@@ -4,7 +4,7 @@ A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) base
 
 ## Status
 
-Currently working progress on [00-base-code](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code).
+Currently finish work on [00-base-code](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code).
 
 ## Usage
 
@@ -19,8 +19,6 @@ Here replace `sample_name` with option in the following table:
 | sample_name  | Reference                                                    |
 | ------------ | ------------------------------------------------------------ |
 | 00_base_code | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
-|              |                                                              |
-|              |                                                              |
 
 ### example usage
 
