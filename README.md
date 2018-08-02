@@ -4,7 +4,7 @@ A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) base
 
 ## Status
 
-Currently finish work on [00-base-code](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code).
+Currently finish work on [01-instance-creation](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance).
 
 ## Usage
 
@@ -16,9 +16,10 @@ $ cargo run --bin sample_name
 
 Here replace `sample_name` with option in the following table:
 
-| sample_name  | Reference                                                    |
-| ------------ | ------------------------------------------------------------ |
-| 00_base_code | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
+| sample_name          | Reference                                                    |
+| -------------------- | ------------------------------------------------------------ |
+| 00_base_code         | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
+| 01_instance_creation | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance) |
 
 ### example usage
 

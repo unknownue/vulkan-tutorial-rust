@@ -1,7 +1,8 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
 winit = "0.16"
+ash = "0.24"

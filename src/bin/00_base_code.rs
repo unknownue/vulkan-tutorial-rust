@@ -1,7 +1,7 @@
 
 extern crate winit;
 
-use winit::{ Event, WindowEvent, ControlFlow, VirtualKeyCode };
+use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 
 // Constants
 const WINDOW_TITLE: &'static str = "00.Base Code";
@@ -11,43 +11,33 @@ const WINDOW_HEIGHT: u32 = 600;
 
 struct VulkanApp {
     // winit stuff
-    events_loop: winit::EventsLoop,
-    window: Option<winit::Window>,
+    events_loop: EventsLoop,
+    _window: winit::Window,
 }
 
 impl VulkanApp {
 
     pub fn new() -> VulkanApp {
+
+        let events_loop = EventsLoop::new();
+        let window = VulkanApp::init_window(&events_loop);
+
         VulkanApp {
-            events_loop: winit::EventsLoop::new(),
-            window: None,
+            events_loop,
+            _window: window,
         }
     }
 
-    pub fn run(&mut self) {
+    fn init_window(events_loop: &EventsLoop) -> winit::Window {
 
-        self.init_window();
-        self.init_vulkan();
-        self.main_loop();
-        self.cleanup();
-    }
-
-    fn init_window(&mut self) {
-
-        let window = winit::WindowBuilder::new()
+        winit::WindowBuilder::new()
             .with_title(WINDOW_TITLE)
             .with_dimensions((WINDOW_WIDTH, WINDOW_HEIGHT).into())
-            .build(&self.events_loop)
-            .expect("Failed to create window.");
-
-        self.window = Some(window);
+            .build(events_loop)
+            .expect("Failed to create window.")
     }
 
-    fn init_vulkan(&mut self) {
-
-    }
-
-    fn main_loop(&mut self) {
+    pub fn main_loop(&mut self) {
 
         self.events_loop.run_forever(|event| {
 
@@ -68,14 +58,10 @@ impl VulkanApp {
             }
         });
     }
-
-    fn cleanup(&mut self) {
-
-    }
 }
 
 fn main() {
 
     let mut vulkan_app = VulkanApp::new();
-    vulkan_app.run();
+    vulkan_app.main_loop();
 }
