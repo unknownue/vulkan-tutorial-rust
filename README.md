@@ -8,7 +8,7 @@ It's recommended to first compile the examples of [ash](https://github.com/MaikK
 
 ## Status
 
-Currently finish work on [02-validation-layers](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers).
+Currently finish work on [03-physical-device-selection](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families).
 
 ## Usage
 
@@ -20,11 +20,12 @@ $ cargo run --bin sample_name
 
 Here replace `sample_name` with option in the following table:
 
-| sample_name          | Reference                                                    |
-| -------------------- | ------------------------------------------------------------ |
-| 00_base_code         | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
-| 01_instance_creation | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance) |
-| 02_validation_layers | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers) |
+| sample_name                  | Reference                                                    |
+| ---------------------------- | ------------------------------------------------------------ |
+| 00_base_code                 | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
+| 01_instance_creation         | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance) |
+| 02_validation_layers         | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers) |
+| 03_physical_device_selection | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families) |
 
 ### example usage
 

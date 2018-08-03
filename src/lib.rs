@@ -6,6 +6,8 @@ mod tests {
     }
 }
 
+#[macro_use]
 extern crate ash;
+extern crate winit;
 
 pub mod utility;

@@ -1,5 +1,11 @@
+//! The utility mod define some fixed function using in this tutorial.
+//! Help to simplify the code.
 
 use ash::extensions::{ Surface, MacOSSurface, DebugReport };
+
+pub mod debug;
+pub mod window;
+pub mod vulkan;
 
 // ------------------------------------------------------------------------
 #[cfg(target_os = "macos")]
@@ -29,3 +35,4 @@ pub fn required_extension_names() -> Vec<*const i8> {
 //    ]
 //}
 // ------------------------------------------------------------------------
+
