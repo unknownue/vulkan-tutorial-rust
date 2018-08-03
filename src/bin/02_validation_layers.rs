@@ -1,6 +1,7 @@
 
 extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::utility;
+use vulkan_tutorial_rust::utility::debug::ValidationInfo;
 
 extern crate winit;
 #[macro_use]
@@ -19,10 +20,12 @@ type EntryV1 = ash::Entry<V1_0>;
 const WINDOW_TITLE: &'static str = "02.Validation Layers";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
-const IS_ENABLE_VALIDATION_LAYERS: bool = true;
-const REQUIRED_VALIDATION_LAYERS: [&'static str; 1] = [
-    "VK_LAYER_LUNARG_standard_validation",
-];
+const VALIDATION: ValidationInfo = ValidationInfo {
+    is_enable: true,
+    required_validation_layers: [
+        "VK_LAYER_LUNARG_standard_validation",
+    ],
+};
 
 unsafe extern "system" fn vulkan_debug_callback(
     _: vk::DebugReportFlagsEXT,
@@ -87,7 +90,7 @@ impl VulkanApp {
 
     fn create_instance(entry: &EntryV1) -> ash::Instance<V1_0> {
 
-        if IS_ENABLE_VALIDATION_LAYERS && VulkanApp::check_validation_layer_support(entry) == false {
+        if VALIDATION.is_enable && VulkanApp::check_validation_layer_support(entry) == false {
             panic!("Validation layers requested, but not available!");
         }
 
@@ -106,20 +109,15 @@ impl VulkanApp {
         // VK_EXT debug report has been requested here.
         let extension_names = utility::required_extension_names();
 
-        let requred_validation_layer_raw_names: Vec<CString> = REQUIRED_VALIDATION_LAYERS.iter()
-            .map(|layer_name| CString::new(*layer_name).unwrap())
-            .collect();
-        let layer_names: Vec<*const i8> = requred_validation_layer_raw_names.iter()
-            .map(|layer_name| layer_name.as_ptr())
-            .collect();
+        let enable_layer_names = VALIDATION.get_layers_names();
 
         let create_info = vk::InstanceCreateInfo {
             s_type: vk::StructureType::InstanceCreateInfo,
             p_next: ptr::null(),
             flags: Default::default(),
             p_application_info: &app_info,
-            pp_enabled_layer_names: if IS_ENABLE_VALIDATION_LAYERS { layer_names.as_ptr() } else { ptr::null() },
-            enabled_layer_count: if IS_ENABLE_VALIDATION_LAYERS { layer_names.len() } else { 0 } as u32,
+            pp_enabled_layer_names: if VALIDATION.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
+            enabled_layer_count: if VALIDATION.is_enable { enable_layer_names.len() } else { 0 } as u32,
             pp_enabled_extension_names: extension_names.as_ptr(),
             enabled_extension_count: extension_names.len() as u32,
         };
@@ -142,7 +140,7 @@ impl VulkanApp {
             return false
         }
 
-        for required_layer_name in REQUIRED_VALIDATION_LAYERS.iter() {
+        for required_layer_name in VALIDATION.required_validation_layers.iter() {
             let mut is_layer_found = false;
             let required_layer_name_bytes = required_layer_name.as_bytes();
 
@@ -173,7 +171,7 @@ impl VulkanApp {
         let debug_report_loader = ash::extensions::DebugReport::new(entry, instance)
             .expect("Unable to load debug report");
 
-        if IS_ENABLE_VALIDATION_LAYERS == false {
+        if VALIDATION.is_enable == false {
             (debug_report_loader, ash::vk::types::DebugReportCallbackEXT::null())
         } else {
 
@@ -227,7 +225,7 @@ impl Drop for VulkanApp {
 
         unsafe {
 
-            if IS_ENABLE_VALIDATION_LAYERS {
+            if VALIDATION.is_enable {
                 self.debug_report_loader.destroy_debug_report_callback_ext(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);

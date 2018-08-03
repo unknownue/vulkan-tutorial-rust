@@ -9,11 +9,14 @@ extern crate ash;
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::DeviceV1_0;
+
+use std::ptr;
 
 type EntryV1 = ash::Entry<V1_0>;
 
 // Constants
-const WINDOW_TITLE: &'static str = "03.Physical Device Selection";
+const WINDOW_TITLE: &'static str = "04.Logical Device";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {
@@ -44,6 +47,8 @@ struct VulkanApp {
     debug_report_loader: ash::extensions::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
     _physical_device: vk::PhysicalDevice,
+    device: ash::Device<V1_0>, // Logical Device
+    _graphics_queue: vk::Queue,
 }
 
 impl VulkanApp {
@@ -59,25 +64,28 @@ impl VulkanApp {
         let instance = utility::vulkan::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
+        let (logical_device, graphics_queue) = VulkanApp::create_logical_device(&instance, &physical_device, &VALIDATION);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
+            // winit stuff
             events_loop,
             _window: window,
 
+            // vulkan stuff
             _entry: entry,
             instance,
             debug_report_loader,
             debug_callback,
             _physical_device: physical_device,
+            device: logical_device,
+            _graphics_queue: graphics_queue,
         }
     }
 
     fn pick_physical_device(instance: &ash::Instance<V1_0>) -> vk::PhysicalDevice {
         let physical_devices = instance.enumerate_physical_devices()
             .expect("Physical device error");
-
-        println!("{} devices (GPU) found with vulkan support.", physical_devices.len());
 
         let mut result = None;
         for physical_device in physical_devices.iter() {
@@ -96,27 +104,57 @@ impl VulkanApp {
 
     fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> bool {
 
-        let device_properties = instance.get_physical_device_properties(physical_device.clone());
-        let device_features = instance.get_physical_device_features(physical_device.clone());
-
-        use vk::PhysicalDeviceType::*;
-        let device_type = match device_properties.device_type {
-            | Cpu => "Cpu",
-            | IntegratedGpu => "Integrated GPU",
-            | DiscreteGpu => "Discrete GPU",
-            | VirtualGpu => "Virtual GPU",
-            | Other => "Unknown",
-        };
-
-        let device_name: Vec<u8> = device_properties.device_name.iter().filter_map(|ch| if *ch as u8 as char != '\0' { Some(*ch as u8) } else { None }).collect();
-        println!("Device Name: {}, id: {}, type: {}", String::from_utf8(device_name).unwrap(), device_properties.device_id, device_type);
-
-        // there are plenty of features
-        println!("Geometry Shader support: {}", if device_features.geometry_shader == 1 { "Support" } else { "Unsupport" });
+        let _device_properties = instance.get_physical_device_properties(physical_device.clone());
+        let _device_features = instance.get_physical_device_features(physical_device.clone());
 
         let indices = VulkanApp::find_queue_family(instance, physical_device);
 
         return indices.is_complete();
+    }
+
+    fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, validation: &ValidationInfo) -> (ash::Device<V1_0>, vk::Queue) {
+
+        let indices = VulkanApp::find_queue_family(instance, physical_device);
+
+        let queue_priorities = [1.0_f32];
+        let queue_create_info = vk::DeviceQueueCreateInfo {
+            s_type: vk::StructureType::DeviceQueueCreateInfo,
+            p_next: ptr::null(),
+            flags: Default::default(),
+            queue_family_index: indices.graphics_family as u32,
+            p_queue_priorities: queue_priorities.as_ptr(),
+            queue_count: queue_priorities.len() as u32,
+        };
+
+        let physical_device_features = vk::PhysicalDeviceFeatures {
+            ..Default::default() // default just enable no feature.
+        };
+
+        let enable_layer_names = validation.get_layers_names();
+
+        let device_create_info = vk::DeviceCreateInfo {
+            s_type: vk::StructureType::DeviceCreateInfo,
+            p_next: ptr::null(),
+            flags: Default::default(),
+            queue_create_info_count: 1,
+            p_queue_create_infos: &queue_create_info,
+            enabled_layer_count: if validation.is_enable { enable_layer_names.len() } else { 0 } as u32,
+            pp_enabled_layer_names: if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
+            enabled_extension_count: 0,
+            pp_enabled_extension_names: ptr::null(),
+            p_enabled_features: &physical_device_features,
+        };
+
+        let device: ash::Device<V1_0> = unsafe {
+            instance.create_device(physical_device.clone(), &device_create_info, None)
+                .expect("Failed to create logical device!")
+        };
+
+        let graphics_queue = unsafe {
+            device.get_device_queue(indices.graphics_family as u32, 0)
+        };
+
+        (device, graphics_queue)
     }
 
     fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> QueueFamilyIndices {
@@ -150,6 +188,8 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
 
         unsafe {
+
+            self.device.destroy_device(None);
 
             if VALIDATION.is_enable {
                 self.debug_report_loader.destroy_debug_report_callback_ext(self.debug_callback, None);
