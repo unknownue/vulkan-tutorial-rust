@@ -61,12 +61,14 @@ impl VulkanApp {
 
         let entry = ash::Entry::new().unwrap();
 
+        let app_name = CString::new(WINDOW_TITLE).unwrap();
+        let engine_name = CString::new("Vulkan Engine").unwrap();
         let app_info = vk::ApplicationInfo {
-            p_application_name: CString::new(WINDOW_TITLE).unwrap().as_ptr(),
+            p_application_name: app_name.as_ptr(),
             s_type: vk::StructureType::ApplicationInfo,
             p_next: ptr::null(),
             application_version: vk_make_version!(1, 0, 0),
-            p_engine_name: CString::new("Vulkan Engine").unwrap().as_ptr(),
+            p_engine_name: engine_name.as_ptr(),
             engine_version: vk_make_version!(1, 0, 0),
             api_version: vk_make_version!(1, 0, 36),
         };
@@ -85,11 +87,11 @@ impl VulkanApp {
         };
 
         use ash::version::EntryV1_0;
-        unsafe {
-            let instance: ash::Instance<V1_0> = entry.create_instance(&create_info, None)
-                .expect("Failed to create instance!");
-            instance
-        }
+        let instance: ash::Instance<V1_0> = unsafe { entry.create_instance(&create_info, None)
+            .expect("Failed to create instance!")
+        };
+
+        instance
     }
     // #############################################################
 

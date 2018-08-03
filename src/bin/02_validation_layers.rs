@@ -1,0 +1,242 @@
+
+extern crate vulkan_tutorial_rust;
+use vulkan_tutorial_rust::utility;
+
+extern crate winit;
+#[macro_use]
+extern crate ash;
+
+use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
+use ash::vk;
+use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::EntryV1_0;
+use std::ptr;
+use std::ffi::{ CStr, CString };
+
+type EntryV1 = ash::Entry<V1_0>;
+
+// Constants
+const WINDOW_TITLE: &'static str = "02.Validation Layers";
+const WINDOW_WIDTH:  u32 = 800;
+const WINDOW_HEIGHT: u32 = 600;
+const IS_ENABLE_VALIDATION_LAYERS: bool = true;
+const REQUIRED_VALIDATION_LAYERS: [&'static str; 1] = [
+    "VK_LAYER_LUNARG_standard_validation",
+];
+
+unsafe extern "system" fn vulkan_debug_callback(
+    _: vk::DebugReportFlagsEXT,
+    _: vk::DebugReportObjectTypeEXT,
+    _: vk::uint64_t,
+    _: vk::size_t,
+    _: vk::int32_t,
+    _: *const vk::c_char,
+    p_message: *const vk::c_char,
+    _: *mut vk::c_void,
+) -> u32 {
+    println!("{:?}", CStr::from_ptr(p_message));
+    vk::VK_FALSE
+}
+
+
+struct VulkanApp {
+    // winit stuff
+    events_loop: EventsLoop,
+    _window: winit::Window,
+
+    // vulkan stuff
+    _entry: EntryV1,
+    instance: ash::Instance<V1_0>,
+    debug_report_loader: ash::extensions::DebugReport,
+    debug_callback: vk::DebugReportCallbackEXT,
+}
+
+impl VulkanApp {
+
+    pub fn new() -> VulkanApp {
+
+        // init window stuff
+        let events_loop = EventsLoop::new();
+        let window = VulkanApp::init_window(&events_loop);
+
+        // init vulkan stuff
+        let entry = EntryV1::new().unwrap();
+        let instance = VulkanApp::create_instance(&entry);
+        let (debug_report_loader, debug_callback) = VulkanApp::setup_debug_callback(&entry, &instance);
+
+        // cleanup(); the 'drop' function will take care of it.
+        VulkanApp {
+            events_loop,
+            _window: window,
+
+            _entry: entry,
+            instance,
+            debug_report_loader,
+            debug_callback,
+        }
+    }
+
+    fn init_window(events_loop: &EventsLoop) -> winit::Window {
+
+        winit::WindowBuilder::new()
+            .with_title(WINDOW_TITLE)
+            .with_dimensions((WINDOW_WIDTH, WINDOW_HEIGHT).into())
+            .build(events_loop)
+            .expect("Failed to create window.")
+    }
+
+    fn create_instance(entry: &EntryV1) -> ash::Instance<V1_0> {
+
+        if IS_ENABLE_VALIDATION_LAYERS && VulkanApp::check_validation_layer_support(entry) == false {
+            panic!("Validation layers requested, but not available!");
+        }
+
+        let app_name = CString::new(WINDOW_TITLE).unwrap();
+        let engine_name = CString::new("Vulkan Engine").unwrap();
+        let app_info = vk::ApplicationInfo {
+            p_application_name: app_name.as_ptr(),
+            s_type: vk::StructureType::ApplicationInfo,
+            p_next: ptr::null(),
+            application_version: vk_make_version!(1, 0, 0),
+            p_engine_name: engine_name.as_ptr(),
+            engine_version: vk_make_version!(1, 0, 0),
+            api_version: vk_make_version!(1, 0, 36),
+        };
+
+        // VK_EXT debug report has been requested here.
+        let extension_names = utility::required_extension_names();
+
+        let requred_validation_layer_raw_names: Vec<CString> = REQUIRED_VALIDATION_LAYERS.iter()
+            .map(|layer_name| CString::new(*layer_name).unwrap())
+            .collect();
+        let layer_names: Vec<*const i8> = requred_validation_layer_raw_names.iter()
+            .map(|layer_name| layer_name.as_ptr())
+            .collect();
+
+        let create_info = vk::InstanceCreateInfo {
+            s_type: vk::StructureType::InstanceCreateInfo,
+            p_next: ptr::null(),
+            flags: Default::default(),
+            p_application_info: &app_info,
+            pp_enabled_layer_names: if IS_ENABLE_VALIDATION_LAYERS { layer_names.as_ptr() } else { ptr::null() },
+            enabled_layer_count: if IS_ENABLE_VALIDATION_LAYERS { layer_names.len() } else { 0 } as u32,
+            pp_enabled_extension_names: extension_names.as_ptr(),
+            enabled_extension_count: extension_names.len() as u32,
+        };
+
+        let instance: ash::Instance<V1_0> = unsafe { entry.create_instance(&create_info, None)
+            .expect("Failed to create instance!")
+        };
+
+        instance
+    }
+
+    fn check_validation_layer_support(entry: &EntryV1) -> bool {
+        // if support validation layer, then return true
+
+        let layer_properties = entry.enumerate_instance_layer_properties()
+            .expect("Failed to enumerate instance layers properties");
+
+        if layer_properties.len() <= 0 {
+            eprintln!("No available layers.");
+            return false
+        }
+
+        for required_layer_name in REQUIRED_VALIDATION_LAYERS.iter() {
+            let mut is_layer_found = false;
+            let required_layer_name_bytes = required_layer_name.as_bytes();
+
+            'loop_marker: for layer_property in layer_properties.iter() {
+
+                let test_layer_name = layer_property.layer_name;
+                for (index, ch) in required_layer_name_bytes.iter().enumerate() {
+                    if test_layer_name[index] != (*ch) as i8 {
+                        continue 'loop_marker
+                    }
+                }
+
+                is_layer_found = true;
+                break
+            }
+
+            if is_layer_found == false {
+                return false
+            }
+        }
+
+        true
+    }
+
+    fn setup_debug_callback(entry: &EntryV1, instance: &ash::Instance<V1_0>)
+        -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
+
+        let debug_report_loader = ash::extensions::DebugReport::new(entry, instance)
+            .expect("Unable to load debug report");
+
+        if IS_ENABLE_VALIDATION_LAYERS == false {
+            (debug_report_loader, ash::vk::types::DebugReportCallbackEXT::null())
+        } else {
+
+            let debug_create_info = vk::DebugReportCallbackCreateInfoEXT {
+                s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
+                p_next: ptr::null(),
+                flags: vk::DEBUG_REPORT_ERROR_BIT_EXT
+                     | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
+                    // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
+                    | vk::DEBUG_REPORT_WARNING_BIT_EXT
+                    | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                pfn_callback: vulkan_debug_callback,
+                p_user_data: ptr::null_mut(),
+            };
+
+            let debug_call_back = unsafe {
+                debug_report_loader.create_debug_report_callback_ext(&debug_create_info, None)
+                    .expect("Failed to set up debug callback!")
+            };
+
+            (debug_report_loader, debug_call_back)
+        }
+    }
+
+    pub fn main_loop(&mut self) {
+
+        self.events_loop.run_forever(|event| {
+
+            match event {
+                // handling keyboard event
+                | Event::WindowEvent { event, .. } => match event {
+                    | WindowEvent::KeyboardInput { input, .. } => {
+                        if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
+                            ControlFlow::Break
+                        } else {
+                            ControlFlow::Continue
+                        }
+                    }
+                    | WindowEvent::CloseRequested => ControlFlow::Break,
+                    | _ => ControlFlow::Continue,
+                },
+                | _ => ControlFlow::Continue,
+            }
+        });
+    }
+}
+
+impl Drop for VulkanApp {
+
+    fn drop(&mut self) {
+
+        unsafe {
+
+            if IS_ENABLE_VALIDATION_LAYERS {
+                self.debug_report_loader.destroy_debug_report_callback_ext(self.debug_callback, None);
+            }
+            self.instance.destroy_instance(None);
+        }
+    }
+}
+
+fn main() {
+
+    let mut vulkan_app = VulkanApp::new();
+    vulkan_app.main_loop();
+}
