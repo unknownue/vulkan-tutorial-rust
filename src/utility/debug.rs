@@ -17,7 +17,7 @@ pub unsafe extern "system" fn vulkan_debug_callback(
     p_message: *const vk::c_char,
     _: *mut vk::c_void,
 ) -> u32 {
-    println!("{:?}", CStr::from_ptr(p_message));
+    println!("Validation Layer: {:?}", CStr::from_ptr(p_message));
     vk::VK_FALSE
 }
 
@@ -55,7 +55,7 @@ pub fn check_validation_layer_support(entry: &ash::Entry<V1_0>, required_validat
 
         for layer_property in layer_properties.iter() {
 
-            let test_layer_name = super::tools::convert_string(&layer_property.layer_name);
+            let test_layer_name = super::tools::vk_to_string(&layer_property.layer_name);
             if (*required_layer_name) == test_layer_name {
                 is_layer_found = true;
                 break

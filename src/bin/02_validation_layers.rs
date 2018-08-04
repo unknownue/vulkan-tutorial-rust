@@ -150,7 +150,7 @@ impl VulkanApp {
 
             for layer_property in layer_properties.iter() {
 
-                let test_layer_name = utility::tools::convert_string(&layer_property.layer_name);
+                let test_layer_name = utility::tools::vk_to_string(&layer_property.layer_name);
                 if (*required_layer_name) == test_layer_name {
                     is_layer_found = true;
                     break

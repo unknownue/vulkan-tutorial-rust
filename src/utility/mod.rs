@@ -1,10 +1,13 @@
 //! The utility mod define some fixed function using in this tutorial.
 //! Help to simplify the code.
 
-
+#[cfg(target_os = "macos")]
 use metal_rs::CoreAnimationLayer;
+#[cfg(target_os = "macos")]
 use cocoa::base::id as cocoa_id;
+#[cfg(target_os = "macos")]
 use cocoa::appkit::{ NSView, NSWindow };
+#[cfg(target_os = "macos")]
 use objc::runtime::YES;
 
 
@@ -20,6 +23,7 @@ use std::ptr;
 pub mod debug;
 pub mod window;
 pub mod vulkan;
+pub mod tools;
 
 // required extension ------------------------------------------------------
 #[cfg(target_os = "macos")]

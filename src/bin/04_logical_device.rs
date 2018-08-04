@@ -87,18 +87,13 @@ impl VulkanApp {
         let physical_devices = instance.enumerate_physical_devices()
             .expect("Physical device error");
 
-        let mut result = None;
-        for physical_device in physical_devices.iter() {
-            if VulkanApp::is_physical_device_suitable(instance, physical_device) {
-                if result.is_none() {
-                    result = Some(*physical_device)
-                }
-            }
-        }
+        let result = physical_devices.iter().find(|physical_device| {
+            VulkanApp::is_physical_device_suitable(instance, physical_device)
+        });
 
         match result {
+            | Some(p_physical_device) => *p_physical_device,
             | None => panic!("Failed to find a suitable GPU!"),
-            | Some(physical_device) => physical_device,
         }
     }
 

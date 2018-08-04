@@ -8,7 +8,7 @@ It's recommended to first compile the examples of [ash](https://github.com/MaikK
 
 ## Status
 
-Currently finish work on [05-window_surface](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface).
+Currently finish work on [06-swap-chain-creation](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain).
 
 ## Usage
 
@@ -28,6 +28,7 @@ Here replace `sample_name` with option in the following table:
 | 03_physical_device_selection | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families) |
 | 04_logical_device            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues) |
 | 05_window_surface            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface) |
+| 06_swap_chain_creation       | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain) |
 
 ### example usage
 

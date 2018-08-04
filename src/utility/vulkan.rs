@@ -9,6 +9,19 @@ use std::ffi::CString;
 
 use super::debug;
 
+pub struct DeviceExtension {
+    pub names: [&'static str; 1],
+//    pub raw_names: [*const i8; 1],
+}
+
+impl DeviceExtension {
+    pub fn get_raw_names(&self) -> Vec<*const i8> {
+        self.names.iter()
+            .map(|name| super::tools::vk_to_raw_string(*name).as_ptr())
+            .collect()
+    }
+}
+
 pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_debug: bool, required_validation_layers: &Vec<&str>) -> ash::Instance<V1_0> {
 
     if is_enable_debug && debug::check_validation_layer_support(entry, required_validation_layers) == false {

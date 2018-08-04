@@ -108,7 +108,7 @@ impl VulkanApp {
             | Other => "Unknown",
         };
 
-        let device_name = utility::tools::convert_string(&device_properties.device_name);
+        let device_name = utility::tools::vk_to_string(&device_properties.device_name);
         println!("Device Name: {}, id: {}, type: {}", device_name, device_properties.device_id, device_type);
 
         // there are plenty of features
