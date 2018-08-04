@@ -108,8 +108,8 @@ impl VulkanApp {
             | Other => "Unknown",
         };
 
-        let device_name: Vec<u8> = device_properties.device_name.iter().filter_map(|ch| if *ch as u8 as char != '\0' { Some(*ch as u8) } else { None }).collect();
-        println!("Device Name: {}, id: {}, type: {}", String::from_utf8(device_name).unwrap(), device_properties.device_id, device_type);
+        let device_name = utility::tools::convert_string(&device_properties.device_name);
+        println!("Device Name: {}, id: {}, type: {}", device_name, device_properties.device_id, device_type);
 
         // there are plenty of features
         println!("Geometry Shader support: {}", if device_features.geometry_shader == 1 { "Support" } else { "Unsupport" });

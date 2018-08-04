@@ -52,19 +52,14 @@ pub fn check_validation_layer_support(entry: &ash::Entry<V1_0>, required_validat
 
     for required_layer_name in required_validation_layers.iter() {
         let mut is_layer_found = false;
-        let required_layer_name_bytes = required_layer_name.as_bytes();
 
-        'loop_marker: for layer_property in layer_properties.iter() {
+        for layer_property in layer_properties.iter() {
 
-            let test_layer_name = layer_property.layer_name;
-            for (index, ch) in required_layer_name_bytes.iter().enumerate() {
-                if test_layer_name[index] != (*ch) as i8 {
-                    continue 'loop_marker
-                }
+            let test_layer_name = super::tools::convert_string(&layer_property.layer_name);
+            if (*required_layer_name) == test_layer_name {
+                is_layer_found = true;
+                break
             }
-
-            is_layer_found = true;
-            break
         }
 
         if is_layer_found == false {
