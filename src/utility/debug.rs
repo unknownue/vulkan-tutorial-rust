@@ -17,7 +17,7 @@ pub unsafe extern "system" fn vulkan_debug_callback(
     p_message: *const vk::c_char,
     _: *mut vk::c_void,
 ) -> u32 {
-    println!("Validation Layer: {:?}", CStr::from_ptr(p_message));
+    println!("Validation Layer -> {:?}", CStr::from_ptr(p_message));
     vk::VK_FALSE
 }
 

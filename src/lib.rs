@@ -9,6 +9,7 @@ mod tests {
 #[macro_use]
 extern crate ash;
 extern crate winit;
+extern crate num;
 
 #[cfg(target_os = "macos")]
 extern crate metal_rs;
