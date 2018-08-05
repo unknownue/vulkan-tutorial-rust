@@ -103,8 +103,9 @@ pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_d
         enabled_extension_count: extension_names.len() as u32,
     };
 
-    let instance: ash::Instance<V1_0> = unsafe { entry.create_instance(&create_info, None)
-        .expect("Failed to create instance!")
+    let instance: ash::Instance<V1_0> = unsafe {
+        entry.create_instance(&create_info, None)
+            .expect("Failed to create instance!")
     };
 
     instance
