@@ -1,7 +1,7 @@
 
 use ash;
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0, EntryV1_0 };
+use ash::version::{ V1_0, InstanceV1_0, EntryV1_0, DeviceV1_0 };
 use winit;
 
 type EntryV1 = ash::Entry<V1_0>;
@@ -388,4 +388,42 @@ pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window
             height: clamp(window_height, capabilities.min_image_extent.height, capabilities.max_image_extent.height)
         }
     }
+}
+
+pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: &vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
+
+    let mut swapchain_imageviews = vec![];
+
+    for image in images.iter() {
+
+        let imageview_create_info = vk::ImageViewCreateInfo {
+            s_type: vk::StructureType::ImageViewCreateInfo,
+            p_next: ptr::null(),
+            flags: Default::default(),
+            view_type: vk::ImageViewType::Type2d,
+            format: surface_format.clone(),
+            components: vk::ComponentMapping {
+                r: vk::ComponentSwizzle::Identity,
+                g: vk::ComponentSwizzle::Identity,
+                b: vk::ComponentSwizzle::Identity,
+                a: vk::ComponentSwizzle::Identity,
+            },
+            subresource_range: vk::ImageSubresourceRange {
+                aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
+                base_mip_level: 0,
+                level_count: 1,
+                base_array_layer: 0,
+                layer_count: 1,
+            },
+            image: image.clone(),
+        };
+
+        let imageview = unsafe {
+            device.create_image_view(&imageview_create_info, None)
+                .expect("Failed to create Image View!")
+        };
+        swapchain_imageviews.push(imageview);
+    }
+
+    swapchain_imageviews
 }
