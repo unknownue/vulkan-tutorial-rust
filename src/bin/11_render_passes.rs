@@ -22,7 +22,7 @@ use std::ptr;
 use std::ffi::CString;
 
 // Constants
-const WINDOW_TITLE: &'static str = "10.Fixed Functions";
+const WINDOW_TITLE: &'static str = "11.Render Passes";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {

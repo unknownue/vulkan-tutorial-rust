@@ -22,7 +22,7 @@ use std::ptr;
 use std::ffi::CString;
 
 // Constants
-const WINDOW_TITLE: &'static str = "10.Fixed Functions";
+const WINDOW_TITLE: &'static str = "12.Graphics Pipeline Complete";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {
@@ -85,7 +85,7 @@ impl VulkanApp {
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
         let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &surface_stuff, &family_indices);
         let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = VulkanApp::create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
         let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -338,60 +338,6 @@ impl VulkanApp {
         }
 
         (graphics_pipelines[0], pipeline_layout)
-    }
-
-    fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format) -> vk::RenderPass {
-
-        let color_attachment = vk::AttachmentDescription {
-            format: surface_format,
-            flags: vk::AttachmentDescriptionFlags::empty(),
-            samples: vk::SAMPLE_COUNT_1_BIT,
-            load_op: vk::AttachmentLoadOp::Clear,
-            store_op: vk::AttachmentStoreOp::Store,
-            stencil_load_op: vk::AttachmentLoadOp::DontCare,
-            stencil_store_op: vk::AttachmentStoreOp::DontCare,
-            initial_layout: vk::ImageLayout::Undefined,
-            final_layout: vk::ImageLayout::PresentSrcKhr,
-        };
-
-        let color_attachment_ref = vk::AttachmentReference {
-            attachment: 0,
-            layout: vk::ImageLayout::ColorAttachmentOptimal,
-        };
-
-        let subpass = vk::SubpassDescription {
-            color_attachment_count: 1,
-            p_color_attachments: &color_attachment_ref,
-            p_depth_stencil_attachment: ptr::null(),
-            flags: Default::default(),
-            pipeline_bind_point: vk::PipelineBindPoint::Graphics,
-            input_attachment_count: 0,
-            p_input_attachments: ptr::null(),
-            p_resolve_attachments: ptr::null(),
-            preserve_attachment_count: 0,
-            p_preserve_attachments: ptr::null(),
-        };
-
-        let render_pass_attachments = [
-            color_attachment,
-        ];
-
-        let renderpass_create_info = vk::RenderPassCreateInfo {
-            s_type: vk::StructureType::RenderPassCreateInfo,
-            flags: Default::default(),
-            p_next: ptr::null(),
-            attachment_count: render_pass_attachments.len() as u32,
-            p_attachments: render_pass_attachments.as_ptr(),
-            subpass_count: 1,
-            p_subpasses: &subpass,
-            dependency_count: 0,
-            p_dependencies: ptr::null(),
-        };
-
-        unsafe {
-            device.create_render_pass(&renderpass_create_info, None)
-                .expect("Failed to create render pass!")
-        }
     }
 }
 
