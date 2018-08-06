@@ -428,3 +428,18 @@ pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: &vk::Format
 
     swapchain_imageviews
 }
+
+pub fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::ShaderModule {
+    let vertex_shader_info = vk::ShaderModuleCreateInfo {
+        s_type: vk::StructureType::ShaderModuleCreateInfo,
+        p_next: ptr::null(),
+        flags: Default::default(),
+        code_size: code.len(),
+        p_code: code.as_ptr() as *const u32,
+    };
+
+    unsafe {
+        device.create_shader_module(&vertex_shader_info, None)
+            .expect("Failed to create Shader Module!")
+    }
+}

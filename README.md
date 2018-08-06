@@ -8,7 +8,7 @@ It's recommended to first compile the examples of [ash](https://github.com/MaikK
 
 ## Status
 
-Currently finish work on [09-shader-modules](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules).
+Currently finish work on [10-fixed-functions](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions).
 
 ## Usage
 
@@ -32,6 +32,7 @@ Here replace `sample_name` with option in the following table:
 | 07_image_view                | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Image_views) |
 | 08_graphics_pipeline         | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics) |
 | 09_shader_modules            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules) |
+| 10_fixed_functions           | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions) |
 
 ### example usage
 

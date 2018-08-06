@@ -1,4 +1,6 @@
 
+use std::path::Path;
+
 #[allow(non_camel_case_types)]
 type c_char = i8; // define in 'libc' crate
 
@@ -42,5 +44,18 @@ pub fn vk_to_raw_string(string_to_converted: &str) -> [c_char; 256] {
 
     content
 }
+
+pub fn read_shader_code(shader_path: &Path) -> Vec<u8> {
+    use std::fs::File;
+    use std::io::Read;
+
+    let spv_file = File::open(shader_path)
+        .expect(&format!("Failed to find spv file at {:?}", shader_path));
+    let bytes_code: Vec<u8> = spv_file.bytes()
+        .filter_map(|byte| byte.ok()).collect();
+
+    bytes_code
+}
+
 
 
