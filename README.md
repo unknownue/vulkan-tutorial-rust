@@ -8,7 +8,7 @@ It's recommended to first compile the examples of [ash](https://github.com/MaikK
 
 ## Status
 
-Currently finish work on [15-hello-triangle](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation).
+Currently finish work on [16-swap-chain-recreation](https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation).
 
 ## Usage
 
@@ -37,7 +37,8 @@ Here replace `sample_name` with option in the following table:
 | 12_graphics_pipeline_complete | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Conclusion) |
 | 13_framebuffers               | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Framebuffers) |
 | 14_command_buffers            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers) |
-| 16_hello_triangle             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation) |
+| 15_hello_triangle             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation) |
+| 16_swap_chain_recreation      | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation) |
 
 ### example usage
 

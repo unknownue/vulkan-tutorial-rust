@@ -65,6 +65,12 @@ impl QueueFamilyIndices {
     }
 }
 
+pub struct SyncObjects {
+    pub image_available_semaphores: Vec<vk::Semaphore>,
+    pub render_finished_semaphores: Vec<vk::Semaphore>,
+    pub inflight_fences: Vec<vk::Fence>,
+}
+
 pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_debug: bool, required_validation_layers: &Vec<&str>) -> ash::Instance<V1_0> {
 
     if is_enable_debug && debug::check_validation_layer_support(entry, required_validation_layers) == false {
@@ -283,13 +289,13 @@ pub fn query_swapchain_support(physical_device: &vk::PhysicalDevice, surface_stu
     }
 }
 
-pub fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff, queue_family: &QueueFamilyIndices) -> SwapChainStuff {
+pub fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: &vk::PhysicalDevice, window: &winit::Window, surface_stuff: &SurfaceStuff, queue_family: &QueueFamilyIndices) -> SwapChainStuff {
 
     let swapchain_support = query_swapchain_support(physical_device, surface_stuff);
 
     let surface_format = choose_swapchain_format(&swapchain_support.formats);
     let present_mode = choose_swapchain_present_mode(&swapchain_support.present_modes);
-    let extent = choose_swapchain_extent(&swapchain_support.capabilities, surface_stuff.screen_width, surface_stuff.screen_height);
+    let extent = choose_swapchain_extent(&swapchain_support.capabilities, window);
 
     use std::cmp::min;
     let image_count = min(swapchain_support.capabilities.min_image_count + 1, swapchain_support.capabilities.max_image_count);
@@ -376,7 +382,7 @@ pub fn choose_swapchain_present_mode(available_present_modes: &Vec<vk::PresentMo
     best_mode
 }
 
-pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window_width: u32, window_height: u32) -> vk::Extent2D {
+pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window: &winit::Window) -> vk::Extent2D {
     use ash::vk::types::*;
 
     if capabilities.current_extent.width != uint32_t::max_value() {
@@ -385,9 +391,13 @@ pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window
     } else {
         use num::clamp;
 
+        let window_size = window.get_inner_size()
+            .expect("Failed to get the size of Window");
+        println!("\t\tInner Window Size: ({}, {})", window_size.width, window_size.height);
+
         vk::Extent2D {
-            width: clamp(window_width, capabilities.min_image_extent.width, capabilities.max_image_extent.width),
-            height: clamp(window_height, capabilities.min_image_extent.height, capabilities.max_image_extent.height)
+            width:  clamp(window_size.width as u32, capabilities.min_image_extent.width, capabilities.max_image_extent.width),
+            height: clamp(window_size.height as u32, capabilities.min_image_extent.height, capabilities.max_image_extent.height)
         }
     }
 }
@@ -446,10 +456,10 @@ pub fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::Sh
 }
 
 
-pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format) -> vk::RenderPass {
+pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: &vk::Format) -> vk::RenderPass {
 
     let color_attachment = vk::AttachmentDescription {
-        format: surface_format,
+        format: surface_format.clone(),
         flags: vk::AttachmentDescriptionFlags::empty(),
         samples: vk::SAMPLE_COUNT_1_BIT,
         load_op: vk::AttachmentLoadOp::Clear,
@@ -830,4 +840,42 @@ pub fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::Com
     }
 
     command_buffers
+}
+
+pub fn create_sync_objects(device: &ash::Device<V1_0>, max_frame_in_flight: usize) -> SyncObjects {
+
+    let mut sync_objects = SyncObjects {
+        image_available_semaphores: vec![],
+        render_finished_semaphores: vec![],
+        inflight_fences: vec![],
+    };
+
+    let semaphore_create_info = vk::SemaphoreCreateInfo {
+        s_type: vk::StructureType::SemaphoreCreateInfo,
+        p_next: ptr::null(),
+        flags: Default::default(),
+    };
+
+    let fence_create_info = vk::FenceCreateInfo {
+        s_type: vk::StructureType::FenceCreateInfo,
+        p_next: ptr::null(),
+        flags: vk::FENCE_CREATE_SIGNALED_BIT,
+    };
+
+    for _ in 0..max_frame_in_flight {
+        unsafe {
+            let image_available_semaphore = device.create_semaphore(&semaphore_create_info, None)
+                .expect("Failed to create Semaphore Object!");
+            let render_finished_semaphore = device.create_semaphore(&semaphore_create_info, None)
+                .expect("Failed to create Semaphore Object!");
+            let inflight_fence = device.create_fence(&fence_create_info, None)
+                .expect("Failed to create Fence Object!");
+
+            sync_objects.image_available_semaphores.push(image_available_semaphore);
+            sync_objects.render_finished_semaphores.push(render_finished_semaphore);
+            sync_objects.inflight_fences.push(inflight_fence);
+        }
+    }
+
+    sync_objects
 }

@@ -1,6 +1,6 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.15.0"
+version = "0.16.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
