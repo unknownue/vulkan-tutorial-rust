@@ -1,12 +1,13 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.16.0"
+version = "0.17.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
 winit = "0.17"
 ash = "0.24"
 num = "0.2"
+memoffset = "0.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 metal-rs = "0.10.4"

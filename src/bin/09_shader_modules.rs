@@ -113,8 +113,8 @@ impl VulkanApp {
     }
 
     fn create_graphics_pipeline(device: &ash::Device<V1_0>) {
-        let vert_shader_code = VulkanApp::read_shader_code(Path::new("shaders/vert.spv"));
-        let frag_shader_code = VulkanApp::read_shader_code(Path::new("shaders/frag.spv"));
+        let vert_shader_code = VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
+        let frag_shader_code = VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
 
         let vert_shader_module = VulkanApp::create_shader_module(device, vert_shader_code);
         let frag_shader_module = VulkanApp::create_shader_module(device, frag_shader_code);

@@ -512,8 +512,8 @@ pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: &vk::Forma
 
 pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, swapchain_extent: &vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
 
-    let vert_shader_code = super::tools::read_shader_code(Path::new("shaders/vert.spv"));
-    let frag_shader_code = super::tools::read_shader_code(Path::new("shaders/frag.spv"));
+    let vert_shader_code = super::tools::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
+    let frag_shader_code = super::tools::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
 
     let vert_shader_module = create_shader_module(device, vert_shader_code);
     let frag_shader_module = create_shader_module(device, frag_shader_code);
@@ -728,7 +728,6 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::Re
 
     (graphics_pipelines[0], pipeline_layout)
 }
-
 
 pub fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, image_views: &Vec<vk::ImageView>, swapchain_extent: &vk::Extent2D) -> Vec<vk::Framebuffer> {
 
