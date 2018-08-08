@@ -16,6 +16,7 @@ use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0 };
 use ash::version::DeviceV1_0;
+use vk::types::uint32_t;
 
 type EntryV1 = ash::Entry<V1_0>;
 
@@ -24,7 +25,7 @@ use std::ptr;
 use std::ffi::CString;
 
 // Constants
-const WINDOW_TITLE: &'static str = "17.Vertex Input";
+const WINDOW_TITLE: &'static str = "18.Vertex Buffer";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {
@@ -38,10 +39,10 @@ const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
 };
 const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
-
+#[derive(Clone, Debug, Copy)]
 struct Vertex {
     pos: [f32; 2],
-    color: [f32; 3],
+    color: [f32; 4],
 }
 impl Vertex {
 
@@ -49,7 +50,7 @@ impl Vertex {
         [
             vk::VertexInputBindingDescription {
                 binding: 0,
-                stride: std::mem::size_of::<Self>() as u32,
+                stride: std::mem::size_of::<Vertex>() as u32,
                 input_rate: vk::VertexInputRate::Vertex,
             },
         ]
@@ -58,25 +59,25 @@ impl Vertex {
     fn get_attribute_descriptions() -> [vk::VertexInputAttributeDescription; 2] {
         [
             vk::VertexInputAttributeDescription {
-                location: 0,
                 binding:  0,
+                location: 0,
                 format: vk::Format::R32g32Sfloat,
-                offset: offset_of!(Self, pos) as u32,
+                offset: offset_of!(Vertex, pos) as u32,
             },
             vk::VertexInputAttributeDescription {
-                binding: 0,
+                binding:  0,
                 location: 1,
-                format: vk::Format::R32g32b32Sfloat,
-                offset: offset_of!(Self, color) as u32,
+                format: vk::Format::R32g32b32a32Sfloat,
+                offset: offset_of!(Vertex, color) as u32,
             }
         ]
     }
 }
 
-const _VERTICES_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0], },
-    Vertex { pos: [-0.5, -0.5], color: [0.0, 0.0, 1.0], },
+const VERTICES_DATA: [Vertex; 3] = [
+    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 0.0], },
+    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 0.0], },
+    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 0.0], },
 ];
 
 
@@ -111,6 +112,9 @@ struct VulkanApp {
     pipeline_layout: vk::PipelineLayout,
     graphics_pipeline: vk::Pipeline,
 
+    vertex_buffer: vk::Buffer,
+    vertex_buffer_memory: vk::DeviceMemory,
+
     command_pool: vk::CommandPool,
     command_buffers: Vec<vk::CommandBuffer>,
 
@@ -143,7 +147,8 @@ impl VulkanApp {
         let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
         let swapchain_framebuffers = create_framebuffers(&device, &render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let command_buffers = create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent);
+        let (vertex_buffer, vertex_buffer_memory) = VulkanApp::create_vertex_buffer(&instance, &physical_device, &device);
+        let command_buffers = VulkanApp::create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent, &vertex_buffer);
         let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -178,6 +183,9 @@ impl VulkanApp {
             render_pass,
             graphics_pipeline,
 
+            vertex_buffer,
+            vertex_buffer_memory,
+
             command_pool,
             command_buffers,
 
@@ -189,6 +197,148 @@ impl VulkanApp {
             is_framebuffer_resized: false,
         }
     }
+
+    fn create_vertex_buffer(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, device: &ash::Device<V1_0>) -> (vk::Buffer, vk::DeviceMemory) {
+
+        let vertex_buffer_create_info = vk::BufferCreateInfo {
+            s_type: vk::StructureType::BufferCreateInfo,
+            p_next: ptr::null(),
+            flags: vk::BufferCreateFlags::empty(),
+            size: std::mem::size_of_val(&VERTICES_DATA) as u64,
+            usage: vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            sharing_mode: vk::SharingMode::Exclusive,
+            queue_family_index_count: 0,
+            p_queue_family_indices: ptr::null(),
+        };
+
+        let vertex_buffer = unsafe {
+            device.create_buffer(&vertex_buffer_create_info, None)
+                .expect("Failed to create Vertex Buffer")
+        };
+
+        let mem_requirements = device.get_buffer_memory_requirements(vertex_buffer);
+        let mem_properties = instance.get_physical_device_memory_properties(physical_device.clone());
+        let required_memory_flags = vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        let memory_type = VulkanApp::find_memory_type(mem_requirements.memory_type_bits, required_memory_flags, mem_properties);
+
+        let allocate_info = vk::MemoryAllocateInfo {
+            s_type: vk::StructureType::MemoryAllocateInfo,
+            p_next: ptr::null(),
+            allocation_size: mem_requirements.size,
+            memory_type_index: memory_type,
+        };
+
+        let vertex_buffer_memory = unsafe {
+            device.allocate_memory(&allocate_info, None)
+                .expect("Failed to allocate vertex buffer memory!")
+        };
+
+        unsafe {
+            device.bind_buffer_memory(vertex_buffer, vertex_buffer_memory, 0)
+                .expect("Failed to bind Buffer");
+
+            let data_ptr = device.map_memory(vertex_buffer_memory, 0, vertex_buffer_create_info.size, vk::MemoryMapFlags::empty())
+                .expect("Failed to Map Memory");
+            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, mem_requirements.size);
+            vert_align.copy_from_slice(&VERTICES_DATA);
+            device.unmap_memory(vertex_buffer_memory);
+        }
+
+        (vertex_buffer, vertex_buffer_memory)
+    }
+
+    fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPropertyFlags, mem_properties: vk::PhysicalDeviceMemoryProperties) -> uint32_t {
+
+        for (i, memory_type) in mem_properties.memory_types.iter().enumerate() {
+            if (type_filter & (1 << i)) > 0 && (memory_type.property_flags & required_properties) == required_properties {
+                return i as uint32_t
+            }
+        }
+
+        panic!("Failed to find suitable memory type!")
+    }
+
+    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, graphics_pipeline: &vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass, surface_extent: &vk::Extent2D, vertex_buffer: &vk::Buffer) -> Vec<vk::CommandBuffer> {
+
+        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
+            s_type: vk::StructureType::CommandBufferAllocateInfo,
+            p_next: ptr::null(),
+            command_buffer_count: framebuffers.len() as u32,
+            command_pool: command_pool.clone(),
+            level: vk::CommandBufferLevel::Primary,
+        };
+
+        let command_buffers = unsafe {
+            device.allocate_command_buffers(&command_buffer_allocate_info)
+                .expect("Failed to allocate Command Buffers!")
+        };
+
+        for (i, &command_buffer) in command_buffers.iter().enumerate() {
+
+            let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
+                s_type: vk::StructureType::CommandBufferBeginInfo,
+                p_next: ptr::null(),
+                p_inheritance_info: ptr::null(),
+                flags: vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+            };
+
+            unsafe {
+                device.begin_command_buffer(command_buffer, &command_buffer_begin_info)
+                    .expect("Failed to begin recording Command Buffer at beginning!");
+            }
+
+            let clear_values = [
+                vk::ClearValue {
+                    color: vk::ClearColorValue {
+                        float32: [0.0, 0.0, 0.0, 1.0]
+                    },
+                }
+            ];
+
+            let render_pass_begin_info = vk::RenderPassBeginInfo {
+                s_type: vk::StructureType::RenderPassBeginInfo,
+                p_next: ptr::null(),
+                render_pass: render_pass.clone(),
+                framebuffer: framebuffers[i],
+                render_area: vk::Rect2D {
+                    offset: vk::Offset2D { x: 0, y: 0 },
+                    extent: surface_extent.clone(),
+                },
+                clear_value_count: clear_values.len() as u32,
+                p_clear_values: clear_values.as_ptr(),
+            };
+
+            unsafe {
+                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
+                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline.clone());
+
+                let vertex_buffers = [
+                    vertex_buffer.clone()
+                ];
+                let offsets = [
+                    0_u64
+                ];
+
+                device.cmd_bind_vertex_buffers(command_buffer, 0, &vertex_buffers, &offsets);
+
+                device.cmd_draw(command_buffer, VERTICES_DATA.len() as u32, 1, 0, 0);
+
+                device.cmd_end_render_pass(command_buffer);
+
+                device.end_command_buffer(command_buffer)
+                    .expect("Failed to record Command Buffer at Ending!");
+            }
+        }
+
+        command_buffers
+    }
+}
+
+
+
+
+// Fix content -------------------------------------------------------------------------------
+impl VulkanApp {
 
     fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, swapchain_extent: &vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
 
@@ -401,11 +551,6 @@ impl VulkanApp {
 
         (graphics_pipelines[0], pipeline_layout)
     }
-}
-
-
-// Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
 
     fn draw_frame(&mut self) {
 
@@ -482,6 +627,8 @@ impl VulkanApp {
         let result = unsafe {
             self.swapchain_loader.queue_present_khr(self.present_queue, &present_info)
         };
+
+        let _is_resized = self.is_framebuffer_resized;
         let is_resized = match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
@@ -527,7 +674,7 @@ impl VulkanApp {
         self.pipeline_layout = pipeline_layout;
 
         self.swapchain_framebuffers = create_framebuffers(&self.device, &self.render_pass, &self.swapchain_imageviews, &self.swapchain_extent);
-        self.command_buffers = create_command_buffers(&self.device, &self.command_pool, &self.graphics_pipeline, &self.swapchain_framebuffers, &self.render_pass, &self.swapchain_extent);
+        self.command_buffers = VulkanApp::create_command_buffers(&self.device, &self.command_pool, &self.graphics_pipeline, &self.swapchain_framebuffers, &self.render_pass, &self.swapchain_extent, &self.vertex_buffer);
     }
 
     fn cleanup_swapchain(&self) {
@@ -559,6 +706,9 @@ impl Drop for VulkanApp {
             }
 
             self.cleanup_swapchain();
+
+            self.device.destroy_buffer(self.vertex_buffer, None);
+            self.device.free_memory(self.vertex_buffer_memory, None);
 
             self.device.destroy_command_pool(self.command_pool, None);
 

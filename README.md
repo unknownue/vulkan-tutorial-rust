@@ -8,7 +8,7 @@ It's recommended to first compile the examples of [ash](https://github.com/MaikK
 
 ## Status
 
-Currently finish work on [17-vertex-input](https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description).
+Currently finish work on [18-vertex-buffer](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation).
 
 ## Usage
 
@@ -40,6 +40,7 @@ Here replace `sample_name` with option in the following table:
 | 15_hello_triangle             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation) |
 | 16_swap_chain_recreation      | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation) |
 | 17_vertex_input               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description) |
+| 18_vertex_buffer              | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation) |
 
 ### example usage
 
