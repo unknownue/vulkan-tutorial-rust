@@ -2,9 +2,15 @@
 
 A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
 
-The codes are only tested on macOS.
+The codes are only tested on macOS, but it should work on Windows or Linux in theory.
 
-It's recommended to first compile the examples of [ash](https://github.com/MaikKlein/ash) before compiling this repository.
+It's recommended to compile the examples of [ash](https://github.com/MaikKlein/ash) first before compiling this repository.
+
+## Dependencies
+
+- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
+- [ash](https://github.com/MaikKlein/ash)
+- [winit](https://github.com/tomaka/winit)
 
 ## Status
 
@@ -48,3 +54,6 @@ Here replace `sample_name` with option in the following table:
 $ cargo run --bin 00_base_code
 ```
 
+## Notices
+
+- Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
