@@ -14,7 +14,7 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 ## Status
 
-Currently finish work on [18-vertex-buffer](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation).
+Currently finish work on [19-staging-buffer](https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer).
 
 ## Usage
 
@@ -47,6 +47,7 @@ Here replace `sample_name` with option in the following table:
 | 16_swap_chain_recreation      | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation) |
 | 17_vertex_input               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description) |
 | 18_vertex_buffer              | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation) |
+| 19_staging_buffer             | [Link](https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer) |
 
 ### example usage
 

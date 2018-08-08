@@ -172,7 +172,7 @@ impl VulkanApp {
             present_queue,
 
             swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain: swapchain_stuff.swapchain,
+            swapchain:        swapchain_stuff.swapchain,
             swapchain_format: swapchain_stuff.swapchain_format,
             swapchain_images: swapchain_stuff.swapchain_images,
             swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -191,7 +191,7 @@ impl VulkanApp {
 
             image_available_semaphores: sync_ojbects.image_available_semaphores,
             render_finished_semaphores: sync_ojbects.render_finished_semaphores,
-            in_flight_fences: sync_ojbects.inflight_fences,
+            in_flight_fences:           sync_ojbects.inflight_fences,
             current_frame: 0,
 
             is_framebuffer_resized: false,
@@ -218,7 +218,7 @@ impl VulkanApp {
 
         let mem_requirements = device.get_buffer_memory_requirements(vertex_buffer);
         let mem_properties = instance.get_physical_device_memory_properties(physical_device.clone());
-        let required_memory_flags = vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        let required_memory_flags: vk::types::MemoryPropertyFlags = vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT;
         let memory_type = VulkanApp::find_memory_type(mem_requirements.memory_type_bits, required_memory_flags, mem_properties);
 
         let allocate_info = vk::MemoryAllocateInfo {
@@ -239,7 +239,7 @@ impl VulkanApp {
 
             let data_ptr = device.map_memory(vertex_buffer_memory, 0, vertex_buffer_create_info.size, vk::MemoryMapFlags::empty())
                 .expect("Failed to Map Memory");
-            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, mem_requirements.size);
+            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, vertex_buffer_create_info.size);
             vert_align.copy_from_slice(&VERTICES_DATA);
             device.unmap_memory(vertex_buffer_memory);
         }
@@ -628,7 +628,6 @@ impl VulkanApp {
             self.swapchain_loader.queue_present_khr(self.present_queue, &present_info)
         };
 
-        let _is_resized = self.is_framebuffer_resized;
         let is_resized = match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
@@ -662,7 +661,7 @@ impl VulkanApp {
 
         let swapchain_stuff = create_swapchain(&self.instance, &self.device, &self.physical_device, &self.window, &surface_suff, &self.queue_family);
         self.swapchain_loader = swapchain_stuff.swapchain_loader;
-        self.swapchain = swapchain_stuff.swapchain;
+        self.swapchain        = swapchain_stuff.swapchain;
         self.swapchain_images = swapchain_stuff.swapchain_images;
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;

@@ -116,8 +116,8 @@ impl VulkanApp {
             graphics_queue,
             present_queue,
 
-            swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain: swapchain_stuff.swapchain,
+            swapchain_loader:  swapchain_stuff.swapchain_loader,
+            swapchain:         swapchain_stuff.swapchain,
             _swapchain_format: swapchain_stuff.swapchain_format,
             _swapchain_images: swapchain_stuff.swapchain_images,
             _swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -133,7 +133,7 @@ impl VulkanApp {
 
             image_available_semaphores: sync_ojbects.image_available_semaphores,
             render_finished_semaphores: sync_ojbects.render_finished_semaphores,
-            in_flight_fences: sync_ojbects.inflight_fences,
+            in_flight_fences:           sync_ojbects.inflight_fences,
             current_frame: 0,
         }
     }
