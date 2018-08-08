@@ -75,7 +75,7 @@ impl Vertex {
 }
 
 const VERTICES_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 0.0], },
+    Vertex { pos: [ 0.0, -0.5], color: [1.0, 1.0, 1.0, 0.0], },
     Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 0.0], },
     Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 0.0], },
 ];
@@ -742,6 +742,8 @@ impl ProgramProc {
 
     fn main_loop(&mut self, vulkan_app: &mut VulkanApp) {
 
+        let mut is_first_toggle_resize = true;
+
         self.events_loop.run_forever(|event| {
 
             match event {
@@ -752,7 +754,13 @@ impl ProgramProc {
                             return ControlFlow::Break
                         }
                     }
-                    | WindowEvent::Resized(_) => vulkan_app.is_framebuffer_resized = true,
+                    | WindowEvent::Resized(_) => {
+                        if is_first_toggle_resize == false {
+                            vulkan_app.is_framebuffer_resized = true;
+                        } else {
+                            is_first_toggle_resize = false;
+                        }
+                    },
                     | WindowEvent::CloseRequested => return ControlFlow::Break,
                     | _ => (),
                 },
