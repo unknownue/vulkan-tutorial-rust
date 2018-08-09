@@ -143,7 +143,15 @@ pub fn pick_physical_device(instance: &ash::Instance<V1_0>, surface_stuff: &Surf
 
     let result = physical_devices.iter().find(|physical_device| {
         let swapchain_support = query_swapchain_support(physical_device, surface_stuff);
-        is_physical_device_suitable(instance, physical_device, surface_stuff, &swapchain_support, required_device_extensions)
+        let is_suitable = is_physical_device_suitable(instance, physical_device, surface_stuff, &swapchain_support, required_device_extensions);
+
+        if is_suitable {
+            let device_properties = instance.get_physical_device_properties(**physical_device);
+            let device_name = super::tools::vk_to_string(&device_properties.device_name);
+            println!("Using GPU: {}", device_name);
+        }
+
+        is_suitable
     });
 
     match result {

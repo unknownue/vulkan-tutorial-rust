@@ -12,7 +12,7 @@ extern crate num;
 #[macro_use]
 extern crate memoffset;
 
-use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
+use winit::{ Event, EventsLoop, WindowEvent, VirtualKeyCode };
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0 };
 use ash::version::DeviceV1_0;
@@ -28,6 +28,7 @@ use std::ffi::CString;
 const WINDOW_TITLE: &'static str = "19.Staging Buffer";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
+const IS_PAINT_FPS_COUNTER: bool = true;
 const VALIDATION: ValidationInfo = ValidationInfo {
     is_enable: true,
     required_validation_layers: [
@@ -612,7 +613,6 @@ impl VulkanApp {
                 .expect("Failed to create pipeline layout!")
         };
 
-
         let graphic_pipeline_create_infos = [
             vk::GraphicsPipelineCreateInfo {
                 s_type: vk::StructureType::GraphicsPipelineCreateInfo,
@@ -840,33 +840,46 @@ impl ProgramProc {
     fn main_loop(&mut self, vulkan_app: &mut VulkanApp) {
 
         let mut is_first_toggle_resize = true;
+        let mut tick_counter = utility::fps_limiter::FPSLimiter::new();
+        let mut is_running = true;
 
-        self.events_loop.run_forever(|event| {
-
-            match event {
-                // handling keyboard event
-                | Event::WindowEvent { event, .. } => match event {
-                    | WindowEvent::KeyboardInput { input, .. } => {
-                        if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
-                            return ControlFlow::Break
+        'mainloop: loop {
+            self.events_loop.poll_events(|event| {
+                match event {
+                    // handling keyboard event
+                    | Event::WindowEvent { event, .. } => match event {
+                        | WindowEvent::KeyboardInput { input, .. } => {
+                            if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
+                                is_running = false;
+                            }
                         }
-                    }
-                    | WindowEvent::Resized(_) => {
-                        if is_first_toggle_resize == false {
-                            vulkan_app.is_framebuffer_resized = true;
-                        } else {
-                            is_first_toggle_resize = false;
-                        }
+                        | WindowEvent::Resized(_) => {
+                            if is_first_toggle_resize == false {
+                                vulkan_app.is_framebuffer_resized = true;
+                            } else {
+                                is_first_toggle_resize = false;
+                            }
+                        },
+                        | WindowEvent::CloseRequested => {
+                            is_running = false;
+                        },
+                        | _ => (),
                     },
-                    | WindowEvent::CloseRequested => return ControlFlow::Break,
                     | _ => (),
-                },
-                | _ => (),
-            }
+                }
+            });
 
             vulkan_app.draw_frame();
-            ControlFlow::Continue
-        });
+
+            tick_counter.tick_frame();
+            if IS_PAINT_FPS_COUNTER {
+                print!("{} ", tick_counter.fps());
+            }
+
+            if is_running == false {
+                break 'mainloop
+            }
+        }
 
         vulkan_app.device.device_wait_idle()
             .expect("Failed to wait device idle!");
