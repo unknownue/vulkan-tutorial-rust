@@ -76,9 +76,9 @@ impl Vertex {
 }
 
 const VERTICES_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 1.0, 1.0, 0.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 0.0], },
-    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 0.0], },
+    Vertex { pos: [ 0.0, -0.5], color: [1.0, 1.0, 1.0, 1.0], },
+    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
+    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
 ];
 
 
@@ -873,7 +873,7 @@ impl ProgramProc {
 
             tick_counter.tick_frame();
             if IS_PAINT_FPS_COUNTER {
-                print!("{} ", tick_counter.fps());
+                print!("FPS: {}\r", tick_counter.fps());
             }
 
             if is_running == false {

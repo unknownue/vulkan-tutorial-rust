@@ -2,6 +2,7 @@
 use ash;
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0, EntryV1_0, DeviceV1_0 };
+use ash::vk::types::uint32_t;
 use winit;
 
 type EntryV1 = ash::Entry<V1_0>;
@@ -885,4 +886,122 @@ pub fn create_sync_objects(device: &ash::Device<V1_0>, max_frame_in_flight: usiz
     }
 
     sync_objects
+}
+
+pub fn create_buffer(device: &ash::Device<V1_0>, size: vk::DeviceSize, usage: vk::BufferUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
+    -> (vk::Buffer, vk::DeviceMemory) {
+
+    let buffer_create_info = vk::BufferCreateInfo {
+        s_type: vk::StructureType::BufferCreateInfo,
+        p_next: ptr::null(),
+        flags: vk::BufferCreateFlags::empty(),
+        size,
+        usage,
+        sharing_mode: vk::SharingMode::Exclusive,
+        queue_family_index_count: 0,
+        p_queue_family_indices: ptr::null(),
+    };
+
+    let buffer = unsafe {
+        device.create_buffer(&buffer_create_info, None)
+            .expect("Failed to create Vertex Buffer")
+    };
+
+    let mem_requirements = device.get_buffer_memory_requirements(buffer);
+    let memory_type = find_memory_type(mem_requirements.memory_type_bits, required_memory_properties, device_memory_properties);
+
+    let allocate_info = vk::MemoryAllocateInfo {
+        s_type: vk::StructureType::MemoryAllocateInfo,
+        p_next: ptr::null(),
+        allocation_size: mem_requirements.size,
+        memory_type_index: memory_type,
+    };
+
+    let buffer_memory = unsafe {
+        device.allocate_memory(&allocate_info, None)
+            .expect("Failed to allocate vertex buffer memory!")
+    };
+
+    unsafe {
+        device.bind_buffer_memory(buffer, buffer_memory, 0)
+            .expect("Failed to bind Buffer");
+    }
+
+    (buffer, buffer_memory)
+}
+
+pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_pool: vk::CommandPool, src_buffer: &vk::Buffer, dst_buffer: &vk::Buffer, size: vk::DeviceSize) {
+
+    let allocate_info = vk::CommandBufferAllocateInfo {
+        s_type: vk::StructureType::CommandBufferAllocateInfo,
+        p_next: ptr::null(),
+        command_buffer_count: 1,
+        command_pool,
+        level: vk::CommandBufferLevel::Primary,
+    };
+
+    let command_buffers = unsafe {
+        device.allocate_command_buffers(&allocate_info)
+            .expect("Failed to allocate Command Buffer")
+    };
+    let command_buffer = command_buffers[0];
+
+    let begin_info = vk::CommandBufferBeginInfo {
+        s_type: vk::StructureType::CommandBufferBeginInfo,
+        p_next: ptr::null(),
+        p_inheritance_info: ptr::null(),
+        flags: vk::COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    };
+
+    unsafe {
+        device.begin_command_buffer(command_buffer, &begin_info)
+            .expect("Failed to begin Command Buffer");
+
+        let copy_regions = [
+            vk::BufferCopy {
+                src_offset: 0,
+                dst_offset: 0,
+                size,
+            },
+        ];
+
+        device.cmd_copy_buffer(command_buffer, src_buffer.clone(), dst_buffer.clone(), &copy_regions);
+
+        device.end_command_buffer(command_buffer)
+            .expect("Failed to end Command Buffer");
+    }
+
+    let submit_info  = [
+        vk::SubmitInfo {
+            s_type: vk::StructureType::SubmitInfo,
+            p_next: ptr::null(),
+            wait_semaphore_count: 0,
+            p_wait_semaphores: ptr::null(),
+            p_wait_dst_stage_mask: ptr::null(),
+            command_buffer_count: 1,
+            p_command_buffers: &command_buffer,
+            signal_semaphore_count: 0,
+            p_signal_semaphores: ptr::null(),
+        }
+    ];
+
+    unsafe {
+        device.queue_submit(submit_queue, &submit_info, vk::Fence::null())
+            .expect("Failed to Submit Queue.");
+        device.queue_wait_idle(submit_queue)
+            .expect("Failed to wait Queue idle");
+
+        device.free_command_buffers(command_pool, &command_buffers);
+    }
+}
+
+fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPropertyFlags, mem_properties: &vk::PhysicalDeviceMemoryProperties) -> uint32_t {
+
+    for (i, memory_type) in mem_properties.memory_types.iter().enumerate() {
+        if (type_filter & (1 << i)) > 0 && (memory_type.property_flags & required_properties) == required_properties {
+            return i as uint32_t
+        }
+    }
+
+    panic!("Failed to find suitable memory type!")
 }

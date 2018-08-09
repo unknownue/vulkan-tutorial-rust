@@ -25,7 +25,7 @@ use std::ptr;
 use std::ffi::CString;
 
 // Constants
-const WINDOW_TITLE: &'static str = "18.Vertex Buffer";
+const WINDOW_TITLE: &'static str = "20.Index Buffer";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const IS_PAINT_FPS_COUNTER: bool = true;
@@ -75,10 +75,14 @@ impl Vertex {
     }
 }
 
-const VERTICES_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 1.0, 1.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+const VERTICES_DATA: [Vertex; 4] = [
+    Vertex { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
+    Vertex { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
+    Vertex { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+    Vertex { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
+];
+const INDICES_DATA: [vk::types::uint32_t; 6] = [
+    0, 1, 2, 2, 3, 0
 ];
 
 
@@ -115,6 +119,8 @@ struct VulkanApp {
 
     vertex_buffer: vk::Buffer,
     vertex_buffer_memory: vk::DeviceMemory,
+    index_buffer: vk::Buffer,
+    index_buffer_memory: vk::DeviceMemory,
 
     command_pool: vk::CommandPool,
     command_buffers: Vec<vk::CommandBuffer>,
@@ -148,8 +154,9 @@ impl VulkanApp {
         let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
         let swapchain_framebuffers = create_framebuffers(&device, &render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (vertex_buffer, vertex_buffer_memory) = VulkanApp::create_vertex_buffer(&instance, &physical_device, &device);
-        let command_buffers = VulkanApp::create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent, &vertex_buffer);
+        let (vertex_buffer, vertex_buffer_memory) = VulkanApp::create_vertex_buffer(&instance, &physical_device, &device, &command_pool, &graphics_queue);
+        let (index_buffer, index_buffer_memory) = VulkanApp::create_index_buffer(&instance, &physical_device, &device, &command_pool, &graphics_queue);
+        let command_buffers = VulkanApp::create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent, &vertex_buffer, &index_buffer);
         let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -186,6 +193,8 @@ impl VulkanApp {
 
             vertex_buffer,
             vertex_buffer_memory,
+            index_buffer,
+            index_buffer_memory,
 
             command_pool,
             command_buffers,
@@ -199,67 +208,87 @@ impl VulkanApp {
         }
     }
 
-    fn create_vertex_buffer(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, device: &ash::Device<V1_0>) -> (vk::Buffer, vk::DeviceMemory) {
+    fn create_vertex_buffer(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, submit_queue: &vk::Queue)
+                            -> (vk::Buffer, vk::DeviceMemory) {
 
-        let vertex_buffer_create_info = vk::BufferCreateInfo {
-            s_type: vk::StructureType::BufferCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::BufferCreateFlags::empty(),
-            size: std::mem::size_of_val(&VERTICES_DATA) as u64,
-            usage: vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            sharing_mode: vk::SharingMode::Exclusive,
-            queue_family_index_count: 0,
-            p_queue_family_indices: ptr::null(),
-        };
+        let buffer_size = std::mem::size_of_val(&VERTICES_DATA) as vk::DeviceSize;;
+        let device_memory_properties = instance.get_physical_device_memory_properties(physical_device.clone());
 
-        let vertex_buffer = unsafe {
-            device.create_buffer(&vertex_buffer_create_info, None)
-                .expect("Failed to create Vertex Buffer")
-        };
-
-        let mem_requirements = device.get_buffer_memory_requirements(vertex_buffer);
-        let mem_properties = instance.get_physical_device_memory_properties(physical_device.clone());
-        let required_memory_flags: vk::types::MemoryPropertyFlags = vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        let memory_type = VulkanApp::find_memory_type(mem_requirements.memory_type_bits, required_memory_flags, mem_properties);
-
-        let allocate_info = vk::MemoryAllocateInfo {
-            s_type: vk::StructureType::MemoryAllocateInfo,
-            p_next: ptr::null(),
-            allocation_size: mem_requirements.size,
-            memory_type_index: memory_type,
-        };
-
-        let vertex_buffer_memory = unsafe {
-            device.allocate_memory(&allocate_info, None)
-                .expect("Failed to allocate vertex buffer memory!")
-        };
+        let (staging_buffer, staging_buffer_memory) = create_buffer(
+            device,
+            buffer_size,
+            vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &device_memory_properties,
+        );
 
         unsafe {
-            device.bind_buffer_memory(vertex_buffer, vertex_buffer_memory, 0)
-                .expect("Failed to bind Buffer");
-
-            let data_ptr = device.map_memory(vertex_buffer_memory, 0, vertex_buffer_create_info.size, vk::MemoryMapFlags::empty())
+            let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
                 .expect("Failed to Map Memory");
-            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, vertex_buffer_create_info.size);
+            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, buffer_size);
             vert_align.copy_from_slice(&VERTICES_DATA);
-            device.unmap_memory(vertex_buffer_memory);
+            device.unmap_memory(staging_buffer_memory);
+        }
+
+        let (vertex_buffer, vertex_buffer_memory) = create_buffer(
+            device,
+            buffer_size,
+            vk::BUFFER_USAGE_TRANSFER_DST_BIT | vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            &device_memory_properties,
+        );
+
+        copy_buffer(device, submit_queue.clone(), command_pool.clone(), &staging_buffer, &vertex_buffer, buffer_size);
+
+        unsafe {
+            device.destroy_buffer(staging_buffer, None);
+            device.free_memory(staging_buffer_memory, None);
         }
 
         (vertex_buffer, vertex_buffer_memory)
     }
 
-    fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPropertyFlags, mem_properties: vk::PhysicalDeviceMemoryProperties) -> uint32_t {
+    fn create_index_buffer(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, submit_queue: &vk::Queue)
+        -> (vk::Buffer, vk::DeviceMemory) {
 
-        for (i, memory_type) in mem_properties.memory_types.iter().enumerate() {
-            if (type_filter & (1 << i)) > 0 && (memory_type.property_flags & required_properties) == required_properties {
-                return i as uint32_t
-            }
+        let buffer_size = std::mem::size_of_val(&INDICES_DATA) as vk::DeviceSize;;
+        let device_memory_properties = instance.get_physical_device_memory_properties(physical_device.clone());
+
+        let (staging_buffer, staging_buffer_memory) = create_buffer(
+            device,
+            buffer_size,
+            vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &device_memory_properties,
+        );
+
+        unsafe {
+            let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
+                .expect("Failed to Map Memory");
+            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<uint32_t>() as u64, buffer_size);
+            vert_align.copy_from_slice(&INDICES_DATA);
+            device.unmap_memory(staging_buffer_memory);
         }
 
-        panic!("Failed to find suitable memory type!")
+        let (index_buffer, index_buffer_memory) = create_buffer(
+            device,
+            buffer_size,
+            vk::BUFFER_USAGE_TRANSFER_DST_BIT | vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+            vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            &device_memory_properties,
+        );
+
+        copy_buffer(device, submit_queue.clone(), command_pool.clone(), &staging_buffer, &index_buffer, buffer_size);
+
+        unsafe {
+            device.destroy_buffer(staging_buffer, None);
+            device.free_memory(staging_buffer_memory, None);
+        }
+
+        (index_buffer, index_buffer_memory)
     }
 
-    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, graphics_pipeline: &vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass, surface_extent: &vk::Extent2D, vertex_buffer: &vk::Buffer) -> Vec<vk::CommandBuffer> {
+    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, graphics_pipeline: &vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass, surface_extent: &vk::Extent2D, vertex_buffer: &vk::Buffer, index_buffer: &vk::Buffer) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
             s_type: vk::StructureType::CommandBufferAllocateInfo,
@@ -321,8 +350,9 @@ impl VulkanApp {
                 ];
 
                 device.cmd_bind_vertex_buffers(command_buffer, 0, &vertex_buffers, &offsets);
+                device.cmd_bind_index_buffer(command_buffer, index_buffer.clone(), 0, vk::IndexType::Uint32);
 
-                device.cmd_draw(command_buffer, VERTICES_DATA.len() as u32, 1, 0, 0);
+                device.cmd_draw_indexed(command_buffer, INDICES_DATA.len() as u32, 1, 0, 0, 0);
 
                 device.cmd_end_render_pass(command_buffer);
 
@@ -515,7 +545,6 @@ impl VulkanApp {
                 .expect("Failed to create pipeline layout!")
         };
 
-
         let graphic_pipeline_create_infos = [
             vk::GraphicsPipelineCreateInfo {
                 s_type: vk::StructureType::GraphicsPipelineCreateInfo,
@@ -674,7 +703,7 @@ impl VulkanApp {
         self.pipeline_layout = pipeline_layout;
 
         self.swapchain_framebuffers = create_framebuffers(&self.device, &self.render_pass, &self.swapchain_imageviews, &self.swapchain_extent);
-        self.command_buffers = VulkanApp::create_command_buffers(&self.device, &self.command_pool, &self.graphics_pipeline, &self.swapchain_framebuffers, &self.render_pass, &self.swapchain_extent, &self.vertex_buffer);
+        self.command_buffers = VulkanApp::create_command_buffers(&self.device, &self.command_pool, &self.graphics_pipeline, &self.swapchain_framebuffers, &self.render_pass, &self.swapchain_extent, &self.vertex_buffer, &self.index_buffer);
     }
 
     fn cleanup_swapchain(&self) {
@@ -706,6 +735,9 @@ impl Drop for VulkanApp {
             }
 
             self.cleanup_swapchain();
+
+            self.device.destroy_buffer(self.index_buffer, None);
+            self.device.free_memory(self.index_buffer_memory, None);
 
             self.device.destroy_buffer(self.vertex_buffer, None);
             self.device.free_memory(self.vertex_buffer_memory, None);

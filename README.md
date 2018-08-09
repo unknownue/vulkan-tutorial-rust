@@ -14,7 +14,7 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 ## Status
 
-Currently finish work on [19-staging-buffer](https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer).
+Currently finish work on [20-index-buffer](https://vulkan-tutorial.com/Vertex_buffers/Index_buffer).
 
 ## Usage
 
@@ -48,6 +48,7 @@ Here replace `sample_name` with option in the following table:
 | 17_vertex_input               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description) |
 | 18_vertex_buffer              | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation) |
 | 19_staging_buffer             | [Link](https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer) |
+| 20_index_buffer               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Index_buffer) |
 
 ### example usage
 
