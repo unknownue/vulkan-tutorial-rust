@@ -61,4 +61,10 @@ impl FPSLimiter {
 
         1000_000.0_f32 / (sum as f32 / SAMPLE_COUNT_FLOAT)
     }
+
+    /// Return current delta time in seconds
+    /// this function ignore its second part, since the second is mostly zero.
+    pub fn delta_time(&self) -> f32 {
+        self.delta_frame as f32 / 1000_000.0_f32 // time in second
+    }
 }
