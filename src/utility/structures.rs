@@ -104,12 +104,12 @@ impl Vertex {
     }
 }
 
-pub const VERTICES_DATA: [Vertex; 4] = [
+pub const RECT_VERTICES_DATA: [Vertex; 4] = [
     Vertex { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
     Vertex { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
     Vertex { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
     Vertex { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
 ];
-pub const INDICES_DATA: [vk::types::uint32_t; 6] = [
+pub const RECT_INDICES_DATA: [vk::types::uint32_t; 6] = [
     0, 1, 2, 2, 3, 0
 ];

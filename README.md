@@ -6,7 +6,7 @@ The codes are only tested on macOS, but it should work on Windows or Linux in th
 
 It's recommended to compile the examples of [ash](https://github.com/MaikKlein/ash) first before compiling this repository.
 
-## Dependencies
+## Main Dependencies
 
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
 - [ash](https://github.com/MaikKlein/ash)

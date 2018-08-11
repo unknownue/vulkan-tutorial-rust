@@ -874,21 +874,39 @@ pub fn create_buffer(device: &ash::Device<V1_0>, size: vk::DeviceSize, usage: vk
 
 pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_pool: vk::CommandPool, src_buffer: &vk::Buffer, dst_buffer: &vk::Buffer, size: vk::DeviceSize) {
 
-    let allocate_info = vk::CommandBufferAllocateInfo {
+    let command_buffer = begin_single_time_command(device, command_pool);
+
+    let copy_regions = [
+        vk::BufferCopy {
+            src_offset: 0,
+            dst_offset: 0,
+            size,
+        },
+    ];
+
+    unsafe {
+        device.cmd_copy_buffer(command_buffer, src_buffer.clone(), dst_buffer.clone(), &copy_regions);
+    }
+
+    end_single_time_command(device, command_pool, submit_queue, command_buffer);
+}
+
+pub fn begin_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::CommandPool) -> vk::CommandBuffer {
+
+    let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
         s_type: vk::StructureType::CommandBufferAllocateInfo,
         p_next: ptr::null(),
         command_buffer_count: 1,
-        command_pool,
+        command_pool: command_pool.clone(),
         level: vk::CommandBufferLevel::Primary,
     };
 
-    let command_buffers = unsafe {
-        device.allocate_command_buffers(&allocate_info)
-            .expect("Failed to allocate Command Buffer")
-    };
-    let command_buffer = command_buffers[0];
+    let command_buffer = unsafe {
+        device.allocate_command_buffers(&command_buffer_allocate_info)
+            .expect("Failed to allocate Command Buffers!")
+    }[0];
 
-    let begin_info = vk::CommandBufferBeginInfo {
+    let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
         s_type: vk::StructureType::CommandBufferBeginInfo,
         p_next: ptr::null(),
         p_inheritance_info: ptr::null(),
@@ -896,24 +914,25 @@ pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_
     };
 
     unsafe {
-        device.begin_command_buffer(command_buffer, &begin_info)
-            .expect("Failed to begin Command Buffer");
-
-        let copy_regions = [
-            vk::BufferCopy {
-                src_offset: 0,
-                dst_offset: 0,
-                size,
-            },
-        ];
-
-        device.cmd_copy_buffer(command_buffer, src_buffer.clone(), dst_buffer.clone(), &copy_regions);
-
-        device.end_command_buffer(command_buffer)
-            .expect("Failed to end Command Buffer");
+        device.begin_command_buffer(command_buffer, &command_buffer_begin_info)
+            .expect("Failed to begin recording Command Buffer at beginning!");
     }
 
-    let submit_info  = [
+    command_buffer
+}
+
+pub fn end_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, command_buffer: vk::CommandBuffer) {
+
+    unsafe {
+        device.end_command_buffer(command_buffer)
+            .expect("Failed to record Command Buffer at Ending!");
+    }
+
+    let buffers_to_submit = [
+        command_buffer,
+    ];
+
+    let sumbit_infos = [
         vk::SubmitInfo {
             s_type: vk::StructureType::SubmitInfo,
             p_next: ptr::null(),
@@ -921,23 +940,22 @@ pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_
             p_wait_semaphores: ptr::null(),
             p_wait_dst_stage_mask: ptr::null(),
             command_buffer_count: 1,
-            p_command_buffers: &command_buffer,
+            p_command_buffers: buffers_to_submit.as_ptr(),
             signal_semaphore_count: 0,
             p_signal_semaphores: ptr::null(),
-        }
+        },
     ];
 
     unsafe {
-        device.queue_submit(submit_queue, &submit_info, vk::Fence::null())
-            .expect("Failed to Submit Queue.");
+        device.queue_submit(submit_queue.clone(), &sumbit_infos, vk::Fence::null())
+            .expect("Failed to Queue Submit!");
         device.queue_wait_idle(submit_queue)
-            .expect("Failed to wait Queue idle");
-
-        device.free_command_buffers(command_pool, &command_buffers);
+            .expect("Failed to wait Queue idle!");
+        device.free_command_buffers(command_pool.clone(), &buffers_to_submit);
     }
 }
 
-fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPropertyFlags, mem_properties: &vk::PhysicalDeviceMemoryProperties) -> uint32_t {
+pub fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPropertyFlags, mem_properties: &vk::PhysicalDeviceMemoryProperties) -> uint32_t {
 
     for (i, memory_type) in mem_properties.memory_types.iter().enumerate() {
         if (type_filter & (1 << i)) > 0 && (memory_type.property_flags & required_properties) == required_properties {
@@ -948,6 +966,83 @@ fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryProper
     panic!("Failed to find suitable memory type!")
 }
 
+pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: &vk::CommandPool, submit_queue: &vk::Queue, data: &[Vertex])
+    -> (vk::Buffer, vk::DeviceMemory) {
+
+    let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
+
+    let (staging_buffer, staging_buffer_memory) = create_buffer(
+        device,
+        buffer_size,
+        vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+        vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &device_memory_properties,
+    );
+
+    unsafe {
+        let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
+            .expect("Failed to Map Memory");
+        let mut vert_align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<Vertex>() as u64, buffer_size);
+        vert_align.copy_from_slice(data);
+        device.unmap_memory(staging_buffer_memory);
+    }
+
+    let (vertex_buffer, vertex_buffer_memory) = create_buffer(
+        device,
+        buffer_size,
+        vk::BUFFER_USAGE_TRANSFER_DST_BIT | vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &device_memory_properties,
+    );
+
+    copy_buffer(device, submit_queue.clone(), command_pool.clone(), &staging_buffer, &vertex_buffer, buffer_size);
+
+    unsafe {
+        device.destroy_buffer(staging_buffer, None);
+        device.free_memory(staging_buffer_memory, None);
+    }
+
+    (vertex_buffer, vertex_buffer_memory)
+}
+
+pub fn create_index_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: &vk::CommandPool, submit_queue: &vk::Queue, data: &[uint32_t])
+    -> (vk::Buffer, vk::DeviceMemory) {
+
+    let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
+
+    let (staging_buffer, staging_buffer_memory) = create_buffer(
+        device,
+        buffer_size,
+        vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+        vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &device_memory_properties,
+    );
+
+    unsafe {
+        let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
+            .expect("Failed to Map Memory");
+        let mut vert_align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<uint32_t>() as u64, buffer_size);
+        vert_align.copy_from_slice(data);
+        device.unmap_memory(staging_buffer_memory);
+    }
+
+    let (index_buffer, index_buffer_memory) = create_buffer(
+        device,
+        buffer_size,
+        vk::BUFFER_USAGE_TRANSFER_DST_BIT | vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
+        vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &device_memory_properties,
+    );
+
+    copy_buffer(device, submit_queue.clone(), command_pool.clone(), &staging_buffer, &index_buffer, buffer_size);
+
+    unsafe {
+        device.destroy_buffer(staging_buffer, None);
+        device.free_memory(staging_buffer_memory, None);
+    }
+
+    (index_buffer, index_buffer_memory)
+}
 
 pub fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size: usize) -> vk::DescriptorPool {
 
