@@ -3,7 +3,7 @@ extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::ValidationInfo,
-    utility::vulkan::DeviceExtension,
+    utility::structures::*,
 };
 
 extern crate winit;

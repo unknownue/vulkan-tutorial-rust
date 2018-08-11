@@ -25,6 +25,10 @@ pub mod window;
 pub mod vulkan;
 pub mod tools;
 pub mod fps_limiter;
+pub mod structures;
+
+
+
 
 // required extension ------------------------------------------------------
 #[cfg(target_os = "macos")]

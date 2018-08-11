@@ -85,7 +85,7 @@ pub fn setup_debug_callback(is_enable_debug: bool, entry: &ash::Entry<V1_0>, ins
             s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
             p_next: ptr::null(),
             flags: vk::DEBUG_REPORT_ERROR_BIT_EXT
-                | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
+//                | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
                 // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
                 | vk::DEBUG_REPORT_WARNING_BIT_EXT
                 | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,

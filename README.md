@@ -21,41 +21,41 @@ Currently finish work on [22-descriptor-sets](https://vulkan-tutorial.com/Unifor
 Enter the project root directory and run any example like the following code:
 
 ```shell
-$ cargo run --bin sample_name
+$ cargo run --bin example_number
 ```
 
-Here replace `sample_name` with option in the following table:
+Here replace `example_number` with option in the following table:
 
-| sample_name                   | Reference                                                    |
-| ----------------------------- | ------------------------------------------------------------ |
-| 00_base_code                  | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
-| 01_instance_creation          | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance) |
-| 02_validation_layers          | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers) |
-| 03_physical_device_selection  | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families) |
-| 04_logical_device             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues) |
-| 05_window_surface             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface) |
-| 06_swap_chain_creation        | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain) |
-| 07_image_view                 | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Image_views) |
-| 08_graphics_pipeline          | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics) |
-| 09_shader_modules             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules) |
-| 10_fixed_functions            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions) |
-| 11_render_passes              | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes) |
-| 12_graphics_pipeline_complete | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Conclusion) |
-| 13_framebuffers               | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Framebuffers) |
-| 14_command_buffers            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers) |
-| 15_hello_triangle             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation) |
-| 16_swap_chain_recreation      | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation) |
-| 17_vertex_input               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description) |
-| 18_vertex_buffer              | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation) |
-| 19_staging_buffer             | [Link](https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer) |
-| 20_index_buffer               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Index_buffer) |
-| 21_descriptor_layout          | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer) |
-| 22_descriptor_sets            | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets) |
+| example_number | file                             | Reference                                                    |
+| -------------- | -------------------------------- | ------------------------------------------------------------ |
+| 00             | 00_base_code.rs                  | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code) |
+| 01             | 01_instance_creation.rs          | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance) |
+| 02             | 02_validation_layers.rs          | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers) |
+| 03             | 03_physical_device_selection.rs  | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families) |
+| 04             | 04_logical_device.rs             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues) |
+| 05             | 05_window_surface.rs             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface) |
+| 06             | 06_swap_chain_creation.rs        | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain) |
+| 07             | 07_image_view.rs                 | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Image_views) |
+| 08             | 08_graphics_pipeline.rs          | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics) |
+| 09             | 09_shader_modules.rs             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules) |
+| 10             | 10_fixed_functions.rs            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions) |
+| 11             | 11_render_passes.rs              | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes) |
+| 12             | 12_graphics_pipeline_complete.rs | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Conclusion) |
+| 13             | 13_framebuffers.rs               | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Framebuffers) |
+| 14             | 14_command_buffers.rs            | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers) |
+| 15             | 15_hello_triangle.rs             | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation) |
+| 16             | 16_swap_chain_recreation.rs      | [Link](https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation) |
+| 17             | 17_vertex_input.rs               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description) |
+| 18             | 18_vertex_buffer.rs              | [Link](https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation) |
+| 19             | 19_staging_buffer.rs             | [Link](https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer) |
+| 20             | 20_index_buffer.rs               | [Link](https://vulkan-tutorial.com/Vertex_buffers/Index_buffer) |
+| 21             | 21_descriptor_layout.rs          | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer) |
+| 22             | 22_descriptor_sets.rs            | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets) |
 
 ### example usage
 
 ```
-$ cargo run --bin 00_base_code
+$ cargo run --bin 00
 ```
 
 ## Notices

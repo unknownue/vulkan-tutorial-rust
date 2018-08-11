@@ -4,6 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
     utility::vulkan::*,
+    utility::structures::*,
 };
 
 extern crate winit;

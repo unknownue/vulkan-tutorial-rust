@@ -12,65 +12,7 @@ use std::ffi::CString;
 use std::path::Path;
 
 use super::debug;
-
-pub struct DeviceExtension {
-    pub names: [&'static str; 1],
-//    pub raw_names: [*const i8; 1],
-}
-
-impl DeviceExtension {
-    pub fn get_raw_names(&self) -> Vec<*const i8> {
-        self.names.iter()
-            .map(|name| super::tools::vk_to_raw_string(*name).as_ptr())
-            .collect()
-    }
-}
-
-pub struct SurfaceStuff {
-    pub surface_loader: ash::extensions::Surface,
-    pub surface: vk::SurfaceKHR,
-
-    pub screen_width: u32,
-    pub screen_height: u32,
-}
-pub struct SwapChainStuff {
-    pub swapchain_loader: ash::extensions::Swapchain,
-    pub swapchain: vk::SwapchainKHR,
-    pub swapchain_images: Vec<vk::Image>,
-    pub swapchain_format: vk::Format,
-    pub swapchain_extent: vk::Extent2D,
-}
-
-pub struct SwapChainSupportDetail {
-    pub capabilities: vk::SurfaceCapabilitiesKHR,
-    pub formats: Vec<vk::SurfaceFormatKHR>,
-    pub present_modes: Vec<vk::PresentModeKHR>,
-}
-
-pub struct QueueFamilyIndices {
-    pub graphics_family: i32,
-    pub present_family:  i32,
-}
-
-impl QueueFamilyIndices {
-
-    pub fn new() -> QueueFamilyIndices {
-        QueueFamilyIndices {
-            graphics_family: -1,
-            present_family:  -1,
-        }
-    }
-
-    pub fn is_complete(&self) -> bool {
-        self.graphics_family >= 0 && self.present_family >= 0
-    }
-}
-
-pub struct SyncObjects {
-    pub image_available_semaphores: Vec<vk::Semaphore>,
-    pub render_finished_semaphores: Vec<vk::Semaphore>,
-    pub inflight_fences: Vec<vk::Fence>,
-}
+use super::structures::*;
 
 pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_debug: bool, required_validation_layers: &Vec<&str>) -> ash::Instance<V1_0> {
 
@@ -1004,4 +946,129 @@ fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryProper
     }
 
     panic!("Failed to find suitable memory type!")
+}
+
+
+pub fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size: usize) -> vk::DescriptorPool {
+
+    let pool_sizes = [
+        vk::DescriptorPoolSize {
+            typ: vk::DescriptorType::UniformBuffer,
+            descriptor_count: swapchain_images_size as u32
+        }
+    ];
+
+    let descriptor_pool_create_info = vk::DescriptorPoolCreateInfo {
+        s_type: vk::StructureType::DescriptorPoolCreateInfo,
+        p_next: ptr::null(),
+        flags: Default::default(),
+        max_sets: swapchain_images_size as u32,
+        pool_size_count: pool_sizes.len() as u32,
+        p_pool_sizes: pool_sizes.as_ptr(),
+    };
+
+    unsafe {
+        device.create_descriptor_pool(&descriptor_pool_create_info, None)
+            .expect("Failed to create Descriptor Pool!")
+    }
+}
+
+pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: &vk::DescriptorPool, descriptor_set_layout: &vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
+
+    let mut layouts: Vec<vk::DescriptorSetLayout> = vec![];
+    for _ in 0..swapchain_images_size {
+        layouts.push(descriptor_set_layout.clone());
+    }
+
+    let descriptor_set_allocate_info = vk::DescriptorSetAllocateInfo {
+        s_type: vk::StructureType::DescriptorSetAllocateInfo,
+        p_next: ptr::null(),
+        descriptor_pool: descriptor_pool.clone(),
+        descriptor_set_count: swapchain_images_size as u32,
+        p_set_layouts: layouts.as_ptr()
+    };
+
+    let descriptor_sets = unsafe {
+        device.allocate_descriptor_sets(&descriptor_set_allocate_info)
+            .expect("Failed to allocate descriptor sets!")
+    };
+
+    for (i, descritptor_set) in descriptor_sets.iter().enumerate() {
+        let descriptor_buffer_info = [
+            vk::DescriptorBufferInfo {
+                buffer: uniforms_buffers[i],
+                offset: 0,
+                range: ::std::mem::size_of::<UniformBufferObject>() as u64,
+            },
+        ];
+
+        let descriptor_write_sets = [
+            vk::WriteDescriptorSet {
+                s_type: vk::StructureType::WriteDescriptorSet,
+                p_next: ptr::null(),
+                dst_set: descritptor_set.clone(),
+                dst_binding: 0,
+                dst_array_element: 0,
+                descriptor_count: 1,
+                descriptor_type: vk::DescriptorType::UniformBuffer,
+                p_image_info: ptr::null(),
+                p_buffer_info: descriptor_buffer_info.as_ptr(),
+                p_texel_buffer_view: ptr::null(),
+            },
+        ];
+
+        unsafe {
+            device.update_descriptor_sets(&descriptor_write_sets, &[]);
+        }
+    }
+
+    descriptor_sets
+}
+
+pub fn create_descriptor_set_layout(device: &ash::Device<V1_0>) -> vk::DescriptorSetLayout {
+
+    let ubo_layout_bindings = [
+        vk::DescriptorSetLayoutBinding {
+            binding: 0,
+            descriptor_type: vk::DescriptorType::UniformBuffer,
+            descriptor_count: 1,
+            stage_flags: vk::SHADER_STAGE_VERTEX_BIT,
+            p_immutable_samplers: ptr::null(),
+        }
+    ];
+
+    let ubo_layout_create_info = vk::DescriptorSetLayoutCreateInfo {
+        s_type: vk::StructureType::DescriptorSetLayoutCreateInfo,
+        p_next: ptr::null(),
+        flags: Default::default(),
+        binding_count: 1_u32,
+        p_bindings: ubo_layout_bindings.as_ptr(),
+    };
+
+    unsafe {
+        device.create_descriptor_set_layout(&ubo_layout_create_info, None)
+            .expect("Failed to create Descriptor Set Layout!")
+    }
+}
+
+pub fn create_uniform_buffers(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, swapchain_image_count: usize) -> (Vec<vk::Buffer>, Vec<vk::DeviceMemory>) {
+
+    let buffer_size = ::std::mem::size_of::<UniformBufferObject>();
+
+    let mut uniform_buffers = vec![];
+    let mut uniform_buffers_memory = vec![];
+
+    for _ in 0..swapchain_image_count {
+        let (uniform_buffer, uniform_buffer_memory) = create_buffer(
+            device,
+            buffer_size as u64,
+            vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            device_memory_properties,
+        );
+        uniform_buffers.push(uniform_buffer);
+        uniform_buffers_memory.push(uniform_buffer_memory);
+    }
+
+    (uniform_buffers, uniform_buffers_memory)
 }

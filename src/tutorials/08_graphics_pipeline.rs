@@ -4,6 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
     utility::vulkan::*,
+    utility::structures::*,
 };
 
 extern crate winit;
@@ -17,10 +18,8 @@ use ash::version::DeviceV1_0;
 
 type EntryV1 = ash::Entry<V1_0>;
 
-use std::ptr;
-
 // Constants
-const WINDOW_TITLE: &'static str = "07.Image View";
+const WINDOW_TITLE: &'static str = "08.Graphics Pipeline";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {
@@ -78,7 +77,8 @@ impl VulkanApp {
         let graphics_queue = unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
         let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &window, &surface_stuff, &family_indices);
-        let swapchain_imageviews = VulkanApp::create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let _graphics_pipeline = VulkanApp::create_graphics_pipeline();
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -109,42 +109,8 @@ impl VulkanApp {
         }
     }
 
-    fn create_image_view(device: &ash::Device<V1_0>, surface_format: &vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
-
-        let mut swapchain_imageviews = vec![];
-
-        for image in images.iter() {
-
-            let imageview_create_info = vk::ImageViewCreateInfo {
-                s_type: vk::StructureType::ImageViewCreateInfo,
-                p_next: ptr::null(),
-                flags: Default::default(),
-                view_type: vk::ImageViewType::Type2d,
-                format: surface_format.clone(),
-                components: vk::ComponentMapping {
-                    r: vk::ComponentSwizzle::Identity,
-                    g: vk::ComponentSwizzle::Identity,
-                    b: vk::ComponentSwizzle::Identity,
-                    a: vk::ComponentSwizzle::Identity,
-                },
-                subresource_range: vk::ImageSubresourceRange {
-                    aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                    base_mip_level: 0,
-                    level_count: 1,
-                    base_array_layer: 0,
-                    layer_count: 1,
-                },
-                image: image.clone(),
-            };
-
-            let imageview = unsafe {
-                device.create_image_view(&imageview_create_info, None)
-                    .expect("Failed to create Image View!")
-            };
-            swapchain_imageviews.push(imageview);
-        }
-
-        swapchain_imageviews
+    fn create_graphics_pipeline() {
+        // leave it empty right now
     }
 }
 

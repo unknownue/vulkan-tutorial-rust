@@ -4,6 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
     utility::vulkan::*,
+    utility::structures::*,
 };
 
 extern crate winit;
@@ -17,10 +18,12 @@ use ash::version::DeviceV1_0;
 
 type EntryV1 = ash::Entry<V1_0>;
 
+use std::path::Path;
 use std::ptr;
+use std::ffi::CString;
 
 // Constants
-const WINDOW_TITLE: &'static str = "14.Command Buffers";
+const WINDOW_TITLE: &'static str = "09.Shader Modules";
 const WINDOW_WIDTH:  u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {
@@ -58,14 +61,6 @@ struct VulkanApp {
     _swapchain_format: vk::Format,
     _swapchain_extent: vk::Extent2D,
     swapchain_imageviews: Vec<vk::ImageView>,
-    swapchain_framebuffers: Vec<vk::Framebuffer>,
-
-    render_pass: vk::RenderPass,
-    pipeline_layout: vk::PipelineLayout,
-    graphics_pipeline: vk::Pipeline,
-
-    command_pool: vk::CommandPool,
-    _command_buffers: Vec<vk::CommandBuffer>,
 }
 
 impl VulkanApp {
@@ -87,11 +82,7 @@ impl VulkanApp {
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
         let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &window, &surface_stuff, &family_indices);
         let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, &swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
-        let swapchain_framebuffers = create_framebuffers(&device, &render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
-        let command_pool = VulkanApp::create_command_pool(&device, &family_indices);
-        let command_buffers = VulkanApp::create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent);
+        let _pipeline = VulkanApp::create_graphics_pipeline(&device);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -119,95 +110,75 @@ impl VulkanApp {
             _swapchain_images: swapchain_stuff.swapchain_images,
             _swapchain_extent: swapchain_stuff.swapchain_extent,
             swapchain_imageviews,
-            swapchain_framebuffers,
-
-            pipeline_layout,
-            render_pass,
-            graphics_pipeline,
-
-            command_pool,
-            _command_buffers: command_buffers,
         }
     }
 
-    fn create_command_pool(device: &ash::Device<V1_0>, queue_families: &QueueFamilyIndices) -> vk::CommandPool {
+    fn create_graphics_pipeline(device: &ash::Device<V1_0>) {
+        let vert_shader_code = VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
+        let frag_shader_code = VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
 
-        let command_pool_create_info = vk::CommandPoolCreateInfo {
-            s_type: vk::StructureType::CommandPoolCreateInfo,
+        let vert_shader_module = VulkanApp::create_shader_module(device, vert_shader_code);
+        let frag_shader_module = VulkanApp::create_shader_module(device, frag_shader_code);
+
+        let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
+
+        let vert_shader_create_info = vk::PipelineShaderStageCreateInfo {
+            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
             p_next: ptr::null(),
             flags: Default::default(),
-            queue_family_index: queue_families.graphics_family as u32,
+            module: vert_shader_module,
+            p_name: main_function_name.as_ptr(),
+            p_specialization_info: ptr::null(),
+            stage: vk::SHADER_STAGE_VERTEX_BIT,
+        };
+
+        let frag_shader_create_info = vk::PipelineShaderStageCreateInfo {
+            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
+            p_next: ptr::null(),
+            flags: Default::default(),
+            module: frag_shader_module,
+            p_name: main_function_name.as_ptr(),
+            p_specialization_info: ptr::null(),
+            stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+        };
+
+        let _shader_stages = [
+            vert_shader_create_info,
+            frag_shader_create_info,
+        ];
+
+
+        unsafe {
+            device.destroy_shader_module(vert_shader_module, None);
+            device.destroy_shader_module(frag_shader_module, None);
+        }
+    }
+
+    fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::ShaderModule {
+        let vertex_shader_info = vk::ShaderModuleCreateInfo {
+            s_type: vk::StructureType::ShaderModuleCreateInfo,
+            p_next: ptr::null(),
+            flags: Default::default(),
+            code_size: code.len(),
+            p_code: code.as_ptr() as *const u32,
         };
 
         unsafe {
-            device.create_command_pool(&command_pool_create_info, None)
-                .expect("Failed to create Command Pool!")
+            device.create_shader_module(&vertex_shader_info, None)
+                .expect("Failed to create Shader Module!")
         }
     }
 
-    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, graphics_pipeline: &vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass, surface_extent: &vk::Extent2D) -> Vec<vk::CommandBuffer> {
+    fn read_shader_code(shader_path: &Path) -> Vec<u8> {
+        use std::fs::File;
+        use std::io::Read;
 
-        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::CommandBufferAllocateInfo,
-            p_next: ptr::null(),
-            command_buffer_count: framebuffers.len() as u32,
-            command_pool: command_pool.clone(),
-            level: vk::CommandBufferLevel::Primary,
-        };
+        let spv_file = File::open(shader_path)
+            .expect(&format!("Failed to find spv file at {:?}", shader_path));
+        let bytes_code: Vec<u8> = spv_file.bytes()
+            .filter_map(|byte| byte.ok()).collect();
 
-        let command_buffers = unsafe {
-            device.allocate_command_buffers(&command_buffer_allocate_info)
-                .expect("Failed to allocate Command Buffers!")
-        };
-
-        for (i, &command_buffer) in command_buffers.iter().enumerate() {
-
-            let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-                s_type: vk::StructureType::CommandBufferBeginInfo,
-                p_next: ptr::null(),
-                p_inheritance_info: ptr::null(),
-                flags: vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
-            };
-
-            unsafe {
-                device.begin_command_buffer(command_buffer, &command_buffer_begin_info)
-                    .expect("Failed to begin recording Command Buffer at beginning!");
-            }
-
-            let clear_values = [
-                vk::ClearValue {
-                    color: vk::ClearColorValue {
-                        float32: [0.0, 0.0, 0.0, 1.0]
-                    },
-                }
-            ];
-
-            let render_pass_begin_info = vk::RenderPassBeginInfo {
-                s_type: vk::StructureType::RenderPassBeginInfo,
-                p_next: ptr::null(),
-                render_pass: render_pass.clone(),
-                framebuffer: framebuffers[i],
-                render_area: vk::Rect2D {
-                    offset: vk::Offset2D { x: 0, y: 0 },
-                    extent: surface_extent.clone(),
-                },
-                clear_value_count: clear_values.len() as u32,
-                p_clear_values: clear_values.as_ptr(),
-            };
-
-            unsafe {
-                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
-                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline.clone());
-                device.cmd_draw(command_buffer, 3, 1, 0, 0);
-
-                device.cmd_end_render_pass(command_buffer);
-
-                device.end_command_buffer(command_buffer)
-                    .expect("Failed to record Command Buffer at Ending!");
-            }
-        }
-
-        command_buffers
+        bytes_code
     }
 }
 
@@ -216,16 +187,6 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
 
         unsafe {
-
-            self.device.destroy_command_pool(self.command_pool, None);
-
-            for &framebuffer in self.swapchain_framebuffers.iter() {
-                self.device.destroy_framebuffer(framebuffer, None);
-            }
-
-            self.device.destroy_pipeline(self.graphics_pipeline, None);
-            self.device.destroy_pipeline_layout(self.pipeline_layout, None);
-            self.device.destroy_render_pass(self.render_pass, None);
 
             for &imageview in self.swapchain_imageviews.iter() {
                 self.device.destroy_image_view(imageview, None);

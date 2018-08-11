@@ -1,6 +1,6 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.22.0"
+version = "0.23.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
@@ -8,6 +8,7 @@ winit = "0.17"
 ash = "0.24"
 num = "0.2"
 cgmath = "0.16.1"
+image = "0.19.0"
 memoffset = "0.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -15,3 +16,74 @@ metal-rs = "0.10.4"
 cocoa = "0.15.0"
 objc = "0.2.5"
 
+
+# shortcuts
+[[bin]]
+name = "00"
+path = "src/tutorials/00_base_code.rs"
+[[bin]]
+name = "01"
+path = "src/tutorials/01_instance_creation.rs"
+[[bin]]
+name = "02"
+path = "src/tutorials/02_validation_layers.rs"
+[[bin]]
+name = "03"
+path = "src/tutorials/03_physical_device_selection.rs"
+[[bin]]
+name = "04"
+path = "src/tutorials/04_logical_device.rs"
+[[bin]]
+name = "05"
+path = "src/tutorials/05_window_surface.rs"
+[[bin]]
+name = "06"
+path = "src/tutorials/06_swap_chain_creation.rs"
+[[bin]]
+name = "07"
+path = "src/tutorials/07_image_view.rs"
+[[bin]]
+name = "08"
+path = "src/tutorials/08_graphics_pipeline.rs"
+[[bin]]
+name = "09"
+path = "src/tutorials/09_shader_modules.rs"
+[[bin]]
+name = "10"
+path = "src/tutorials/10_fixed_functions.rs"
+[[bin]]
+name = "11"
+path = "src/tutorials/11_render_passes.rs"
+[[bin]]
+name = "12"
+path = "src/tutorials/12_graphics_pipeline_complete.rs"
+[[bin]]
+name = "13"
+path = "src/tutorials/13_framebuffers.rs"
+[[bin]]
+name = "14"
+path = "src/tutorials/14_command_buffers.rs"
+[[bin]]
+name = "15"
+path = "src/tutorials/15_hello_triangle.rs"
+[[bin]]
+name = "16"
+path = "src/tutorials/16_swap_chain_recreation.rs"
+[[bin]]
+name = "17"
+path = "src/tutorials/17_vertex_input.rs"
+[[bin]]
+name = "18"
+path = "src/tutorials/18_vertex_buffer.rs"
+[[bin]]
+name = "19"
+path = "src/tutorials/19_staging_buffer.rs"
+[[bin]]
+name = "20"
+path = "src/tutorials/20_index_buffer.rs"
+[[bin]]
+name = "21"
+path = "src/tutorials/21_descriptor_layout.rs"
+[[bin]]
+name = "22"
+path = "src/tutorials/22_descriptor_sets.rs"
