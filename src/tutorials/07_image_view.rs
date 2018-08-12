@@ -108,7 +108,7 @@ impl VulkanApp {
             let imageview_create_info = vk::ImageViewCreateInfo {
                 s_type: vk::StructureType::ImageViewCreateInfo,
                 p_next: ptr::null(),
-                flags: Default::default(),
+                flags: vk::ImageViewCreateFlags::empty(),
                 view_type: vk::ImageViewType::Type2d,
                 format: surface_format,
                 components: vk::ComponentMapping {

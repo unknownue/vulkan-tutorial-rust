@@ -124,7 +124,7 @@ impl VulkanApp {
             let framebuffer_create_info = vk::FramebufferCreateInfo {
                 s_type: vk::StructureType::FramebufferCreateInfo,
                 p_next: ptr::null(),
-                flags: Default::default(),
+                flags: vk::FramebufferCreateFlags::empty(),
                 render_pass,
                 attachment_count: attachments.len() as u32,
                 p_attachments: attachments.as_ptr(),

@@ -6,11 +6,13 @@ use vulkan_tutorial_rust::{
 };
 
 extern crate winit;
+#[macro_use]
 extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0 };
+use ash::vk::uint32_t;
 
 type EntryV1 = ash::Entry<V1_0>;
 
@@ -93,6 +95,7 @@ impl VulkanApp {
 
         let device_properties = instance.get_physical_device_properties(physical_device);
         let device_features = instance.get_physical_device_features(physical_device);
+        let device_queue_families = instance.get_physical_device_queue_family_properties(physical_device);
 
         use vk::PhysicalDeviceType::*;
         let device_type = match device_properties.device_type {
@@ -104,10 +107,27 @@ impl VulkanApp {
         };
 
         let device_name = utility::tools::vk_to_string(&device_properties.device_name);
-        println!("Device Name: {}, id: {}, type: {}", device_name, device_properties.device_id, device_type);
+        println!("\tDevice Name: {}, id: {}, type: {}", device_name, device_properties.device_id, device_type);
+
+        let major_version = vk_version_major!(device_properties.api_version);
+        let minor_version = vk_version_minor!(device_properties.api_version);
+        let patch_version = vk_version_patch!(device_properties.api_version);
+
+        println!("\tAPI Version: {}.{}.{}", major_version, minor_version, patch_version);
+
+        println!("\tSupport Queue Family: {}", device_queue_families.len());
+        println!("\t\tQueue Count | Graphics, Compute, Transfer, Sparse Binding");
+        for queue_family in device_queue_families.iter() {
+            let is_graphics_support = if queue_family.queue_flags.subset(vk::types::QUEUE_GRAPHICS_BIT) { "support" } else { "unsupport" };
+            let is_compute_support  = if queue_family.queue_flags.subset(vk::types::QUEUE_COMPUTE_BIT) { "support" } else { "unsupport" };;
+            let is_transfer_support = if queue_family.queue_flags.subset(vk::types::QUEUE_TRANSFER_BIT) { "support" } else { "unsupport" };;
+            let is_sparse_support   = if queue_family.queue_flags.subset(vk::types::QUEUE_SPARSE_BINDING_BIT) { "support" } else { "unsupport" };;
+
+            println!("\t\t{}\t    | {},  {},  {},  {}", queue_family.queue_count, is_graphics_support, is_compute_support, is_transfer_support, is_sparse_support);
+        }
 
         // there are plenty of features
-        println!("Geometry Shader support: {}", if device_features.geometry_shader == 1 { "Support" } else { "Unsupport" });
+        println!("\tGeometry Shader support: {}", if device_features.geometry_shader == 1 { "Support" } else { "Unsupport" });
 
         let indices = VulkanApp::find_queue_family(instance, physical_device);
 

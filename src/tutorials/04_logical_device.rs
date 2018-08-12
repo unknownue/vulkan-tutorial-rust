@@ -110,7 +110,7 @@ impl VulkanApp {
         let queue_create_info = vk::DeviceQueueCreateInfo {
             s_type: vk::StructureType::DeviceQueueCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::DeviceQueueCreateFlags::empty(),
             queue_family_index: indices.graphics_family as u32,
             p_queue_priorities: queue_priorities.as_ptr(),
             queue_count: queue_priorities.len() as u32,
@@ -125,10 +125,10 @@ impl VulkanApp {
         let device_create_info = vk::DeviceCreateInfo {
             s_type: vk::StructureType::DeviceCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::DeviceCreateFlags::empty(),
             queue_create_info_count: 1,
             p_queue_create_infos: &queue_create_info,
-            enabled_layer_count: if validation.is_enable { enable_layer_names.len() } else { 0 } as u32,
+            enabled_layer_count:    if validation.is_enable { enable_layer_names.len() }    else { 0 } as u32,
             pp_enabled_layer_names: if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
             enabled_extension_count: 0,
             pp_enabled_extension_names: ptr::null(),

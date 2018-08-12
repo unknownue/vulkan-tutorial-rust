@@ -208,7 +208,7 @@ impl VulkanApp {
         let semaphore_create_info = vk::SemaphoreCreateInfo {
             s_type: vk::StructureType::SemaphoreCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::SemaphoreCreateFlags::empty(),
         };
 
         let fence_create_info = vk::FenceCreateInfo {

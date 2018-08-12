@@ -48,10 +48,10 @@ pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_d
     let create_info = vk::InstanceCreateInfo {
         s_type: vk::StructureType::InstanceCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::InstanceCreateFlags::empty(),
         p_application_info: &app_info,
         pp_enabled_layer_names: if is_enable_debug { layer_names.as_ptr() } else { ptr::null() },
-        enabled_layer_count: if is_enable_debug { layer_names.len() } else { 0 } as u32,
+        enabled_layer_count:    if is_enable_debug { layer_names.len() } else { 0 } as u32,
         pp_enabled_extension_names: extension_names.as_ptr(),
         enabled_extension_count: extension_names.len() as u32,
     };
@@ -134,7 +134,7 @@ pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk
         let queue_create_info = vk::DeviceQueueCreateInfo {
             s_type: vk::StructureType::DeviceQueueCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::DeviceQueueCreateFlags::empty(),
             queue_family_index: *queue_family as u32,
             p_queue_priorities: queue_priorities.as_ptr(),
             queue_count: queue_priorities.len() as u32,
@@ -154,7 +154,7 @@ pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk
     let device_create_info = vk::DeviceCreateInfo {
         s_type: vk::StructureType::DeviceCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::DeviceCreateFlags::empty(),
         queue_create_info_count: queue_create_infos.len() as u32,
         p_queue_create_infos: queue_create_infos.as_ptr(),
         enabled_layer_count: if validation.is_enable { enable_layer_names.len() } else { 0 } as u32,
@@ -263,7 +263,7 @@ pub fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_
     let swapchain_create_info = vk::SwapchainCreateInfoKHR {
         s_type: vk::StructureType::SwapchainCreateInfoKhr,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::SwapchainCreateFlagsKHR::empty(),
         surface: surface_stuff.surface,
         min_image_count: image_count,
         image_color_space: surface_format.color_space,
@@ -362,7 +362,7 @@ pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: vk::Format,
         let imageview_create_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::ImageViewCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::ImageViewCreateFlags::empty(),
             view_type: vk::ImageViewType::Type2d,
             format: surface_format,
             components: vk::ComponentMapping {
@@ -395,7 +395,7 @@ pub fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::Sh
     let vertex_shader_info = vk::ShaderModuleCreateInfo {
         s_type: vk::StructureType::ShaderModuleCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::ShaderModuleCreateFlags::empty(),
         code_size: code.len(),
         p_code: code.as_ptr() as *const u32,
     };
@@ -430,7 +430,7 @@ pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format
         color_attachment_count: 1,
         p_color_attachments: &color_attachment_ref,
         p_depth_stencil_attachment: ptr::null(),
-        flags: Default::default(),
+        flags: vk::SubpassDescriptionFlags::empty(),
         pipeline_bind_point: vk::PipelineBindPoint::Graphics,
         input_attachment_count: 0,
         p_input_attachments: ptr::null(),
@@ -445,7 +445,7 @@ pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format
 
     let renderpass_create_info = vk::RenderPassCreateInfo {
         s_type: vk::StructureType::RenderPassCreateInfo,
-        flags: Default::default(),
+        flags: vk::RenderPassCreateFlags::empty(),
         p_next: ptr::null(),
         attachment_count: render_pass_attachments.len() as u32,
         p_attachments: render_pass_attachments.as_ptr(),
@@ -474,7 +474,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let vert_shader_create_info = vk::PipelineShaderStageCreateInfo {
         s_type: vk::StructureType::PipelineShaderStageCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineShaderStageCreateFlags::empty(),
         module: vert_shader_module,
         p_name: main_function_name.as_ptr(),
         p_specialization_info: ptr::null(),
@@ -484,7 +484,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let frag_shader_create_info = vk::PipelineShaderStageCreateInfo {
         s_type: vk::StructureType::PipelineShaderStageCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineShaderStageCreateFlags::empty(),
         module: frag_shader_module,
         p_name: main_function_name.as_ptr(),
         p_specialization_info: ptr::null(),
@@ -499,7 +499,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
         s_type: vk::StructureType::PipelineVertexInputStateCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineVertexInputStateCreateFlags::empty(),
         vertex_attribute_description_count: 0,
         p_vertex_attribute_descriptions: ptr::null(),
         vertex_binding_description_count: 0,
@@ -507,7 +507,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     };
     let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
         s_type: vk::StructureType::PipelineInputAssemblyStateCreateInfo,
-        flags: Default::default(),
+        flags: vk::PipelineInputAssemblyStateCreateFlags::empty(),
         p_next: ptr::null(),
         primitive_restart_enable: vk::VK_FALSE,
         topology: vk::PrimitiveTopology::TriangleList,
@@ -534,7 +534,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let viewport_state_create_info = vk::PipelineViewportStateCreateInfo {
         s_type: vk::StructureType::PipelineViewportStateCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineViewportStateCreateFlags::empty(),
         scissor_count: scissors.len() as u32,
         p_scissors: scissors.as_ptr(),
         viewport_count: viewports.len() as u32,
@@ -544,7 +544,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let rasterization_statue_create_info = vk::PipelineRasterizationStateCreateInfo {
         s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineRasterizationStateCreateFlags::empty(),
         depth_clamp_enable: vk::VK_FALSE,
         cull_mode: vk::CULL_MODE_BACK_BIT,
         front_face: vk::FrontFace::Clockwise,
@@ -558,7 +558,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     };
     let multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo {
         s_type: vk::StructureType::PipelineMultisampleStateCreateInfo,
-        flags: Default::default(),
+        flags: vk::PipelineMultisampleStateCreateFlags::empty(),
         p_next: ptr::null(),
         rasterization_samples: vk::SAMPLE_COUNT_1_BIT,
         sample_shading_enable: vk::VK_FALSE,
@@ -581,7 +581,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let depth_state_create_info = vk::PipelineDepthStencilStateCreateInfo {
         s_type: vk::StructureType::PipelineDepthStencilStateCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineDepthStencilStateCreateFlags::empty(),
         depth_test_enable: vk::VK_FALSE,
         depth_write_enable: vk::VK_FALSE,
         depth_compare_op: vk::CompareOp::LessOrEqual,
@@ -609,7 +609,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let color_blend_state = vk::PipelineColorBlendStateCreateInfo {
         s_type: vk::StructureType::PipelineColorBlendStateCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineColorBlendStateCreateFlags::empty(),
         logic_op_enable: vk::VK_FALSE,
         logic_op: vk::LogicOp::Copy,
         attachment_count: color_blend_attachment_states.len() as u32,
@@ -622,7 +622,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
 //        let dynamic_state_info = vk::PipelineDynamicStateCreateInfo {
 //            s_type: vk::StructureType::PipelineDynamicStateCreateInfo,
 //            p_next: ptr::null(),
-//            flags: Default::default(),
+//            flags: vk::PipelineDynamicStateCreateFlags::empty(),
 //            dynamic_state_count: dynamic_state.len() as u32,
 //            p_dynamic_states: dynamic_state.as_ptr(),
 //        };
@@ -630,7 +630,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::Ren
     let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
         s_type: vk::StructureType::PipelineLayoutCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::PipelineLayoutCreateFlags::empty(),
         set_layout_count: 0,
         p_set_layouts: ptr::null(),
         push_constant_range_count: 0,
@@ -692,7 +692,7 @@ pub fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: vk::RenderPa
         let framebuffer_create_info = vk::FramebufferCreateInfo {
             s_type: vk::StructureType::FramebufferCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::FramebufferCreateFlags::empty(),
             render_pass,
             attachment_count: attachments.len() as u32,
             p_attachments: attachments.as_ptr(),
@@ -717,7 +717,7 @@ pub fn create_command_pool(device: &ash::Device<V1_0>, queue_families: &QueueFam
     let command_pool_create_info = vk::CommandPoolCreateInfo {
         s_type: vk::StructureType::CommandPoolCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::CommandPoolCreateFlags::empty(),
         queue_family_index: queue_families.graphics_family as u32,
     };
 
@@ -803,7 +803,7 @@ pub fn create_sync_objects(device: &ash::Device<V1_0>, max_frame_in_flight: usiz
     let semaphore_create_info = vk::SemaphoreCreateInfo {
         s_type: vk::StructureType::SemaphoreCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::SemaphoreCreateFlags::empty(),
     };
 
     let fence_create_info = vk::FenceCreateInfo {
@@ -1056,7 +1056,7 @@ pub fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size:
     let descriptor_pool_create_info = vk::DescriptorPoolCreateInfo {
         s_type: vk::StructureType::DescriptorPoolCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::DescriptorPoolCreateFlags::empty(),
         max_sets: swapchain_images_size as u32,
         pool_size_count: pool_sizes.len() as u32,
         p_pool_sizes: pool_sizes.as_ptr(),
@@ -1135,7 +1135,7 @@ pub fn create_descriptor_set_layout(device: &ash::Device<V1_0>) -> vk::Descripto
     let ubo_layout_create_info = vk::DescriptorSetLayoutCreateInfo {
         s_type: vk::StructureType::DescriptorSetLayoutCreateInfo,
         p_next: ptr::null(),
-        flags: Default::default(),
+        flags: vk::DescriptorSetLayoutCreateFlags::empty(),
         binding_count: 1_u32,
         p_bindings: ubo_layout_bindings.as_ptr(),
     };

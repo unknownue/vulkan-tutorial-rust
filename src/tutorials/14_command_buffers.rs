@@ -126,7 +126,7 @@ impl VulkanApp {
         let command_pool_create_info = vk::CommandPoolCreateInfo {
             s_type: vk::StructureType::CommandPoolCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::CommandPoolCreateFlags::empty(),
             queue_family_index: queue_families.graphics_family as u32,
         };
 

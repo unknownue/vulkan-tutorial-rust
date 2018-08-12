@@ -119,7 +119,7 @@ impl VulkanApp {
         let create_info = vk::InstanceCreateInfo {
             s_type: vk::StructureType::InstanceCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::InstanceCreateFlags::empty(),
             p_application_info: &app_info,
             pp_enabled_layer_names: if VALIDATION.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
             enabled_layer_count: if VALIDATION.is_enable { enable_layer_names.len() } else { 0 } as u32,

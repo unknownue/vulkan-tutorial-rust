@@ -125,7 +125,7 @@ impl VulkanApp {
         let vert_shader_create_info = vk::PipelineShaderStageCreateInfo {
             s_type: vk::StructureType::PipelineShaderStageCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineShaderStageCreateFlags::empty(),
             module: vert_shader_module,
             p_name: main_function_name.as_ptr(),
             p_specialization_info: ptr::null(),
@@ -135,7 +135,7 @@ impl VulkanApp {
         let frag_shader_create_info = vk::PipelineShaderStageCreateInfo {
             s_type: vk::StructureType::PipelineShaderStageCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineShaderStageCreateFlags::empty(),
             module: frag_shader_module,
             p_name: main_function_name.as_ptr(),
             p_specialization_info: ptr::null(),
@@ -158,7 +158,7 @@ impl VulkanApp {
         let vertex_shader_info = vk::ShaderModuleCreateInfo {
             s_type: vk::StructureType::ShaderModuleCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::ShaderModuleCreateFlags::empty(),
             code_size: code.len(),
             p_code: code.as_ptr() as *const u32,
         };

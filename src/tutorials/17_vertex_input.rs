@@ -192,7 +192,7 @@ impl VulkanApp {
         let vert_shader_create_info = vk::PipelineShaderStageCreateInfo {
             s_type: vk::StructureType::PipelineShaderStageCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineShaderStageCreateFlags::empty(),
             module: vert_shader_module,
             p_name: main_function_name.as_ptr(),
             p_specialization_info: ptr::null(),
@@ -202,7 +202,7 @@ impl VulkanApp {
         let frag_shader_create_info = vk::PipelineShaderStageCreateInfo {
             s_type: vk::StructureType::PipelineShaderStageCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineShaderStageCreateFlags::empty(),
             module: frag_shader_module,
             p_name: main_function_name.as_ptr(),
             p_specialization_info: ptr::null(),
@@ -220,7 +220,7 @@ impl VulkanApp {
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
             s_type: vk::StructureType::PipelineVertexInputStateCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineVertexInputStateCreateFlags::empty(),
             vertex_attribute_description_count: attribute_description.len() as u32,
             p_vertex_attribute_descriptions: attribute_description.as_ptr(),
             vertex_binding_description_count: binding_description.len() as u32,
@@ -228,7 +228,7 @@ impl VulkanApp {
         };
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
             s_type: vk::StructureType::PipelineInputAssemblyStateCreateInfo,
-            flags: Default::default(),
+            flags: vk::PipelineInputAssemblyStateCreateFlags::empty(),
             p_next: ptr::null(),
             primitive_restart_enable: vk::VK_FALSE,
             topology: vk::PrimitiveTopology::TriangleList,
@@ -255,7 +255,7 @@ impl VulkanApp {
         let viewport_state_create_info = vk::PipelineViewportStateCreateInfo {
             s_type: vk::StructureType::PipelineViewportStateCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineViewportStateCreateFlags::empty(),
             scissor_count: scissors.len() as u32,
             p_scissors: scissors.as_ptr(),
             viewport_count: viewports.len() as u32,
@@ -265,7 +265,7 @@ impl VulkanApp {
         let rasterization_statue_create_info = vk::PipelineRasterizationStateCreateInfo {
             s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineRasterizationStateCreateFlags::empty(),
             depth_clamp_enable: vk::VK_FALSE,
             cull_mode: vk::CULL_MODE_BACK_BIT,
             front_face: vk::FrontFace::Clockwise,
@@ -279,7 +279,7 @@ impl VulkanApp {
         };
         let multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo {
             s_type: vk::StructureType::PipelineMultisampleStateCreateInfo,
-            flags: Default::default(),
+            flags: vk::PipelineMultisampleStateCreateFlags::empty(),
             p_next: ptr::null(),
             rasterization_samples: vk::SAMPLE_COUNT_1_BIT,
             sample_shading_enable: vk::VK_FALSE,
@@ -302,7 +302,7 @@ impl VulkanApp {
         let depth_state_create_info = vk::PipelineDepthStencilStateCreateInfo {
             s_type: vk::StructureType::PipelineDepthStencilStateCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineDepthStencilStateCreateFlags::empty(),
             depth_test_enable: vk::VK_FALSE,
             depth_write_enable: vk::VK_FALSE,
             depth_compare_op: vk::CompareOp::LessOrEqual,
@@ -330,7 +330,7 @@ impl VulkanApp {
         let color_blend_state = vk::PipelineColorBlendStateCreateInfo {
             s_type: vk::StructureType::PipelineColorBlendStateCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineColorBlendStateCreateFlags::empty(),
             logic_op_enable: vk::VK_FALSE,
             logic_op: vk::LogicOp::Copy,
             attachment_count: color_blend_attachment_states.len() as u32,
@@ -341,7 +341,7 @@ impl VulkanApp {
         let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
             s_type: vk::StructureType::PipelineLayoutCreateInfo,
             p_next: ptr::null(),
-            flags: Default::default(),
+            flags: vk::PipelineLayoutCreateFlags::empty(),
             set_layout_count: 0,
             p_set_layouts: ptr::null(),
             push_constant_range_count: 0,
