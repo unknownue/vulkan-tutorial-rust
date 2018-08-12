@@ -43,7 +43,7 @@ pub fn check_validation_layer_support(entry: &ash::Entry<V1_0>, required_validat
     // if support validation layer, then return true
 
     let layer_properties = entry.enumerate_instance_layer_properties()
-        .expect("Failed to enumerate instance layers properties");
+        .expect("Failed to enumerate Instance Layers Properties");
 
     if layer_properties.len() <= 0 {
         eprintln!("No available layers.");
@@ -75,7 +75,7 @@ pub fn setup_debug_callback(is_enable_debug: bool, entry: &ash::Entry<V1_0>, ins
     -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
 
     let debug_report_loader = ash::extensions::DebugReport::new(entry, instance)
-        .expect("Unable to load debug report");
+        .expect("Unable to load Debug Report!");
 
     if is_enable_debug == false {
         (debug_report_loader, ash::vk::types::DebugReportCallbackEXT::null())
@@ -95,7 +95,7 @@ pub fn setup_debug_callback(is_enable_debug: bool, entry: &ash::Entry<V1_0>, ins
 
         let debug_call_back = unsafe {
             debug_report_loader.create_debug_report_callback_ext(&debug_create_info, None)
-                .expect("Failed to set up debug callback!")
+                .expect("Failed to set up Debug Callback!")
         };
 
         (debug_report_loader, debug_call_back)

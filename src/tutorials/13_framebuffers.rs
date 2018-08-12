@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
     utility::vulkan::*,
-    utility::structures::*,
+    utility::constants::*,
 };
 
 extern crate winit;
@@ -22,17 +22,6 @@ use std::ptr;
 
 // Constants
 const WINDOW_TITLE: &'static str = "13.Framebuffers";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
-const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
-    names: [vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
-};
 
 struct VulkanApp {
     // winit stuff
@@ -80,14 +69,14 @@ impl VulkanApp {
         let surface_stuff = create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
-        let (device, family_indices) = create_logical_device(&instance, &physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let (device, family_indices) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &window, &surface_stuff, &family_indices);
-        let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, &swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
-        let swapchain_framebuffers = VulkanApp::create_framebuffers(&device, &render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
+        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &family_indices);
+        let swapchain_imageviews = create_image_view(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent);
+        let swapchain_framebuffers = VulkanApp::create_framebuffers(&device, render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -123,7 +112,7 @@ impl VulkanApp {
         }
     }
 
-    fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, image_views: &Vec<vk::ImageView>, swapchain_extent: &vk::Extent2D) -> Vec<vk::Framebuffer> {
+    fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, image_views: &Vec<vk::ImageView>, swapchain_extent: &vk::Extent2D) -> Vec<vk::Framebuffer> {
 
         let mut framebuffers = vec![];
 
@@ -136,7 +125,7 @@ impl VulkanApp {
                 s_type: vk::StructureType::FramebufferCreateInfo,
                 p_next: ptr::null(),
                 flags: Default::default(),
-                render_pass: render_pass.clone(),
+                render_pass,
                 attachment_count: attachments.len() as u32,
                 p_attachments: attachments.as_ptr(),
                 width:  swapchain_extent.width,

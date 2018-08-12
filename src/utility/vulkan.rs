@@ -11,8 +11,11 @@ use std::ptr;
 use std::ffi::CString;
 use std::path::Path;
 
-use super::debug;
-use super::structures::*;
+use super::{
+    debug,
+    structures::*,
+    constants::*,
+};
 
 pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_debug: bool, required_validation_layers: &Vec<&str>) -> ash::Instance<V1_0> {
 
@@ -26,10 +29,10 @@ pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_d
         p_application_name: app_name.as_ptr(),
         s_type: vk::StructureType::ApplicationInfo,
         p_next: ptr::null(),
-        application_version: vk_make_version!(1, 0, 0),
+        application_version: APPLICATION_VERSION,
         p_engine_name: engine_name.as_ptr(),
-        engine_version: vk_make_version!(1, 0, 0),
-        api_version: vk_make_version!(1, 0, 36),
+        engine_version: ENGINE_VERSION,
+        api_version: API_VERSION,
     };
 
     // VK_EXT debug report has been requested here.
@@ -61,7 +64,6 @@ pub fn create_instance(entry: &ash::Entry<V1_0>, window_title: &str, is_enable_d
     instance
 }
 
-
 pub fn create_surface(entry: &EntryV1, instance: &ash::Instance<V1_0>, window: &winit::Window, screen_width: u32, screen_height: u32) -> SurfaceStuff {
 
     let surface = unsafe {
@@ -82,11 +84,11 @@ pub fn create_surface(entry: &EntryV1, instance: &ash::Instance<V1_0>, window: &
 pub fn pick_physical_device(instance: &ash::Instance<V1_0>, surface_stuff: &SurfaceStuff, required_device_extensions: &DeviceExtension) -> vk::PhysicalDevice {
 
     let physical_devices = instance.enumerate_physical_devices()
-        .expect("Physical device error");
+        .expect("Failed to enumerate Physical Devices!");
 
     let result = physical_devices.iter().find(|physical_device| {
-        let swapchain_support = query_swapchain_support(physical_device, surface_stuff);
-        let is_suitable = is_physical_device_suitable(instance, physical_device, surface_stuff, &swapchain_support, required_device_extensions);
+        let swapchain_support = query_swapchain_support(**physical_device, surface_stuff);
+        let is_suitable = is_physical_device_suitable(instance, **physical_device, surface_stuff, &swapchain_support, required_device_extensions);
 
         if is_suitable {
             let device_properties = instance.get_physical_device_properties(**physical_device);
@@ -103,9 +105,9 @@ pub fn pick_physical_device(instance: &ash::Instance<V1_0>, surface_stuff: &Surf
     }
 }
 
-pub fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff, swapchain_support: &SwapChainSupportDetail, required_device_extensions: &DeviceExtension) -> bool {
+pub fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff, swapchain_support: &SwapChainSupportDetail, required_device_extensions: &DeviceExtension) -> bool {
 
-    let _device_features = instance.get_physical_device_features(physical_device.clone());
+    let _device_features = instance.get_physical_device_features(physical_device);
 
     let indices = find_queue_family(instance, physical_device, surface_stuff);
 
@@ -116,7 +118,7 @@ pub fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_devi
     return is_queue_family_supported && is_device_extension_supported && is_swapchain_supported;
 }
 
-pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, validation: &super::debug::ValidationInfo, device_extensions: &DeviceExtension, surface_stuff: &SurfaceStuff)
+pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, validation: &super::debug::ValidationInfo, device_extensions: &DeviceExtension, surface_stuff: &SurfaceStuff)
     -> (ash::Device<V1_0>, QueueFamilyIndices) {
 
     let indices = find_queue_family(instance, physical_device, surface_stuff);
@@ -163,27 +165,27 @@ pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: &v
     };
 
     let device: ash::Device<V1_0> = unsafe {
-        instance.create_device(physical_device.clone(), &device_create_info, None)
-            .expect("Failed to create logical device!")
+        instance.create_device(physical_device, &device_create_info, None)
+            .expect("Failed to create logical Device!")
     };
 
     (device, indices)
 }
 
-pub fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> QueueFamilyIndices {
+pub fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> QueueFamilyIndices {
 
-    let queue_families = instance.get_physical_device_queue_family_properties(physical_device.clone());
+    let queue_families = instance.get_physical_device_queue_family_properties(physical_device);
 
     let mut queue_family_indices = QueueFamilyIndices::new();
 
     let mut index = 0;
     for queue_family in queue_families.iter() {
-        use ash::vk::types::{ QueueFlags, QUEUE_GRAPHICS_BIT };
-        if queue_family.queue_count > 0 && queue_family.queue_flags.subset(QueueFlags::from(QUEUE_GRAPHICS_BIT)) {
+
+        if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QueueFlags::from(vk::QUEUE_GRAPHICS_BIT)) {
             queue_family_indices.graphics_family = index;
         }
 
-        let is_present_support = surface_stuff.surface_loader.get_physical_device_surface_support_khr(physical_device.clone(), index as u32, surface_stuff.surface);
+        let is_present_support = surface_stuff.surface_loader.get_physical_device_surface_support_khr(physical_device, index as u32, surface_stuff.surface);
         if queue_family.queue_count > 0 && is_present_support {
             queue_family_indices.present_family = index;
         }
@@ -198,9 +200,9 @@ pub fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: &vk::P
     queue_family_indices
 }
 
-pub fn check_device_extension_support(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, device_extensions: &DeviceExtension) -> bool {
+pub fn check_device_extension_support(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, device_extensions: &DeviceExtension) -> bool {
 
-    let available_extensions = instance.enumerate_device_extension_properties(physical_device.clone())
+    let available_extensions = instance.enumerate_device_extension_properties(physical_device)
         .expect("Failed to get device extension properties.");
 
     let mut available_extension_names = vec![];
@@ -224,13 +226,13 @@ pub fn check_device_extension_support(instance: &ash::Instance<V1_0>, physical_d
     return required_extensions.is_empty()
 }
 
-pub fn query_swapchain_support(physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> SwapChainSupportDetail {
+pub fn query_swapchain_support(physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> SwapChainSupportDetail {
 
-    let capabilities = surface_stuff.surface_loader.get_physical_device_surface_capabilities_khr(physical_device.clone(), surface_stuff.surface)
+    let capabilities = surface_stuff.surface_loader.get_physical_device_surface_capabilities_khr(physical_device, surface_stuff.surface)
         .expect("Failed to query for surface capabilities.");
-    let formats = surface_stuff.surface_loader.get_physical_device_surface_formats_khr(physical_device.clone(), surface_stuff.surface)
+    let formats = surface_stuff.surface_loader.get_physical_device_surface_formats_khr(physical_device, surface_stuff.surface)
         .expect("Failed to query for surface formats.");
-    let present_modes = surface_stuff.surface_loader.get_physical_device_surface_present_modes_khr(physical_device.clone(), surface_stuff.surface)
+    let present_modes = surface_stuff.surface_loader.get_physical_device_surface_present_modes_khr(physical_device, surface_stuff.surface)
         .expect("Failed to query for surface present mode.");
 
     SwapChainSupportDetail {
@@ -240,7 +242,7 @@ pub fn query_swapchain_support(physical_device: &vk::PhysicalDevice, surface_stu
     }
 }
 
-pub fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: &vk::PhysicalDevice, window: &winit::Window, surface_stuff: &SurfaceStuff, queue_family: &QueueFamilyIndices) -> SwapChainStuff {
+pub fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, window: &winit::Window, surface_stuff: &SurfaceStuff, queue_family: &QueueFamilyIndices) -> SwapChainStuff {
 
     let swapchain_support = query_swapchain_support(physical_device, surface_stuff);
 
@@ -318,15 +320,14 @@ pub fn choose_swapchain_format(available_formats: &Vec<vk::SurfaceFormatKHR>) ->
 }
 
 pub fn choose_swapchain_present_mode(available_present_modes: &Vec<vk::PresentModeKHR>) -> vk::PresentModeKHR {
-    use ash::vk::types::*;
 
-    let mut best_mode = PresentModeKHR::Fifo;
+    let mut best_mode = vk::PresentModeKHR::Fifo;
 
-    for available_present_mode in available_present_modes.iter() {
-        if *available_present_mode == PresentModeKHR::Mailbox {
-            return available_present_mode.clone()
-        } else if *available_present_mode == PresentModeKHR::Immediate {
-            best_mode = available_present_mode.clone();
+    for &available_present_mode in available_present_modes.iter() {
+        if available_present_mode == vk::PresentModeKHR::Mailbox {
+            return available_present_mode
+        } else if available_present_mode == vk::PresentModeKHR::Immediate {
+            best_mode = available_present_mode;
         }
     }
 
@@ -334,7 +335,6 @@ pub fn choose_swapchain_present_mode(available_present_modes: &Vec<vk::PresentMo
 }
 
 pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window: &winit::Window) -> vk::Extent2D {
-    use ash::vk::types::*;
 
     if capabilities.current_extent.width != uint32_t::max_value() {
 
@@ -353,18 +353,18 @@ pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window
     }
 }
 
-pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: &vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
+pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
 
     let mut swapchain_imageviews = vec![];
 
-    for image in images.iter() {
+    for &image in images.iter() {
 
         let imageview_create_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::ImageViewCreateInfo,
             p_next: ptr::null(),
             flags: Default::default(),
             view_type: vk::ImageViewType::Type2d,
-            format: surface_format.clone(),
+            format: surface_format,
             components: vk::ComponentMapping {
                 r: vk::ComponentSwizzle::Identity,
                 g: vk::ComponentSwizzle::Identity,
@@ -378,7 +378,7 @@ pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: &vk::Format
                 base_array_layer: 0,
                 layer_count: 1,
             },
-            image: image.clone(),
+            image,
         };
 
         let imageview = unsafe {
@@ -407,10 +407,10 @@ pub fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::Sh
 }
 
 
-pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: &vk::Format) -> vk::RenderPass {
+pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format) -> vk::RenderPass {
 
     let color_attachment = vk::AttachmentDescription {
-        format: surface_format.clone(),
+        format: surface_format,
         flags: vk::AttachmentDescriptionFlags::empty(),
         samples: vk::SAMPLE_COUNT_1_BIT,
         load_op: vk::AttachmentLoadOp::Clear,
@@ -461,7 +461,7 @@ pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: &vk::Forma
     }
 }
 
-pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, swapchain_extent: &vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
+pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
 
     let vert_shader_code = super::tools::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
     let frag_shader_code = super::tools::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
@@ -527,7 +527,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::Re
     let scissors = [
         vk::Rect2D {
             offset: vk::Offset2D { x: 0, y: 0 },
-            extent: swapchain_extent.clone(),
+            extent: swapchain_extent,
         },
     ];
 
@@ -587,8 +587,8 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::Re
         depth_compare_op: vk::CompareOp::LessOrEqual,
         depth_bounds_test_enable: vk::VK_FALSE,
         stencil_test_enable: vk::VK_FALSE,
-        front: stencil_state.clone(),
-        back:  stencil_state.clone(),
+        front: stencil_state,
+        back:  stencil_state,
         max_depth_bounds: 1.0,
         min_depth_bounds: 0.0,
     };
@@ -660,7 +660,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::Re
             p_color_blend_state: &color_blend_state,
             p_dynamic_state: ptr::null(),
             layout: pipeline_layout,
-            render_pass: render_pass.clone(),
+            render_pass,
             subpass: 0,
             base_pipeline_handle: vk::Pipeline::null(),
             base_pipeline_index: -1,
@@ -680,7 +680,7 @@ pub fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::Re
     (graphics_pipelines[0], pipeline_layout)
 }
 
-pub fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, image_views: &Vec<vk::ImageView>, swapchain_extent: &vk::Extent2D) -> Vec<vk::Framebuffer> {
+pub fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, image_views: &Vec<vk::ImageView>, swapchain_extent: vk::Extent2D) -> Vec<vk::Framebuffer> {
 
     let mut framebuffers = vec![];
 
@@ -693,7 +693,7 @@ pub fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: &vk::RenderP
             s_type: vk::StructureType::FramebufferCreateInfo,
             p_next: ptr::null(),
             flags: Default::default(),
-            render_pass: render_pass.clone(),
+            render_pass,
             attachment_count: attachments.len() as u32,
             p_attachments: attachments.as_ptr(),
             width:  swapchain_extent.width,
@@ -727,13 +727,13 @@ pub fn create_command_pool(device: &ash::Device<V1_0>, queue_families: &QueueFam
     }
 }
 
-pub fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, graphics_pipeline: &vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass, surface_extent: &vk::Extent2D) -> Vec<vk::CommandBuffer> {
+pub fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D) -> Vec<vk::CommandBuffer> {
 
     let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
         s_type: vk::StructureType::CommandBufferAllocateInfo,
         p_next: ptr::null(),
         command_buffer_count: framebuffers.len() as u32,
-        command_pool: command_pool.clone(),
+        command_pool,
         level: vk::CommandBufferLevel::Primary,
     };
 
@@ -767,11 +767,11 @@ pub fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::Com
         let render_pass_begin_info = vk::RenderPassBeginInfo {
             s_type: vk::StructureType::RenderPassBeginInfo,
             p_next: ptr::null(),
-            render_pass: render_pass.clone(),
+            render_pass,
             framebuffer: framebuffers[i],
             render_area: vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: surface_extent.clone(),
+                extent: surface_extent,
             },
             clear_value_count: clear_values.len() as u32,
             p_clear_values: clear_values.as_ptr(),
@@ -779,7 +779,7 @@ pub fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::Com
 
         unsafe {
             device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
-            device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline.clone());
+            device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline);
             device.cmd_draw(command_buffer, 3, 1, 0, 0);
 
             device.cmd_end_render_pass(command_buffer);
@@ -872,7 +872,7 @@ pub fn create_buffer(device: &ash::Device<V1_0>, size: vk::DeviceSize, usage: vk
     (buffer, buffer_memory)
 }
 
-pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_pool: vk::CommandPool, src_buffer: &vk::Buffer, dst_buffer: &vk::Buffer, size: vk::DeviceSize) {
+pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_pool: vk::CommandPool, src_buffer: vk::Buffer, dst_buffer: vk::Buffer, size: vk::DeviceSize) {
 
     let command_buffer = begin_single_time_command(device, command_pool);
 
@@ -885,7 +885,7 @@ pub fn copy_buffer(device: &ash::Device<V1_0>, submit_queue: vk::Queue, command_
     ];
 
     unsafe {
-        device.cmd_copy_buffer(command_buffer, src_buffer.clone(), dst_buffer.clone(), &copy_regions);
+        device.cmd_copy_buffer(command_buffer, src_buffer, dst_buffer, &copy_regions);
     }
 
     end_single_time_command(device, command_pool, submit_queue, command_buffer);
@@ -897,7 +897,7 @@ pub fn begin_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::C
         s_type: vk::StructureType::CommandBufferAllocateInfo,
         p_next: ptr::null(),
         command_buffer_count: 1,
-        command_pool: command_pool.clone(),
+        command_pool,
         level: vk::CommandBufferLevel::Primary,
     };
 
@@ -947,11 +947,11 @@ pub fn end_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::Com
     ];
 
     unsafe {
-        device.queue_submit(submit_queue.clone(), &sumbit_infos, vk::Fence::null())
+        device.queue_submit(submit_queue, &sumbit_infos, vk::Fence::null())
             .expect("Failed to Queue Submit!");
         device.queue_wait_idle(submit_queue)
             .expect("Failed to wait Queue idle!");
-        device.free_command_buffers(command_pool.clone(), &buffers_to_submit);
+        device.free_command_buffers(command_pool, &buffers_to_submit);
     }
 }
 
@@ -966,7 +966,7 @@ pub fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPr
     panic!("Failed to find suitable memory type!")
 }
 
-pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: &vk::CommandPool, submit_queue: &vk::Queue, data: &[Vertex])
+pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: vk::CommandPool, submit_queue: vk::Queue, data: &[Vertex])
     -> (vk::Buffer, vk::DeviceMemory) {
 
     let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
@@ -995,7 +995,7 @@ pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties
         &device_memory_properties,
     );
 
-    copy_buffer(device, submit_queue.clone(), command_pool.clone(), &staging_buffer, &vertex_buffer, buffer_size);
+    copy_buffer(device, submit_queue, command_pool, staging_buffer, vertex_buffer, buffer_size);
 
     unsafe {
         device.destroy_buffer(staging_buffer, None);
@@ -1005,7 +1005,7 @@ pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties
     (vertex_buffer, vertex_buffer_memory)
 }
 
-pub fn create_index_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: &vk::CommandPool, submit_queue: &vk::Queue, data: &[uint32_t])
+pub fn create_index_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: vk::CommandPool, submit_queue: vk::Queue, data: &[uint32_t])
     -> (vk::Buffer, vk::DeviceMemory) {
 
     let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
@@ -1034,7 +1034,7 @@ pub fn create_index_buffer(device: &ash::Device<V1_0>, device_memory_properties:
         &device_memory_properties,
     );
 
-    copy_buffer(device, submit_queue.clone(), command_pool.clone(), &staging_buffer, &index_buffer, buffer_size);
+    copy_buffer(device, submit_queue, command_pool, staging_buffer, index_buffer, buffer_size);
 
     unsafe {
         device.destroy_buffer(staging_buffer, None);
@@ -1068,17 +1068,17 @@ pub fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size:
     }
 }
 
-pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: &vk::DescriptorPool, descriptor_set_layout: &vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
+pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::DescriptorPool, descriptor_set_layout: vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
 
     let mut layouts: Vec<vk::DescriptorSetLayout> = vec![];
     for _ in 0..swapchain_images_size {
-        layouts.push(descriptor_set_layout.clone());
+        layouts.push(descriptor_set_layout);
     }
 
     let descriptor_set_allocate_info = vk::DescriptorSetAllocateInfo {
         s_type: vk::StructureType::DescriptorSetAllocateInfo,
         p_next: ptr::null(),
-        descriptor_pool: descriptor_pool.clone(),
+        descriptor_pool,
         descriptor_set_count: swapchain_images_size as u32,
         p_set_layouts: layouts.as_ptr()
     };
@@ -1088,7 +1088,7 @@ pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: &vk::
             .expect("Failed to allocate descriptor sets!")
     };
 
-    for (i, descritptor_set) in descriptor_sets.iter().enumerate() {
+    for (i, &descritptor_set) in descriptor_sets.iter().enumerate() {
         let descriptor_buffer_info = [
             vk::DescriptorBufferInfo {
                 buffer: uniforms_buffers[i],
@@ -1101,7 +1101,7 @@ pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: &vk::
             vk::WriteDescriptorSet {
                 s_type: vk::StructureType::WriteDescriptorSet,
                 p_next: ptr::null(),
-                dst_set: descritptor_set.clone(),
+                dst_set: descritptor_set,
                 dst_binding: 0,
                 dst_array_element: 0,
                 descriptor_count: 1,

@@ -1,7 +1,9 @@
 
 extern crate vulkan_tutorial_rust;
-use vulkan_tutorial_rust::utility; // the mod define some fixed functions that have been learned before.
-use vulkan_tutorial_rust::utility::debug::ValidationInfo;
+use vulkan_tutorial_rust::{
+    utility, // the mod define some fixed functions that have been learned before.
+    utility::constants::*,
+};
 
 extern crate winit;
 extern crate ash;
@@ -14,14 +16,7 @@ type EntryV1 = ash::Entry<V1_0>;
 
 // Constants
 const WINDOW_TITLE: &'static str = "03.Physical Device Selection";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
+
 
 struct QueueFamilyIndices {
     graphics_family: i32,
@@ -75,15 +70,15 @@ impl VulkanApp {
 
     fn pick_physical_device(instance: &ash::Instance<V1_0>) -> vk::PhysicalDevice {
         let physical_devices = instance.enumerate_physical_devices()
-            .expect("Physical device error");
+            .expect("Failed to enumerate Physical Devices!");
 
         println!("{} devices (GPU) found with vulkan support.", physical_devices.len());
 
         let mut result = None;
-        for physical_device in physical_devices.iter() {
+        for &physical_device in physical_devices.iter() {
             if VulkanApp::is_physical_device_suitable(instance, physical_device) {
                 if result.is_none() {
-                    result = Some(*physical_device)
+                    result = Some(physical_device)
                 }
             }
         }
@@ -94,10 +89,10 @@ impl VulkanApp {
         }
     }
 
-    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> bool {
+    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> bool {
 
-        let device_properties = instance.get_physical_device_properties(physical_device.clone());
-        let device_features = instance.get_physical_device_features(physical_device.clone());
+        let device_properties = instance.get_physical_device_properties(physical_device);
+        let device_features = instance.get_physical_device_features(physical_device);
 
         use vk::PhysicalDeviceType::*;
         let device_type = match device_properties.device_type {
@@ -119,9 +114,9 @@ impl VulkanApp {
         return indices.is_complete();
     }
 
-    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> QueueFamilyIndices {
+    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices {
 
-        let queue_families = instance.get_physical_device_queue_family_properties(physical_device.clone());
+        let queue_families = instance.get_physical_device_queue_family_properties(physical_device);
 
         let mut queue_family_indices = QueueFamilyIndices {
             graphics_family: -1,
@@ -129,8 +124,8 @@ impl VulkanApp {
 
         let mut index = 0;
         for queue_family in queue_families.iter() {
-            use ash::vk::types::{ QueueFlags, QUEUE_GRAPHICS_BIT };
-            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(QueueFlags::from(QUEUE_GRAPHICS_BIT)) {
+
+            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QueueFlags::from(vk::QUEUE_GRAPHICS_BIT)) {
                 queue_family_indices.graphics_family = index;
             }
 

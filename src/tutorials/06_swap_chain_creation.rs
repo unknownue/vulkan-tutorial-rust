@@ -4,6 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::ValidationInfo,
     utility::structures::*,
+    utility::constants::*,
 };
 
 extern crate winit;
@@ -22,14 +23,6 @@ type EntryV1 = ash::Entry<V1_0>;
 
 // Constants
 const WINDOW_TITLE: &'static str = "06.Swap Chain Creation";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
 const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
     names: [vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
 };
@@ -111,10 +104,10 @@ impl VulkanApp {
         let surface_stuff = VulkanApp::create_surface(&entry, &instance, &window);
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance, &surface_stuff);
-        let (device, family_indices) = VulkanApp::create_logical_device(&instance, &physical_device, &VALIDATION, &surface_stuff);
+        let (device, family_indices) = VulkanApp::create_logical_device(&instance, physical_device, &VALIDATION, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
-        let swapchain_stuff = VulkanApp::create_swapchain(&instance, &device, &physical_device, &surface_stuff, &family_indices);
+        let swapchain_stuff = VulkanApp::create_swapchain(&instance, &device, physical_device, &surface_stuff, &family_indices);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -162,11 +155,11 @@ impl VulkanApp {
     fn pick_physical_device(instance: &ash::Instance<V1_0>, surface_stuff: &SurfaceStuff) -> vk::PhysicalDevice {
 
         let physical_devices = instance.enumerate_physical_devices()
-            .expect("Physical device error");
+            .expect("Failed to enumerate Physical Devices!");
 
         let result = physical_devices.iter().find(|physical_device| {
-            let swapchain_support = VulkanApp::query_swapchain_support(physical_device, surface_stuff);
-            VulkanApp::is_physical_device_suitable(instance, physical_device, surface_stuff, &swapchain_support)
+            let swapchain_support = VulkanApp::query_swapchain_support(**physical_device, surface_stuff);
+            VulkanApp::is_physical_device_suitable(instance, **physical_device, surface_stuff, &swapchain_support)
         });
 
         match result {
@@ -175,9 +168,9 @@ impl VulkanApp {
         }
     }
 
-    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff, swapchain_support: &SwapChainSupportDetail) -> bool {
+    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff, swapchain_support: &SwapChainSupportDetail) -> bool {
 
-        let _device_features = instance.get_physical_device_features(physical_device.clone());
+        let _device_features = instance.get_physical_device_features(physical_device);
 
         let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
 
@@ -188,7 +181,7 @@ impl VulkanApp {
         return is_queue_family_supported && is_device_extension_supported && is_swapchain_supported;
     }
 
-    fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, validation: &ValidationInfo, surface_stuff: &SurfaceStuff)
+    fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, validation: &ValidationInfo, surface_stuff: &SurfaceStuff)
         -> (ash::Device<V1_0>, QueueFamilyIndices) {
 
         let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
@@ -235,16 +228,16 @@ impl VulkanApp {
         };
 
         let device: ash::Device<V1_0> = unsafe {
-            instance.create_device(physical_device.clone(), &device_create_info, None)
+            instance.create_device(physical_device, &device_create_info, None)
                 .expect("Failed to create logical device!")
         };
 
         (device, indices)
     }
 
-    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> QueueFamilyIndices {
+    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> QueueFamilyIndices {
 
-        let queue_families = instance.get_physical_device_queue_family_properties(physical_device.clone());
+        let queue_families = instance.get_physical_device_queue_family_properties(physical_device);
 
         let mut queue_family_indices = QueueFamilyIndices::new();
 
@@ -255,7 +248,7 @@ impl VulkanApp {
                 queue_family_indices.graphics_family = index;
             }
 
-            let is_present_support = surface_stuff.surface_loader.get_physical_device_surface_support_khr(physical_device.clone(), index as u32, surface_stuff.surface);
+            let is_present_support = surface_stuff.surface_loader.get_physical_device_surface_support_khr(physical_device, index as u32, surface_stuff.surface);
             if queue_family.queue_count > 0 && is_present_support {
                 queue_family_indices.present_family = index;
             }
@@ -270,9 +263,9 @@ impl VulkanApp {
         queue_family_indices
     }
 
-    fn check_device_extension_support(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> bool {
+    fn check_device_extension_support(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> bool {
 
-        let available_extensions = instance.enumerate_device_extension_properties(physical_device.clone())
+        let available_extensions = instance.enumerate_device_extension_properties(physical_device)
             .expect("Failed to get device extension properties.");
 
         let mut available_extension_names = vec![];
@@ -297,13 +290,13 @@ impl VulkanApp {
         return required_extensions.is_empty()
     }
 
-    fn query_swapchain_support(physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> SwapChainSupportDetail {
+    fn query_swapchain_support(physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff) -> SwapChainSupportDetail {
 
-        let capabilities = surface_stuff.surface_loader.get_physical_device_surface_capabilities_khr(physical_device.clone(), surface_stuff.surface)
+        let capabilities = surface_stuff.surface_loader.get_physical_device_surface_capabilities_khr(physical_device, surface_stuff.surface)
             .expect("Failed to query for surface capabilities.");
-        let formats = surface_stuff.surface_loader.get_physical_device_surface_formats_khr(physical_device.clone(), surface_stuff.surface)
+        let formats = surface_stuff.surface_loader.get_physical_device_surface_formats_khr(physical_device, surface_stuff.surface)
             .expect("Failed to query for surface formats.");
-        let present_modes = surface_stuff.surface_loader.get_physical_device_surface_present_modes_khr(physical_device.clone(), surface_stuff.surface)
+        let present_modes = surface_stuff.surface_loader.get_physical_device_surface_present_modes_khr(physical_device, surface_stuff.surface)
             .expect("Failed to query for surface present mode.");
 
         SwapChainSupportDetail {
@@ -313,7 +306,7 @@ impl VulkanApp {
         }
     }
 
-    fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: &vk::PhysicalDevice, surface_stuff: &SurfaceStuff, queue_family: &QueueFamilyIndices) -> SwapChainStuff {
+    fn create_swapchain(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff, queue_family: &QueueFamilyIndices) -> SwapChainStuff {
 
         let swapchain_support = VulkanApp::query_swapchain_support(physical_device, surface_stuff);
 
@@ -372,17 +365,16 @@ impl VulkanApp {
     }
 
     fn choose_swapchain_format(available_formats: &Vec<vk::SurfaceFormatKHR>) -> vk::SurfaceFormatKHR {
-        use vk::types::*;
 
-        if available_formats.len() == 1 && available_formats[0].format == Format::Undefined {
+        if available_formats.len() == 1 && available_formats[0].format == vk::Format::Undefined {
             return vk::SurfaceFormatKHR {
-                format: Format::B8g8r8a8Unorm,
-                color_space: ColorSpaceKHR::SrgbNonlinear
+                format: vk::Format::B8g8r8a8Unorm,
+                color_space: vk::ColorSpaceKHR::SrgbNonlinear
             };
         }
 
         for available_format in available_formats {
-            if available_format.format == Format::B8g8r8a8Unorm && available_format.color_space == ColorSpaceKHR::SrgbNonlinear {
+            if available_format.format == vk::Format::B8g8r8a8Unorm && available_format.color_space == vk::ColorSpaceKHR::SrgbNonlinear {
                 return available_format.clone()
             }
         }
@@ -391,15 +383,14 @@ impl VulkanApp {
     }
 
     fn choose_swapchain_present_mode(available_present_modes: &Vec<vk::PresentModeKHR>) -> vk::PresentModeKHR {
-        use vk::types::*;
 
-        let mut best_mode = PresentModeKHR::Fifo;
+        let mut best_mode = vk::PresentModeKHR::Fifo;
 
-        for available_present_mode in available_present_modes.iter() {
-            if *available_present_mode == PresentModeKHR::Mailbox {
-                return available_present_mode.clone()
-            } else if *available_present_mode == PresentModeKHR::Immediate {
-                best_mode = available_present_mode.clone();
+        for &available_present_mode in available_present_modes.iter() {
+            if available_present_mode == vk::PresentModeKHR::Mailbox {
+                return available_present_mode
+            } else if available_present_mode == vk::PresentModeKHR::Immediate {
+                best_mode = available_present_mode
             }
         }
 
@@ -407,9 +398,8 @@ impl VulkanApp {
     }
 
     fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR) -> vk::Extent2D {
-        use vk::types::*;
 
-        if capabilities.current_extent.width != uint32_t::max_value() {
+        if capabilities.current_extent.width != vk::types::uint32_t::max_value() {
 
             capabilities.current_extent
         } else {

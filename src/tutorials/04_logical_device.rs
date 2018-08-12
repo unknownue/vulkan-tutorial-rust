@@ -1,7 +1,10 @@
 
 extern crate vulkan_tutorial_rust;
-use vulkan_tutorial_rust::utility; // the mod define some fixed functions that have been learned before.
-use vulkan_tutorial_rust::utility::debug::ValidationInfo;
+use vulkan_tutorial_rust::{
+    utility, // the mod define some fixed functions that have been learned before.
+    utility::debug::ValidationInfo,
+    utility::constants::*,
+};
 
 extern crate winit;
 extern crate ash;
@@ -17,14 +20,6 @@ type EntryV1 = ash::Entry<V1_0>;
 
 // Constants
 const WINDOW_TITLE: &'static str = "04.Logical Device";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
 
 struct QueueFamilyIndices {
     graphics_family: i32,
@@ -64,7 +59,7 @@ impl VulkanApp {
         let instance = utility::vulkan::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
-        let (logical_device, graphics_queue) = VulkanApp::create_logical_device(&instance, &physical_device, &VALIDATION);
+        let (logical_device, graphics_queue) = VulkanApp::create_logical_device(&instance, physical_device, &VALIDATION);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -85,10 +80,10 @@ impl VulkanApp {
 
     fn pick_physical_device(instance: &ash::Instance<V1_0>) -> vk::PhysicalDevice {
         let physical_devices = instance.enumerate_physical_devices()
-            .expect("Physical device error");
+            .expect("Failed to enumerate Physical Devices!");
 
         let result = physical_devices.iter().find(|physical_device| {
-            VulkanApp::is_physical_device_suitable(instance, physical_device)
+            VulkanApp::is_physical_device_suitable(instance, **physical_device)
         });
 
         match result {
@@ -97,17 +92,17 @@ impl VulkanApp {
         }
     }
 
-    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> bool {
+    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> bool {
 
-        let _device_properties = instance.get_physical_device_properties(physical_device.clone());
-        let _device_features = instance.get_physical_device_features(physical_device.clone());
+        let _device_properties = instance.get_physical_device_properties(physical_device);
+        let _device_features = instance.get_physical_device_features(physical_device);
 
         let indices = VulkanApp::find_queue_family(instance, physical_device);
 
         return indices.is_complete();
     }
 
-    fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice, validation: &ValidationInfo) -> (ash::Device<V1_0>, vk::Queue) {
+    fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, validation: &ValidationInfo) -> (ash::Device<V1_0>, vk::Queue) {
 
         let indices = VulkanApp::find_queue_family(instance, physical_device);
 
@@ -141,8 +136,8 @@ impl VulkanApp {
         };
 
         let device: ash::Device<V1_0> = unsafe {
-            instance.create_device(physical_device.clone(), &device_create_info, None)
-                .expect("Failed to create logical device!")
+            instance.create_device(physical_device, &device_create_info, None)
+                .expect("Failed to create logical Device!")
         };
 
         let graphics_queue = unsafe {
@@ -152,9 +147,9 @@ impl VulkanApp {
         (device, graphics_queue)
     }
 
-    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: &vk::PhysicalDevice) -> QueueFamilyIndices {
+    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices {
 
-        let queue_families = instance.get_physical_device_queue_family_properties(physical_device.clone());
+        let queue_families = instance.get_physical_device_queue_family_properties(physical_device);
 
         let mut queue_family_indices = QueueFamilyIndices {
             graphics_family: -1,

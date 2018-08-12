@@ -26,8 +26,7 @@ pub mod vulkan;
 pub mod tools;
 pub mod fps_limiter;
 pub mod structures;
-
-
+pub mod constants;
 
 
 // required extension ------------------------------------------------------

@@ -1,31 +1,28 @@
 
 extern crate vulkan_tutorial_rust;
-use vulkan_tutorial_rust::utility;
+use vulkan_tutorial_rust::{
+    utility,
+    utility::constants::*,
+};
 
 extern crate winit;
-#[macro_use]
 extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::{ V1_0, InstanceV1_0, EntryV1_0 };
 use std::ptr;
 use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "01.Instance Creation";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-
 
 struct VulkanApp {
     // winit stuff
     events_loop: EventsLoop,
     _window: winit::Window,
 
-    // # New ######################################################
     instance: ash::Instance<V1_0>,
-    // ############################################################
 }
 
 impl VulkanApp {
@@ -56,7 +53,6 @@ impl VulkanApp {
             .expect("Failed to create window.")
     }
 
-    // # New #######################################################
     fn create_instance() -> ash::Instance<V1_0> {
 
         let entry = ash::Entry::new().unwrap();
@@ -67,10 +63,10 @@ impl VulkanApp {
             p_application_name: app_name.as_ptr(),
             s_type: vk::StructureType::ApplicationInfo,
             p_next: ptr::null(),
-            application_version: vk_make_version!(1, 0, 0),
+            application_version: APPLICATION_VERSION,
             p_engine_name: engine_name.as_ptr(),
-            engine_version: vk_make_version!(1, 0, 0),
-            api_version: vk_make_version!(1, 0, 36),
+            engine_version: ENGINE_VERSION,
+            api_version: API_VERSION,
         };
 
         let extension_names = utility::required_extension_names();
@@ -86,14 +82,12 @@ impl VulkanApp {
             enabled_extension_count: extension_names.len() as u32,
         };
 
-        use ash::version::EntryV1_0;
         let instance: ash::Instance<V1_0> = unsafe { entry.create_instance(&create_info, None)
             .expect("Failed to create instance!")
         };
 
         instance
     }
-    // #############################################################
 
     pub fn main_loop(&mut self) {
 
@@ -118,7 +112,6 @@ impl VulkanApp {
     }
 }
 
-// # New #######################################################
 impl Drop for VulkanApp {
 
     fn drop(&mut self) {
@@ -128,7 +121,6 @@ impl Drop for VulkanApp {
         }
     }
 }
-// #############################################################
 
 fn main() {
 

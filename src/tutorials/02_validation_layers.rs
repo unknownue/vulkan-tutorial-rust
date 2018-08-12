@@ -1,10 +1,12 @@
 
 extern crate vulkan_tutorial_rust;
-use vulkan_tutorial_rust::utility;
-use vulkan_tutorial_rust::utility::debug::ValidationInfo;
+use vulkan_tutorial_rust::{
+    utility,
+    utility::debug::ValidationInfo,
+    utility::constants::*,
+};
 
 extern crate winit;
-#[macro_use]
 extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
@@ -18,8 +20,6 @@ type EntryV1 = ash::Entry<V1_0>;
 
 // Constants
 const WINDOW_TITLE: &'static str = "02.Validation Layers";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
 const VALIDATION: ValidationInfo = ValidationInfo {
     is_enable: true,
     required_validation_layers: [
@@ -100,10 +100,10 @@ impl VulkanApp {
             p_application_name: app_name.as_ptr(),
             s_type: vk::StructureType::ApplicationInfo,
             p_next: ptr::null(),
-            application_version: vk_make_version!(1, 0, 0),
+            application_version: APPLICATION_VERSION,
             p_engine_name: engine_name.as_ptr(),
-            engine_version: vk_make_version!(1, 0, 0),
-            api_version: vk_make_version!(1, 0, 36),
+            engine_version: ENGINE_VERSION,
+            api_version: API_VERSION,
         };
 
         // VK_EXT debug report has been requested here.
@@ -127,8 +127,9 @@ impl VulkanApp {
             enabled_extension_count: extension_names.len() as u32,
         };
 
-        let instance: ash::Instance<V1_0> = unsafe { entry.create_instance(&create_info, None)
-            .expect("Failed to create instance!")
+        let instance: ash::Instance<V1_0> = unsafe {
+            entry.create_instance(&create_info, None)
+                .expect("Failed to create Instance!")
         };
 
         instance
@@ -138,11 +139,18 @@ impl VulkanApp {
         // if support validation layer, then return true
 
         let layer_properties = entry.enumerate_instance_layer_properties()
-            .expect("Failed to enumerate instance layers properties");
+            .expect("Failed to enumerate Instance Layers Properties!");
 
         if layer_properties.len() <= 0 {
             eprintln!("No available layers.");
             return false
+        } else {
+
+            println!("Instance Available Layers: ");
+            for layer in layer_properties.iter() {
+                let layer_name = utility::tools::vk_to_string(&layer.layer_name);
+                println!("\t{}", layer_name);
+            }
         }
 
         for required_layer_name in VALIDATION.required_validation_layers.iter() {
@@ -169,7 +177,7 @@ impl VulkanApp {
         -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
 
         let debug_report_loader = ash::extensions::DebugReport::new(entry, instance)
-            .expect("Unable to load debug report");
+            .expect("Unable to load Debug Report!");
 
         if VALIDATION.is_enable == false {
             (debug_report_loader, ash::vk::types::DebugReportCallbackEXT::null())
@@ -189,7 +197,7 @@ impl VulkanApp {
 
             let debug_call_back = unsafe {
                 debug_report_loader.create_debug_report_callback_ext(&debug_create_info, None)
-                    .expect("Failed to set up debug callback!")
+                    .expect("Failed to set up Debug Callback!")
             };
 
             (debug_report_loader, debug_call_back)

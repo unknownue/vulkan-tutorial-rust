@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
     utility::vulkan::*,
-    utility::structures::*,
+    utility::constants::*,
 };
 
 extern crate winit;
@@ -24,17 +24,6 @@ use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "12.Graphics Pipeline Complete";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
-const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
-    names: [vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
-};
 
 struct VulkanApp {
     // winit stuff
@@ -81,13 +70,13 @@ impl VulkanApp {
         let surface_stuff = create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
-        let (device, family_indices) = create_logical_device(&instance, &physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let (device, family_indices) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &window, &surface_stuff, &family_indices);
-        let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, &swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
+        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &family_indices);
+        let swapchain_imageviews = create_image_view(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -122,7 +111,7 @@ impl VulkanApp {
         }
     }
 
-    fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, swapchain_extent: &vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
+    fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
 
         let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
         let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
@@ -188,7 +177,7 @@ impl VulkanApp {
         let scissors = [
             vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: swapchain_extent.clone(),
+                extent: swapchain_extent,
             },
         ];
 
@@ -248,8 +237,8 @@ impl VulkanApp {
             depth_compare_op: vk::CompareOp::LessOrEqual,
             depth_bounds_test_enable: vk::VK_FALSE,
             stencil_test_enable: vk::VK_FALSE,
-            front: stencil_state.clone(),
-            back:  stencil_state.clone(),
+            front: stencil_state,
+            back:  stencil_state,
             max_depth_bounds: 1.0,
             min_depth_bounds: 0.0,
         };
@@ -321,7 +310,7 @@ impl VulkanApp {
                 p_color_blend_state: &color_blend_state,
                 p_dynamic_state: ptr::null(),
                 layout: pipeline_layout,
-                render_pass: render_pass.clone(),
+                render_pass: render_pass,
                 subpass: 0,
                 base_pipeline_handle: vk::Pipeline::null(),
                 base_pipeline_index: -1,

@@ -5,6 +5,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::vulkan::*,
     utility::structures::*,
+    utility::constants::*,
 };
 
 extern crate winit;
@@ -22,18 +23,6 @@ use std::ptr;
 
 // Constants
 const WINDOW_TITLE: &'static str = "16.Swap Chain Recreation";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
-const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
-    names: [vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
-};
-const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
 struct VulkanApp {
 
@@ -89,16 +78,16 @@ impl VulkanApp {
         let surface_stuff = create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
-        let (device, queue_family) = create_logical_device(&instance, &physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let (device, queue_family) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &window, &surface_stuff, &queue_family);
-        let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, &swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent);
-        let swapchain_framebuffers = create_framebuffers(&device, &render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
+        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
+        let swapchain_imageviews = create_image_view(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent);
+        let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let command_buffers = create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent);
+        let command_buffers = create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent);
         let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -251,21 +240,21 @@ impl VulkanApp {
             .expect("Failed to wait device idle!");
         self.cleanup_swapchain();
 
-        let swapchain_stuff = create_swapchain(&self.instance, &self.device, &self.physical_device, &self.window, &surface_suff, &self.queue_family);
+        let swapchain_stuff = create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
         self.swapchain_loader = swapchain_stuff.swapchain_loader;
         self.swapchain        = swapchain_stuff.swapchain;
         self.swapchain_images = swapchain_stuff.swapchain_images;
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;
 
-        self.swapchain_imageviews = create_image_view(&self.device, &self.swapchain_format, &self.swapchain_images);
-        self.render_pass = create_render_pass(&self.device, &self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&self.device, &self.render_pass, &swapchain_stuff.swapchain_extent);
+        self.swapchain_imageviews = create_image_view(&self.device, self.swapchain_format, &self.swapchain_images);
+        self.render_pass = create_render_pass(&self.device, self.swapchain_format);
+        let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent);
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        self.swapchain_framebuffers = create_framebuffers(&self.device, &self.render_pass, &self.swapchain_imageviews, &self.swapchain_extent);
-        self.command_buffers = create_command_buffers(&self.device, &self.command_pool, &self.graphics_pipeline, &self.swapchain_framebuffers, &self.render_pass, &self.swapchain_extent);
+        self.swapchain_framebuffers = create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
+        self.command_buffers = create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent);
     }
 
     fn cleanup_swapchain(&self) {

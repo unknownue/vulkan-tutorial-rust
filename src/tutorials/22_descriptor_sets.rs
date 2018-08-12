@@ -5,6 +5,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::vulkan::*,
     utility::structures::*,
+    utility::constants::*,
     utility::window::{ VulkanApp, ProgramProc }
 };
 
@@ -26,18 +27,6 @@ use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "22.Descriptor Sets";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
-const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
-    names: [vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
-};
-const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
 #[derive(Clone, Debug, Copy)]
 struct UniformBufferObject {
@@ -114,22 +103,22 @@ impl VulkanApp22 {
         let (debug_report_loader, debug_callback) = setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
         let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
         let physical_device_memory_properties = instance.get_physical_device_memory_properties(physical_device);
-        let (device, queue_family) = create_logical_device(&instance, &physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let (device, queue_family) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, &physical_device, &window, &surface_stuff, &queue_family);
-        let swapchain_imageviews = create_image_view(&device, &swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, &swapchain_stuff.swapchain_format);
+        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
+        let swapchain_imageviews = create_image_view(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
         let ubo_layout = VulkanApp22::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(&device, &render_pass, &swapchain_stuff.swapchain_extent, &ubo_layout);
-        let swapchain_framebuffers = create_framebuffers(&device, &render_pass, &swapchain_imageviews, &swapchain_stuff.swapchain_extent);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
+        let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, &command_pool, &graphics_queue, &RECT_VERTICES_DATA);
-        let (index_buffer, index_buffer_memory) = create_index_buffer(&device, &physical_device_memory_properties, &command_pool, &graphics_queue, &RECT_INDICES_DATA);
+        let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_VERTICES_DATA);
+        let (index_buffer, index_buffer_memory) = create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_INDICES_DATA);
         let (uniform_buffers, uniform_buffers_memory) = VulkanApp22::create_uniform_buffers(&device, &physical_device_memory_properties, swapchain_stuff.swapchain_images.len());
         let descriptor_pool = VulkanApp22::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
-        let descriptor_sets = VulkanApp22::create_descriptor_sets(&device, &descriptor_pool, &ubo_layout, &uniform_buffers, swapchain_stuff.swapchain_images.len());
-        let command_buffers = VulkanApp22::create_command_buffers(&device, &command_pool, &graphics_pipeline, &swapchain_framebuffers, &render_pass, &swapchain_stuff.swapchain_extent, &vertex_buffer, &index_buffer, &pipeline_layout, &descriptor_sets);
+        let descriptor_sets = VulkanApp22::create_descriptor_sets(&device, descriptor_pool, ubo_layout, &uniform_buffers, swapchain_stuff.swapchain_images.len());
+        let command_buffers = VulkanApp22::create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent, vertex_buffer, index_buffer, pipeline_layout, &descriptor_sets);
         let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -217,17 +206,17 @@ impl VulkanApp22 {
         }
     }
 
-    fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: &vk::DescriptorPool, descriptor_set_layout: &vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
+    fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::DescriptorPool, descriptor_set_layout: vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
 
         let mut layouts: Vec<vk::DescriptorSetLayout> = vec![];
         for _ in 0..swapchain_images_size {
-            layouts.push(descriptor_set_layout.clone());
+            layouts.push(descriptor_set_layout);
         }
 
         let descriptor_set_allocate_info = vk::DescriptorSetAllocateInfo {
             s_type: vk::StructureType::DescriptorSetAllocateInfo,
             p_next: ptr::null(),
-            descriptor_pool: descriptor_pool.clone(),
+            descriptor_pool,
             descriptor_set_count: swapchain_images_size as u32,
             p_set_layouts: layouts.as_ptr()
         };
@@ -237,7 +226,7 @@ impl VulkanApp22 {
                 .expect("Failed to allocate descriptor sets!")
         };
 
-        for (i, descritptor_set) in descriptor_sets.iter().enumerate() {
+        for (i, &descritptor_set) in descriptor_sets.iter().enumerate() {
             let descriptor_buffer_info = [
                 vk::DescriptorBufferInfo {
                     buffer: uniforms_buffers[i],
@@ -250,7 +239,7 @@ impl VulkanApp22 {
                 vk::WriteDescriptorSet {
                     s_type: vk::StructureType::WriteDescriptorSet,
                     p_next: ptr::null(),
-                    dst_set: descritptor_set.clone(),
+                    dst_set: descritptor_set,
                     dst_binding: 0,
                     dst_array_element: 0,
                     descriptor_count: 1,
@@ -269,13 +258,13 @@ impl VulkanApp22 {
         descriptor_sets
     }
 
-    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: &vk::CommandPool, graphics_pipeline: &vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass, surface_extent: &vk::Extent2D, vertex_buffer: &vk::Buffer, index_buffer: &vk::Buffer, pipeline_layout: &vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>) -> Vec<vk::CommandBuffer> {
+    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer, pipeline_layout: vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
             s_type: vk::StructureType::CommandBufferAllocateInfo,
             p_next: ptr::null(),
             command_buffer_count: framebuffers.len() as u32,
-            command_pool: command_pool.clone(),
+            command_pool,
             level: vk::CommandBufferLevel::Primary,
         };
 
@@ -309,11 +298,11 @@ impl VulkanApp22 {
             let render_pass_begin_info = vk::RenderPassBeginInfo {
                 s_type: vk::StructureType::RenderPassBeginInfo,
                 p_next: ptr::null(),
-                render_pass: render_pass.clone(),
+                render_pass,
                 framebuffer: framebuffers[i],
                 render_area: vk::Rect2D {
                     offset: vk::Offset2D { x: 0, y: 0 },
-                    extent: surface_extent.clone(),
+                    extent: surface_extent,
                 },
                 clear_value_count: clear_values.len() as u32,
                 p_clear_values: clear_values.as_ptr(),
@@ -321,21 +310,21 @@ impl VulkanApp22 {
 
             unsafe {
                 device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
-                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline.clone());
+                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline);
 
                 let vertex_buffers = [
-                    vertex_buffer.clone()
+                    vertex_buffer
                 ];
                 let offsets = [
                     0_u64
                 ];
                 let descriptor_sets_to_bind = [
-                    descriptor_sets[i].clone(),
+                    descriptor_sets[i],
                 ];
 
                 device.cmd_bind_vertex_buffers(command_buffer, 0, &vertex_buffers, &offsets);
-                device.cmd_bind_index_buffer(command_buffer, index_buffer.clone(), 0, vk::IndexType::Uint32);
-                device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, pipeline_layout.clone(), 0, &descriptor_sets_to_bind, &[]);
+                device.cmd_bind_index_buffer(command_buffer, index_buffer, 0, vk::IndexType::Uint32);
+                device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, pipeline_layout, 0, &descriptor_sets_to_bind, &[]);
 
                 device.cmd_draw_indexed(command_buffer, RECT_INDICES_DATA.len() as u32, 1, 0, 0, 0);
 
@@ -424,7 +413,7 @@ impl VulkanApp22 {
         }
     }
 
-    fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: &vk::RenderPass, swapchain_extent: &vk::Extent2D, ubo_set_layout: &vk::DescriptorSetLayout) -> (vk::Pipeline, vk::PipelineLayout) {
+    fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D, ubo_set_layout: vk::DescriptorSetLayout) -> (vk::Pipeline, vk::PipelineLayout) {
 
         let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/21-shader-ubo.vert.spv"));
         let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/21-shader-ubo.frag.spv"));
@@ -493,7 +482,7 @@ impl VulkanApp22 {
         let scissors = [
             vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: swapchain_extent.clone(),
+                extent: swapchain_extent,
             },
         ];
 
@@ -553,8 +542,8 @@ impl VulkanApp22 {
             depth_compare_op: vk::CompareOp::LessOrEqual,
             depth_bounds_test_enable: vk::VK_FALSE,
             stencil_test_enable: vk::VK_FALSE,
-            front: stencil_state.clone(),
-            back:  stencil_state.clone(),
+            front: stencil_state,
+            back:  stencil_state,
             max_depth_bounds: 1.0,
             min_depth_bounds: 0.0,
         };
@@ -584,7 +573,7 @@ impl VulkanApp22 {
         };
 
         let set_layouts = [
-            ubo_set_layout.clone()
+            ubo_set_layout
         ];
 
         let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
@@ -619,7 +608,7 @@ impl VulkanApp22 {
                 p_color_blend_state: &color_blend_state,
                 p_dynamic_state: ptr::null(),
                 layout: pipeline_layout,
-                render_pass: render_pass.clone(),
+                render_pass,
                 subpass: 0,
                 base_pipeline_handle: vk::Pipeline::null(),
                 base_pipeline_index: -1,
@@ -792,21 +781,21 @@ impl VulkanApp for VulkanApp22 {
             .expect("Failed to wait device idle!");
         self.cleanup_swapchain();
 
-        let swapchain_stuff = create_swapchain(&self.instance, &self.device, &self.physical_device, &self.window, &surface_suff, &self.queue_family);
+        let swapchain_stuff = create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
         self.swapchain_loader = swapchain_stuff.swapchain_loader;
         self.swapchain        = swapchain_stuff.swapchain;
         self.swapchain_images = swapchain_stuff.swapchain_images;
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;
 
-        self.swapchain_imageviews = create_image_view(&self.device, &self.swapchain_format, &self.swapchain_images);
-        self.render_pass = create_render_pass(&self.device, &self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(&self.device, &self.render_pass, &swapchain_stuff.swapchain_extent, &self.ubo_layout);
+        self.swapchain_imageviews = create_image_view(&self.device, self.swapchain_format, &self.swapchain_images);
+        self.render_pass = create_render_pass(&self.device, self.swapchain_format);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent, self.ubo_layout);
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        self.swapchain_framebuffers = create_framebuffers(&self.device, &self.render_pass, &self.swapchain_imageviews, &self.swapchain_extent);
-        self.command_buffers = VulkanApp22::create_command_buffers(&self.device, &self.command_pool, &self.graphics_pipeline, &self.swapchain_framebuffers, &self.render_pass, &self.swapchain_extent, &self.vertex_buffer, &self.index_buffer, &self.pipeline_layout, &self.descriptor_sets);
+        self.swapchain_framebuffers = create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
+        self.command_buffers = VulkanApp22::create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent, self.vertex_buffer, self.index_buffer, self.pipeline_layout, &self.descriptor_sets);
     }
 
     fn cleanup_swapchain(&self) {
