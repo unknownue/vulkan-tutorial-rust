@@ -107,15 +107,16 @@ pub fn pick_physical_device(instance: &ash::Instance<V1_0>, surface_stuff: &Surf
 
 pub fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, surface_stuff: &SurfaceStuff, swapchain_support: &SwapChainSupportDetail, required_device_extensions: &DeviceExtension) -> bool {
 
-    let _device_features = instance.get_physical_device_features(physical_device);
+    let device_features = instance.get_physical_device_features(physical_device);
 
     let indices = find_queue_family(instance, physical_device, surface_stuff);
 
     let is_queue_family_supported = indices.is_complete();
     let is_device_extension_supported = check_device_extension_support(instance, physical_device, required_device_extensions);
     let is_swapchain_supported = !swapchain_support.formats.is_empty() && !swapchain_support.present_modes.is_empty();
+    let is_support_sampler_anisotropy = device_features.sampler_anisotropy == 1;
 
-    return is_queue_family_supported && is_device_extension_supported && is_swapchain_supported;
+    return is_queue_family_supported && is_device_extension_supported && is_swapchain_supported && is_support_sampler_anisotropy;
 }
 
 pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, validation: &super::debug::ValidationInfo, device_extensions: &DeviceExtension, surface_stuff: &SurfaceStuff)
@@ -143,7 +144,8 @@ pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk
     }
 
     let physical_device_features = vk::PhysicalDeviceFeatures {
-        ..Default::default() // default just enable no feature.
+        sampler_anisotropy: vk::VK_TRUE, // enable anisotropy device feature from Chapter-24.
+        ..Default::default()
     };
 
     let enable_layer_names = validation.get_layers_names();
@@ -352,42 +354,43 @@ pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window
     }
 }
 
-pub fn create_image_view(device: &ash::Device<V1_0>, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
+pub fn create_image_views(device: &ash::Device<V1_0>, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
 
-    let mut swapchain_imageviews = vec![];
-
-    for &image in images.iter() {
-
-        let imageview_create_info = vk::ImageViewCreateInfo {
-            s_type: vk::StructureType::ImageViewCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::ImageViewCreateFlags::empty(),
-            view_type: vk::ImageViewType::Type2d,
-            format: surface_format,
-            components: vk::ComponentMapping {
-                r: vk::ComponentSwizzle::Identity,
-                g: vk::ComponentSwizzle::Identity,
-                b: vk::ComponentSwizzle::Identity,
-                a: vk::ComponentSwizzle::Identity,
-            },
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                base_mip_level: 0,
-                level_count: 1,
-                base_array_layer: 0,
-                layer_count: 1,
-            },
-            image,
-        };
-
-        let imageview = unsafe {
-            device.create_image_view(&imageview_create_info, None)
-                .expect("Failed to create Image View!")
-        };
-        swapchain_imageviews.push(imageview);
-    }
+    let swapchain_imageviews: Vec<vk::ImageView> = images.iter().map(|&image| {
+        create_image_view(device, image, surface_format)
+    }).collect();
 
     swapchain_imageviews
+}
+
+fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::Format) -> vk::ImageView {
+
+    let imageview_create_info = vk::ImageViewCreateInfo {
+        s_type: vk::StructureType::ImageViewCreateInfo,
+        p_next: ptr::null(),
+        flags: vk::ImageViewCreateFlags::empty(),
+        view_type: vk::ImageViewType::Type2d,
+        format,
+        components: vk::ComponentMapping {
+            r: vk::ComponentSwizzle::Identity,
+            g: vk::ComponentSwizzle::Identity,
+            b: vk::ComponentSwizzle::Identity,
+            a: vk::ComponentSwizzle::Identity,
+        },
+        subresource_range: vk::ImageSubresourceRange {
+            aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
+            base_mip_level: 0,
+            level_count: 1,
+            base_array_layer: 0,
+            layer_count: 1,
+        },
+        image,
+    };
+
+    unsafe {
+        device.create_image_view(&imageview_create_info, None)
+            .expect("Failed to create Image View!")
+    }
 }
 
 pub fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::ShaderModule {
@@ -957,7 +960,7 @@ pub fn end_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::Com
 pub fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPropertyFlags, mem_properties: &vk::PhysicalDeviceMemoryProperties) -> uint32_t {
 
     for (i, memory_type) in mem_properties.memory_types.iter().enumerate() {
-        if (type_filter & (1 << i)) > 0 && (memory_type.property_flags & required_properties) == required_properties {
+        if (type_filter & (1 << i)) > 0 && memory_type.property_flags.subset(required_properties) {
             return i as uint32_t
         }
     }
@@ -1165,4 +1168,147 @@ pub fn create_uniform_buffers(device: &ash::Device<V1_0>, device_memory_properti
     }
 
     (uniform_buffers, uniform_buffers_memory)
+}
+
+
+pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_t, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
+    -> (vk::Image, vk::DeviceMemory) {
+
+    let image_create_info = vk::ImageCreateInfo {
+        s_type: vk::StructureType::ImageCreateInfo,
+        p_next: ptr::null(),
+        flags: vk::ImageCreateFlags::empty(),
+        image_type: vk::ImageType::Type2d,
+        format,
+        extent: vk::Extent3D {
+            width,
+            height,
+            depth: 1,
+        },
+        mip_levels: 1,
+        array_layers: 1,
+        samples: vk::SAMPLE_COUNT_1_BIT,
+        tiling,
+        usage,
+        sharing_mode: vk::SharingMode::Exclusive,
+        queue_family_index_count: 0,
+        p_queue_family_indices: ptr::null(),
+        initial_layout: vk::ImageLayout::Undefined,
+    };
+
+    let texture_image = unsafe {
+        device.create_image(&image_create_info, None)
+            .expect("Failed to create Texture Image!")
+    };
+
+    let image_memory_requirement = device.get_image_memory_requirements(texture_image);
+    let memory_allocate_info = vk::MemoryAllocateInfo {
+        s_type: vk::StructureType::MemoryAllocateInfo,
+        p_next: ptr::null(),
+        allocation_size: image_memory_requirement.size,
+        memory_type_index: find_memory_type(image_memory_requirement.memory_type_bits, required_memory_properties, device_memory_properties)
+    };
+
+    let texture_image_memory = unsafe {
+        device.allocate_memory(&memory_allocate_info, None)
+            .expect("Failed to allocate Texture Image memory!")
+    };
+
+    unsafe {
+        device.bind_image_memory(texture_image, texture_image_memory, 0)
+            .expect("Failed to bind Image Memmory!");
+    }
+
+    (texture_image, texture_image_memory)
+}
+
+pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, _format: vk::Format, old_layout: vk::ImageLayout, new_layout: vk::ImageLayout) {
+
+    let command_buffer = begin_single_time_command(device, command_pool);
+
+    let src_access_mask;
+    let dst_access_mask;
+    let source_stage;
+    let destination_stage;
+
+    if old_layout == vk::ImageLayout::Undefined && new_layout == vk::ImageLayout::TransferDstOptimal {
+
+        src_access_mask = vk::AccessFlags::empty();
+        dst_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
+        source_stage = vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = vk::PIPELINE_STAGE_TRANSFER_BIT;
+    } else if old_layout == vk::ImageLayout::TransferDstOptimal && new_layout == vk::ImageLayout::ShaderReadOnlyOptimal {
+
+        src_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
+        dst_access_mask = vk::ACCESS_SHADER_READ_BIT;
+        source_stage = vk::PIPELINE_STAGE_TRANSFER_BIT;
+        destination_stage = vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        panic!("Unsupported layout transition!")
+    }
+
+    let image_barriers = [
+        vk::ImageMemoryBarrier {
+            s_type: vk::StructureType::ImageMemoryBarrier,
+            p_next: ptr::null(),
+            src_access_mask,
+            dst_access_mask,
+            old_layout,
+            new_layout,
+            src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
+            dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
+            image,
+            subresource_range: vk::ImageSubresourceRange {
+                aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
+                base_mip_level: 0,
+                level_count: 1,
+                base_array_layer: 0,
+                layer_count: 1,
+            }
+        },
+    ];
+
+    unsafe {
+        device.cmd_pipeline_barrier(
+            command_buffer,
+            source_stage, destination_stage,
+            vk::DependencyFlags::empty(),
+            &[],
+            &[],
+            &image_barriers
+        );
+    }
+
+    end_single_time_command(device, command_pool, submit_queue, command_buffer);
+}
+
+pub fn copy_buffer_to_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, buffer: vk::Buffer, image: vk::Image, width: uint32_t, height: uint32_t) {
+
+    let command_buffer = begin_single_time_command(device, command_pool);
+
+    let buffer_image_regions = [
+        vk::BufferImageCopy {
+            image_subresource: vk::ImageSubresourceLayers {
+                aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
+                mip_level: 0,
+                base_array_layer: 0,
+                layer_count: 1,
+            },
+            image_extent: vk::Extent3D {
+                width,
+                height,
+                depth: 1,
+            },
+            buffer_offset: 0,
+            buffer_image_height: 0,
+            buffer_row_length: 0,
+            image_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
+        },
+    ];
+
+    unsafe {
+        device.cmd_copy_buffer_to_image(command_buffer, buffer, image, vk::ImageLayout::TransferDstOptimal, &buffer_image_regions);
+    }
+
+    end_single_time_command(device, command_pool, submit_queue, command_buffer);
 }

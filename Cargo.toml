@@ -1,6 +1,6 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.23.0"
+version = "0.24.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
@@ -90,3 +90,6 @@ path = "src/tutorials/22_descriptor_sets.rs"
 [[bin]]
 name = "23"
 path = "src/tutorials/23_texture_image.rs"
+[[bin]]
+name = "24"
+path = "src/tutorials/24_sampler.rs"

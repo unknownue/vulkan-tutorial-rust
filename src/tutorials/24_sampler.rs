@@ -18,7 +18,6 @@ extern crate image;
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0 };
 use ash::version::DeviceV1_0;
-use ash::vk::types::uint32_t;
 use cgmath::{ Matrix4, Deg, Point3, Vector3, SquareMatrix };
 use image::GenericImage;
 
@@ -29,9 +28,9 @@ use std::ptr;
 use std::ffi::CString;
 
 // Constants
-const WINDOW_TITLE: &'static str = "23.Texture Image";
+const WINDOW_TITLE: &'static str = "24.Sampler";
 
-struct VulkanApp23 {
+struct VulkanApp24 {
 
     window: winit::Window,
 
@@ -64,6 +63,8 @@ struct VulkanApp23 {
     graphics_pipeline: vk::Pipeline,
 
     texture_image: vk::Image,
+    texture_image_view: vk::ImageView,
+    texture_sampler: vk::Sampler,
     texture_image_memory: vk::DeviceMemory,
 
     vertex_buffer: vk::Buffer,
@@ -89,9 +90,9 @@ struct VulkanApp23 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp23 {
+impl VulkanApp24 {
 
-    pub fn new(event_loop: &winit::EventsLoop) -> VulkanApp23 {
+    pub fn new(event_loop: &winit::EventsLoop) -> VulkanApp24 {
 
         let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -109,20 +110,22 @@ impl VulkanApp23 {
         let swapchain_imageviews = create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
         let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
         let ubo_layout = create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp23::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp24::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
         let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (texture_image, texture_image_memory) = VulkanApp23::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new("textures/texture.jpg"));
+        let (texture_image, texture_image_memory) = VulkanApp24::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new("textures/texture.jpg"));
+        let texture_image_view = VulkanApp24::create_texture_image_view(&device, texture_image);
+        let texture_sampler = VulkanApp24::create_texture_sampler(&device);
         let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_VERTICES_DATA);
         let (index_buffer, index_buffer_memory) = create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_INDICES_DATA);
         let (uniform_buffers, uniform_buffers_memory) = create_uniform_buffers(&device, &physical_device_memory_properties, swapchain_stuff.swapchain_images.len());
         let descriptor_pool = create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
         let descriptor_sets = create_descriptor_sets(&device, descriptor_pool, ubo_layout, &uniform_buffers, swapchain_stuff.swapchain_images.len());
-        let command_buffers = VulkanApp23::create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent, vertex_buffer, index_buffer, pipeline_layout, &descriptor_sets);
+        let command_buffers = VulkanApp24::create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent, vertex_buffer, index_buffer, pipeline_layout, &descriptor_sets);
         let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp23 {
+        VulkanApp24 {
             // winit stuff
             window,
 
@@ -155,6 +158,8 @@ impl VulkanApp23 {
             graphics_pipeline,
 
             texture_image,
+            texture_image_view,
+            texture_sampler,
             texture_image_memory,
 
             vertex_buffer,
@@ -185,6 +190,71 @@ impl VulkanApp23 {
         }
     }
 
+    fn create_texture_image_view(device: &ash::Device<V1_0>, texture_image: vk::Image) -> vk::ImageView {
+
+        let texture_image_view = VulkanApp24::create_image_view(device, texture_image, vk::Format::R8g8b8a8Unorm);
+        texture_image_view
+    }
+
+    fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::Format) -> vk::ImageView {
+
+        let imageview_create_info = vk::ImageViewCreateInfo {
+            s_type: vk::StructureType::ImageViewCreateInfo,
+            p_next: ptr::null(),
+            flags: vk::ImageViewCreateFlags::empty(),
+            view_type: vk::ImageViewType::Type2d,
+            format,
+            components: vk::ComponentMapping {
+                r: vk::ComponentSwizzle::Identity,
+                g: vk::ComponentSwizzle::Identity,
+                b: vk::ComponentSwizzle::Identity,
+                a: vk::ComponentSwizzle::Identity,
+            },
+            subresource_range: vk::ImageSubresourceRange {
+                aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
+                base_mip_level: 0,
+                level_count: 1,
+                base_array_layer: 0,
+                layer_count: 1,
+            },
+            image,
+        };
+
+        unsafe {
+            device.create_image_view(&imageview_create_info, None)
+                .expect("Failed to create Image View!")
+        }
+    }
+
+    fn create_texture_sampler(device: &ash::Device<V1_0>) -> vk::Sampler {
+
+        let sampler_create_info = vk::SamplerCreateInfo {
+            s_type: vk::StructureType::SamplerCreateInfo,
+            p_next: ptr::null(),
+            flags: vk::SamplerCreateFlags::empty(),
+            mag_filter: vk::Filter::Linear,
+            min_filter: vk::Filter::Linear,
+            mipmap_mode: vk::SamplerMipmapMode::Linear,
+            address_mode_u: vk::SamplerAddressMode::Repeat,
+            address_mode_v: vk::SamplerAddressMode::Repeat,
+            address_mode_w: vk::SamplerAddressMode::Repeat,
+            mip_lod_bias: 0.0,
+            anisotropy_enable: vk::VK_TRUE,
+            max_anisotropy: 16.0,
+            compare_enable: vk::VK_FALSE,
+            compare_op: vk::CompareOp::Always,
+            min_lod: 0.0,
+            max_lod: 0.0,
+            border_color: vk::BorderColor::IntOpaqueBlack,
+            unnormalized_coordinates: vk::VK_FALSE,
+        };
+
+        unsafe {
+            device.create_sampler(&sampler_create_info, None)
+                .expect("Failed to create Sampler!")
+        }
+    }
+
     fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory) {
 
         let image = image::open(image_path).unwrap();
@@ -212,7 +282,7 @@ impl VulkanApp23 {
             device.unmap_memory(staging_buffer_memory);
         }
 
-        let (texture_image, texture_image_memory) = VulkanApp23::create_image(
+        let (texture_image, texture_image_memory) = create_image(
             device,
             image_width, image_height,
             vk::Format::R8g8b8a8Unorm,
@@ -222,11 +292,11 @@ impl VulkanApp23 {
             device_memory_properties
         );
 
-        VulkanApp23::transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal);
+        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal);
 
-        VulkanApp23::copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
+        copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
 
-        VulkanApp23::transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal);
+        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal);
 
         unsafe {
             device.destroy_buffer(staging_buffer, None);
@@ -235,212 +305,14 @@ impl VulkanApp23 {
 
         (texture_image, texture_image_memory)
     }
+}
 
-    fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_t, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
-        -> (vk::Image, vk::DeviceMemory) {
 
-        let image_create_info = vk::ImageCreateInfo {
-            s_type: vk::StructureType::ImageCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::ImageCreateFlags::empty(),
-            image_type: vk::ImageType::Type2d,
-            format,
-            extent: vk::Extent3D {
-                width,
-                height,
-                depth: 1,
-            },
-            mip_levels: 1,
-            array_layers: 1,
-            samples: vk::SAMPLE_COUNT_1_BIT,
-            tiling,
-            usage,
-            sharing_mode: vk::SharingMode::Exclusive,
-            queue_family_index_count: 0,
-            p_queue_family_indices: ptr::null(),
-            initial_layout: vk::ImageLayout::Undefined,
-        };
 
-        let texture_image = unsafe {
-            device.create_image(&image_create_info, None)
-                .expect("Failed to create Texture Image!")
-        };
 
-        let image_memory_requirement = device.get_image_memory_requirements(texture_image);
-        let memory_allocate_info = vk::MemoryAllocateInfo {
-            s_type: vk::StructureType::MemoryAllocateInfo,
-            p_next: ptr::null(),
-            allocation_size: image_memory_requirement.size,
-            memory_type_index: find_memory_type(image_memory_requirement.memory_type_bits, required_memory_properties, device_memory_properties)
-        };
 
-        let texture_image_memory = unsafe {
-            device.allocate_memory(&memory_allocate_info, None)
-                .expect("Failed to allocate Texture Image memory!")
-        };
-
-        unsafe {
-            device.bind_image_memory(texture_image, texture_image_memory, 0)
-                .expect("Failed to bind Image Memmory!");
-        }
-
-        (texture_image, texture_image_memory)
-    }
-
-    fn begin_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::CommandPool) -> vk::CommandBuffer {
-
-        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::CommandBufferAllocateInfo,
-            p_next: ptr::null(),
-            command_buffer_count: 1,
-            command_pool,
-            level: vk::CommandBufferLevel::Primary,
-        };
-
-        let command_buffer = unsafe {
-            device.allocate_command_buffers(&command_buffer_allocate_info)
-                .expect("Failed to allocate Command Buffers!")
-        }[0];
-
-        let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-            s_type: vk::StructureType::CommandBufferBeginInfo,
-            p_next: ptr::null(),
-            p_inheritance_info: ptr::null(),
-            flags: vk::COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-        };
-
-        unsafe {
-            device.begin_command_buffer(command_buffer, &command_buffer_begin_info)
-                .expect("Failed to begin recording Command Buffer at beginning!");
-        }
-
-        command_buffer
-    }
-
-    fn end_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, command_buffer: vk::CommandBuffer) {
-
-        unsafe {
-            device.end_command_buffer(command_buffer)
-                .expect("Failed to record Command Buffer at Ending!");
-        }
-
-        let buffers_to_submit = [
-            command_buffer,
-        ];
-
-        let submit_infos = [
-            vk::SubmitInfo {
-                s_type: vk::StructureType::SubmitInfo,
-                p_next: ptr::null(),
-                wait_semaphore_count: 0,
-                p_wait_semaphores: ptr::null(),
-                p_wait_dst_stage_mask: ptr::null(),
-                command_buffer_count: 1,
-                p_command_buffers: buffers_to_submit.as_ptr(),
-                signal_semaphore_count: 0,
-                p_signal_semaphores: ptr::null(),
-            },
-        ];
-
-        unsafe {
-            device.queue_submit(submit_queue, &submit_infos, vk::Fence::null())
-                .expect("Failed to Queue Submit!");
-            device.queue_wait_idle(submit_queue)
-                .expect("Failed to wait Queue idle!");
-            device.free_command_buffers(command_pool, &buffers_to_submit);
-        }
-    }
-
-    fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, _format: vk::Format, old_layout: vk::ImageLayout, new_layout: vk::ImageLayout) {
-
-        let command_buffer = VulkanApp23::begin_single_time_command(device, command_pool);
-
-        let src_access_mask;
-        let dst_access_mask;
-        let source_stage;
-        let destination_stage;
-
-        if old_layout == vk::ImageLayout::Undefined && new_layout == vk::ImageLayout::TransferDstOptimal {
-
-            src_access_mask = vk::AccessFlags::empty();
-            dst_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
-            source_stage = vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destination_stage = vk::PIPELINE_STAGE_TRANSFER_BIT;
-        } else if old_layout == vk::ImageLayout::TransferDstOptimal && new_layout == vk::ImageLayout::ShaderReadOnlyOptimal {
-
-            src_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
-            dst_access_mask = vk::ACCESS_SHADER_READ_BIT;
-            source_stage = vk::PIPELINE_STAGE_TRANSFER_BIT;
-            destination_stage = vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else {
-            panic!("Unsupported layout transition!")
-        }
-
-        let image_barriers = [
-            vk::ImageMemoryBarrier {
-                s_type: vk::StructureType::ImageMemoryBarrier,
-                p_next: ptr::null(),
-                src_access_mask,
-                dst_access_mask,
-                old_layout,
-                new_layout,
-                src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
-                dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
-                image,
-                subresource_range: vk::ImageSubresourceRange {
-                    aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                    base_mip_level: 0,
-                    level_count: 1,
-                    base_array_layer: 0,
-                    layer_count: 1,
-                }
-            },
-        ];
-
-        unsafe {
-            device.cmd_pipeline_barrier(
-                command_buffer,
-                source_stage, destination_stage,
-                vk::DependencyFlags::empty(),
-                &[],
-                &[],
-                &image_barriers
-            );
-        }
-
-        VulkanApp23::end_single_time_command(device, command_pool, submit_queue, command_buffer);
-    }
-
-    fn copy_buffer_to_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, buffer: vk::Buffer, image: vk::Image, width: uint32_t, height: uint32_t) {
-
-        let command_buffer = VulkanApp23::begin_single_time_command(device, command_pool);
-
-        let buffer_image_regions = [
-            vk::BufferImageCopy {
-                image_subresource: vk::ImageSubresourceLayers {
-                    aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                    mip_level: 0,
-                    base_array_layer: 0,
-                    layer_count: 1,
-                },
-                image_extent: vk::Extent3D {
-                    width,
-                    height,
-                    depth: 1,
-                },
-                buffer_offset: 0,
-                buffer_image_height: 0,
-                buffer_row_length: 0,
-                image_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
-            },
-        ];
-
-        unsafe {
-            device.cmd_copy_buffer_to_image(command_buffer, buffer, image, vk::ImageLayout::TransferDstOptimal, &buffer_image_regions);
-        }
-
-        VulkanApp23::end_single_time_command(device, command_pool, submit_queue, command_buffer);
-    }
+// Fix content -------------------------------------------------------------------------------
+impl VulkanApp24 {
 
     fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer, pipeline_layout: vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>) -> Vec<vk::CommandBuffer> {
 
@@ -521,14 +393,6 @@ impl VulkanApp23 {
 
         command_buffers
     }
-}
-
-
-
-
-
-// Fix content -------------------------------------------------------------------------------
-impl VulkanApp23 {
 
     fn update_uniform_buffer(&mut self, current_image: usize, delta_time: f32) {
 
@@ -765,7 +629,7 @@ impl VulkanApp23 {
     }
 }
 
-impl Drop for VulkanApp23 {
+impl Drop for VulkanApp24 {
 
     fn drop(&mut self) {
 
@@ -791,6 +655,9 @@ impl Drop for VulkanApp23 {
             self.device.destroy_buffer(self.vertex_buffer, None);
             self.device.free_memory(self.vertex_buffer_memory, None);
 
+            self.device.destroy_sampler(self.texture_sampler, None);
+            self.device.destroy_image_view(self.texture_image_view, None);
+
             self.device.destroy_image(self.texture_image, None);
             self.device.free_memory(self.texture_image_memory, None);
 
@@ -809,7 +676,7 @@ impl Drop for VulkanApp23 {
     }
 }
 
-impl VulkanApp for VulkanApp23 {
+impl VulkanApp for VulkanApp24 {
 
     fn draw_frame(&mut self, delta_time: f32) {
 
@@ -929,12 +796,12 @@ impl VulkanApp for VulkanApp23 {
 
         self.swapchain_imageviews = create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
         self.render_pass = create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp23::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent, self.ubo_layout);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp24::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent, self.ubo_layout);
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
         self.swapchain_framebuffers = create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
-        self.command_buffers = VulkanApp23::create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent, self.vertex_buffer, self.index_buffer, self.pipeline_layout, &self.descriptor_sets);
+        self.command_buffers = VulkanApp24::create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent, self.vertex_buffer, self.index_buffer, self.pipeline_layout, &self.descriptor_sets);
     }
 
     fn cleanup_swapchain(&self) {
@@ -966,7 +833,7 @@ impl VulkanApp for VulkanApp23 {
 fn main() {
 
     let mut program_proc = ProgramProc::new();
-    let mut vulkan_app = VulkanApp23::new(&program_proc.events_loop);
+    let mut vulkan_app = VulkanApp24::new(&program_proc.events_loop);
 
     program_proc.main_loop(&mut vulkan_app);
 }

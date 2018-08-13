@@ -107,7 +107,7 @@ impl VulkanApp22 {
         let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
         let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
-        let swapchain_imageviews = create_image_view(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let swapchain_imageviews = create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
         let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
         let ubo_layout = VulkanApp22::create_descriptor_set_layout(&device);
         let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
@@ -788,7 +788,7 @@ impl VulkanApp for VulkanApp22 {
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;
 
-        self.swapchain_imageviews = create_image_view(&self.device, self.swapchain_format, &self.swapchain_images);
+        self.swapchain_imageviews = create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
         self.render_pass = create_render_pass(&self.device, self.swapchain_format);
         let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent, self.ubo_layout);
         self.graphics_pipeline = graphics_pipeline;

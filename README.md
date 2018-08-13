@@ -14,7 +14,7 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 ## Status
 
-Currently finish work on [23-texture-image](https://vulkan-tutorial.com/Texture_mapping/Images).
+Currently finish work on [24-sampler](https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler).
 
 ## Usage
 
@@ -52,6 +52,7 @@ Here replace `example_number` with option in the following table:
 | 21             | 21_descriptor_layout.rs          | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer) |
 | 22             | 22_descriptor_sets.rs            | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets) |
 | 23             | 23_texture_image.rs              | [Link](https://vulkan-tutorial.com/Texture_mapping/Images)   |
+| 24             | 24_sampler.rs                    | [Link](https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler) |
 
 ### example usage
 
