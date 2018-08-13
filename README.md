@@ -10,11 +10,10 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
 - [ash](https://github.com/MaikKlein/ash)
-- [winit](https://github.com/tomaka/winit)
 
 ## Status
 
-Currently finish work on [24-sampler](https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler).
+Currently finish work on [25-texture-mapping](https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler).
 
 ## Usage
 
@@ -53,6 +52,7 @@ Here replace `example_number` with option in the following table:
 | 22             | 22_descriptor_sets.rs            | [Link](https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets) |
 | 23             | 23_texture_image.rs              | [Link](https://vulkan-tutorial.com/Texture_mapping/Images)   |
 | 24             | 24_sampler.rs                    | [Link](https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler) |
+| 25             | 25_texture_mapping.rs            | [Link](https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler) |
 
 ### example usage
 

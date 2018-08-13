@@ -4,6 +4,8 @@ use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0, EntryV1_0, DeviceV1_0 };
 use ash::vk::types::uint32_t;
 use winit;
+use image;
+use image::GenericImage;
 
 type EntryV1 = ash::Entry<V1_0>;
 
@@ -968,7 +970,7 @@ pub fn find_memory_type(type_filter: uint32_t, required_properties: vk::MemoryPr
     panic!("Failed to find suitable memory type!")
 }
 
-pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: vk::CommandPool, submit_queue: vk::Queue, data: &[Vertex])
+pub fn create_vertex_buffer<T: Copy>(device: &ash::Device<V1_0>, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: vk::CommandPool, submit_queue: vk::Queue, data: &[T])
     -> (vk::Buffer, vk::DeviceMemory) {
 
     let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
@@ -984,7 +986,7 @@ pub fn create_vertex_buffer(device: &ash::Device<V1_0>, device_memory_properties
     unsafe {
         let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
             .expect("Failed to Map Memory");
-        let mut vert_align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<Vertex>() as u64, buffer_size);
+        let mut vert_align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<T>() as u64, buffer_size);
         vert_align.copy_from_slice(data);
         device.unmap_memory(staging_buffer_memory);
     }
@@ -1138,7 +1140,7 @@ pub fn create_descriptor_set_layout(device: &ash::Device<V1_0>) -> vk::Descripto
         s_type: vk::StructureType::DescriptorSetLayoutCreateInfo,
         p_next: ptr::null(),
         flags: vk::DescriptorSetLayoutCreateFlags::empty(),
-        binding_count: 1_u32,
+        binding_count: ubo_layout_bindings.len() as u32,
         p_bindings: ubo_layout_bindings.as_ptr(),
     };
 
@@ -1311,4 +1313,91 @@ pub fn copy_buffer_to_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
     }
 
     end_single_time_command(device, command_pool, submit_queue, command_buffer);
+}
+
+
+pub fn create_texture_image_view(device: &ash::Device<V1_0>, texture_image: vk::Image) -> vk::ImageView {
+
+    let texture_image_view = create_image_view(device, texture_image, vk::Format::R8g8b8a8Unorm);
+    texture_image_view
+}
+
+pub fn create_texture_sampler(device: &ash::Device<V1_0>) -> vk::Sampler {
+
+    let sampler_create_info = vk::SamplerCreateInfo {
+        s_type: vk::StructureType::SamplerCreateInfo,
+        p_next: ptr::null(),
+        flags: vk::SamplerCreateFlags::empty(),
+        mag_filter: vk::Filter::Linear,
+        min_filter: vk::Filter::Linear,
+        mipmap_mode: vk::SamplerMipmapMode::Linear,
+        address_mode_u: vk::SamplerAddressMode::Repeat,
+        address_mode_v: vk::SamplerAddressMode::Repeat,
+        address_mode_w: vk::SamplerAddressMode::Repeat,
+        mip_lod_bias: 0.0,
+        anisotropy_enable: vk::VK_TRUE,
+        max_anisotropy: 16.0,
+        compare_enable: vk::VK_FALSE,
+        compare_op: vk::CompareOp::Always,
+        min_lod: 0.0,
+        max_lod: 0.0,
+        border_color: vk::BorderColor::IntOpaqueBlack,
+        unnormalized_coordinates: vk::VK_FALSE,
+    };
+
+    unsafe {
+        device.create_sampler(&sampler_create_info, None)
+            .expect("Failed to create Sampler!")
+    }
+}
+
+pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory) {
+
+    let image = image::open(image_path).unwrap();
+    let (image_width, image_height) = (image.width(), image.height());
+    let image_data = image.to_rgba().into_raw();
+    let image_size = (::std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;
+
+    if image_size <= 0 {
+        panic!("Failed to load texture image!")
+    }
+
+    let (staging_buffer, staging_buffer_memory) = create_buffer(
+        device,
+        image_size,
+        vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
+        vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        device_memory_properties
+    );
+
+    unsafe {
+        let data_ptr = device.map_memory(staging_buffer_memory, 0, image_size, vk::MemoryMapFlags::empty())
+            .expect("Failed to Map Memory");
+        let mut align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<u8>() as u64, image_size);
+        align.copy_from_slice(&image_data);
+        device.unmap_memory(staging_buffer_memory);
+    }
+
+    let (texture_image, texture_image_memory) = create_image(
+        device,
+        image_width, image_height,
+        vk::Format::R8g8b8a8Unorm,
+        vk::ImageTiling::Optimal,
+        vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,
+        vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        device_memory_properties
+    );
+
+    transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal);
+
+    copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
+
+    transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal);
+
+    unsafe {
+        device.destroy_buffer(staging_buffer, None);
+        device.free_memory(staging_buffer_memory, None);
+    }
+
+    (texture_image, texture_image_memory)
 }

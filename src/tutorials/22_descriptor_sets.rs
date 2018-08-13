@@ -362,7 +362,7 @@ impl VulkanApp22 {
             s_type: vk::StructureType::DescriptorSetLayoutCreateInfo,
             p_next: ptr::null(),
             flags: vk::DescriptorSetLayoutCreateFlags::empty(),
-            binding_count: 1_u32,
+            binding_count: ubo_layout_bindings.len() as u32,
             p_bindings: ubo_layout_bindings.as_ptr(),
         };
 
@@ -448,8 +448,8 @@ impl VulkanApp22 {
             frag_shader_create_info,
         ];
 
-        let binding_description = Vertex::get_binding_description();
-        let attribute_description = Vertex::get_attribute_descriptions();
+        let binding_description = VertexV1::get_binding_description();
+        let attribute_description = VertexV1::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
             s_type: vk::StructureType::PipelineVertexInputStateCreateInfo,

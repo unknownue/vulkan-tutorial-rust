@@ -584,8 +584,8 @@ impl VulkanApp23 {
             frag_shader_create_info,
         ];
 
-        let binding_description = Vertex::get_binding_description();
-        let attribute_description = Vertex::get_attribute_descriptions();
+        let binding_description = VertexV1::get_binding_description();
+        let attribute_description = VertexV1::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
             s_type: vk::StructureType::PipelineVertexInputStateCreateInfo,

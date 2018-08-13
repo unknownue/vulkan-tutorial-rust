@@ -62,17 +62,17 @@ pub struct UniformBufferObject {
 }
 
 #[derive(Clone, Debug, Copy)]
-pub struct Vertex {
+pub struct VertexV1 {
     pub pos: [f32; 2],
     pub color: [f32; 4],
 }
-impl Vertex {
+impl VertexV1 {
 
     pub fn get_binding_description() -> [vk::VertexInputBindingDescription; 1] {
         [
             vk::VertexInputBindingDescription {
                 binding: 0,
-                stride: ::std::mem::size_of::<Vertex>() as u32,
+                stride: ::std::mem::size_of::<VertexV1>() as u32,
                 input_rate: vk::VertexInputRate::Vertex,
             },
         ]
@@ -84,24 +84,25 @@ impl Vertex {
                 binding:  0,
                 location: 0,
                 format: vk::Format::R32g32Sfloat,
-                offset: offset_of!(Vertex, pos) as u32,
+                offset: offset_of!(VertexV1, pos) as u32,
             },
             vk::VertexInputAttributeDescription {
                 binding:  0,
                 location: 1,
                 format: vk::Format::R32g32b32a32Sfloat,
-                offset: offset_of!(Vertex, color) as u32,
+                offset: offset_of!(VertexV1, color) as u32,
             }
         ]
     }
 }
 
-pub const RECT_VERTICES_DATA: [Vertex; 4] = [
-    Vertex { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
-    Vertex { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
-    Vertex { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
+pub const RECT_VERTICES_DATA: [VertexV1; 4] = [
+    VertexV1 { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
+    VertexV1 { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
+    VertexV1 { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
+    VertexV1 { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
 ];
 pub const RECT_INDICES_DATA: [vk::types::uint32_t; 6] = [
     0, 1, 2, 2, 3, 0
 ];
+
