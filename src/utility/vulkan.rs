@@ -130,12 +130,12 @@ pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk
 
     let queue_priorities = [1.0_f32];
     let mut queue_create_infos = vec![];
-    for queue_family in unique_queue_families.iter() {
+    for &queue_family in unique_queue_families.iter() {
         let queue_create_info = vk::DeviceQueueCreateInfo {
             s_type: vk::StructureType::DeviceQueueCreateInfo,
             p_next: ptr::null(),
             flags: vk::DeviceQueueCreateFlags::empty(),
-            queue_family_index: *queue_family as u32,
+            queue_family_index: queue_family,
             p_queue_priorities: queue_priorities.as_ptr(),
             queue_count: queue_priorities.len() as u32,
         };
@@ -148,8 +148,7 @@ pub fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk
 
     let enable_layer_names = validation.get_layers_names();
 
-    // or replace 'device_extensions.get_raw_names()' with '[ash::extension::Swapchain::name().as_ptr()]'
-    let enable_extension_names = device_extensions.get_raw_names();
+    let enable_extension_names = device_extensions.get_extensions_raw_names();
 
     let device_create_info = vk::DeviceCreateInfo {
         s_type: vk::StructureType::DeviceCreateInfo,
@@ -181,7 +180,7 @@ pub fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::Ph
     let mut index = 0;
     for queue_family in queue_families.iter() {
 
-        if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QueueFlags::from(vk::QUEUE_GRAPHICS_BIT)) {
+        if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT) {
             queue_family_indices.graphics_family = index;
         }
 

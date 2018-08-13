@@ -8,14 +8,6 @@ pub struct DeviceExtension {
 //    pub raw_names: [*const i8; 1],
 }
 
-impl DeviceExtension {
-    pub fn get_raw_names(&self) -> Vec<*const i8> {
-        self.names.iter()
-            .map(|name| super::tools::vk_to_raw_string(*name).as_ptr())
-            .collect()
-    }
-}
-
 pub struct SurfaceStuff {
     pub surface_loader: ash::extensions::Surface,
     pub surface: vk::SurfaceKHR,

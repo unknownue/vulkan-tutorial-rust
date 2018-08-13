@@ -292,7 +292,6 @@ impl VulkanApp {
                 .expect("Failed to create pipeline layout!")
         };
 
-
         let graphic_pipeline_create_infos = [
             vk::GraphicsPipelineCreateInfo {
                 s_type: vk::StructureType::GraphicsPipelineCreateInfo,

@@ -152,12 +152,12 @@ impl VulkanApp {
 
         let queue_priorities = [1.0_f32];
         let mut queue_create_infos = vec![];
-        for queue_family in unique_queue_families.iter() {
+        for &queue_family in unique_queue_families.iter() {
             let queue_create_info = vk::DeviceQueueCreateInfo {
                 s_type: vk::StructureType::DeviceQueueCreateInfo,
                 p_next: ptr::null(),
                 flags: vk::DeviceQueueCreateFlags::empty(),
-                queue_family_index: *queue_family as u32,
+                queue_family_index: queue_family,
                 p_queue_priorities: queue_priorities.as_ptr(),
                 queue_count: queue_priorities.len() as u32,
             };

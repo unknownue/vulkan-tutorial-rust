@@ -193,12 +193,12 @@ impl VulkanApp {
 
         let queue_priorities = [1.0_f32];
         let mut queue_create_infos = vec![];
-        for queue_family in unique_queue_families.iter() {
+        for &queue_family in unique_queue_families.iter() {
             let queue_create_info = vk::DeviceQueueCreateInfo {
                 s_type: vk::StructureType::DeviceQueueCreateInfo,
                 p_next: ptr::null(),
                 flags: vk::DeviceQueueCreateFlags::empty(),
-                queue_family_index: *queue_family as u32,
+                queue_family_index: queue_family,
                 p_queue_priorities: queue_priorities.as_ptr(),
                 queue_count: queue_priorities.len() as u32,
             };
@@ -211,18 +211,19 @@ impl VulkanApp {
 
         let enable_layer_names = validation.get_layers_names();
 
-        // or replace 'DEVICE_EXTENSIONS.get_raw_names()' with '[ash::extension::Swapchain::name().as_ptr()]'
-        let enable_extension_names = DEVICE_EXTENSIONS.get_raw_names();
+        let enable_extension_names = [
+            ash::extensions::Swapchain::name().as_ptr() // currently just enable the Swapchain extension.
+        ];
 
         let device_create_info = vk::DeviceCreateInfo {
             s_type: vk::StructureType::DeviceCreateInfo,
             p_next: ptr::null(),
             flags: vk::DeviceCreateFlags::empty(),
             queue_create_info_count: queue_create_infos.len() as u32,
-            p_queue_create_infos: queue_create_infos.as_ptr(),
+            p_queue_create_infos:    queue_create_infos.as_ptr(),
             enabled_layer_count:    if validation.is_enable { enable_layer_names.len() }    else { 0 } as u32,
             pp_enabled_layer_names: if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
-            enabled_extension_count: enable_extension_names.len() as u32,
+            enabled_extension_count:    enable_extension_names.len() as u32,
             pp_enabled_extension_names: enable_extension_names.as_ptr(),
             p_enabled_features: &physical_device_features,
         };
@@ -243,8 +244,8 @@ impl VulkanApp {
 
         let mut index = 0;
         for queue_family in queue_families.iter() {
-            use ash::vk::types::{ QueueFlags, QUEUE_GRAPHICS_BIT };
-            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(QueueFlags::from(QUEUE_GRAPHICS_BIT)) {
+
+            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT) {
                 queue_family_indices.graphics_family = index;
             }
 
@@ -366,6 +367,8 @@ impl VulkanApp {
 
     fn choose_swapchain_format(available_formats: &Vec<vk::SurfaceFormatKHR>) -> vk::SurfaceFormatKHR {
 
+        // check if the list contains only one entry with undefined format
+        // it means that there are no preferred surface formats and any can be choosen
         if available_formats.len() == 1 && available_formats[0].format == vk::Format::Undefined {
             return vk::SurfaceFormatKHR {
                 format: vk::Format::B8g8r8a8Unorm,
@@ -373,12 +376,14 @@ impl VulkanApp {
             };
         }
 
+        // check if list contains most widely used R8G8B8A8 format with nonlinear color space
         for available_format in available_formats {
             if available_format.format == vk::Format::B8g8r8a8Unorm && available_format.color_space == vk::ColorSpaceKHR::SrgbNonlinear {
                 return available_format.clone()
             }
         }
 
+        // return the first format from the list
         return available_formats.first().unwrap().clone()
     }
 
@@ -406,7 +411,7 @@ impl VulkanApp {
             use num::clamp;
 
             vk::Extent2D {
-                width: clamp(WINDOW_WIDTH, capabilities.min_image_extent.width, capabilities.max_image_extent.width),
+                width:  clamp(WINDOW_WIDTH,  capabilities.min_image_extent.width,  capabilities.max_image_extent.width),
                 height: clamp(WINDOW_HEIGHT, capabilities.min_image_extent.height, capabilities.max_image_extent.height)
             }
         }
