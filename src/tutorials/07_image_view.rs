@@ -25,29 +25,29 @@ const WINDOW_TITLE: &'static str = "07.Image View";
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop          : EventsLoop,
+    _window              : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry               : EntryV1,
+    instance             : ash::Instance<V1_0>,
+    surface_loader       : ash::extensions::Surface,
+    surface              : vk::SurfaceKHR,
+    debug_report_loader  : ash::extensions::DebugReport,
+    debug_callback       : vk::DebugReportCallbackEXT,
 
-    _physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>,
+    _physical_device     : vk::PhysicalDevice,
+    device               : ash::Device<V1_0>,
 
-    _graphics_queue: vk::Queue,
-    _present_queue: vk::Queue,
+    _graphics_queue      : vk::Queue,
+    _present_queue       : vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    _swapchain_images: Vec<vk::Image>,
-    _swapchain_format: vk::Format,
-    _swapchain_extent: vk::Extent2D,
-    swapchain_imageviews: Vec<vk::ImageView>,
+    swapchain_loader     : ash::extensions::Swapchain,
+    swapchain            : vk::SwapchainKHR,
+    _swapchain_images    : Vec<vk::Image>,
+    _swapchain_format    : vk::Format,
+    _swapchain_extent    : vk::Extent2D,
+    swapchain_imageviews : Vec<vk::ImageView>,
 }
 
 impl VulkanApp {
@@ -88,10 +88,10 @@ impl VulkanApp {
             device,
 
             _graphics_queue: graphics_queue,
-            _present_queue: present_queue,
+            _present_queue : present_queue,
 
-            swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain: swapchain_stuff.swapchain,
+            swapchain_loader : swapchain_stuff.swapchain_loader,
+            swapchain        : swapchain_stuff.swapchain,
             _swapchain_format: swapchain_stuff.swapchain_format,
             _swapchain_images: swapchain_stuff.swapchain_images,
             _swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -106,23 +106,23 @@ impl VulkanApp {
         for &image in images.iter() {
 
             let imageview_create_info = vk::ImageViewCreateInfo {
-                s_type: vk::StructureType::ImageViewCreateInfo,
-                p_next: ptr::null(),
-                flags: vk::ImageViewCreateFlags::empty(),
-                view_type: vk::ImageViewType::Type2d,
-                format: surface_format,
-                components: vk::ComponentMapping {
+                s_type     : vk::StructureType::ImageViewCreateInfo,
+                p_next     : ptr::null(),
+                flags      : vk::ImageViewCreateFlags::empty(),
+                view_type  : vk::ImageViewType::Type2d,
+                format     : surface_format,
+                components : vk::ComponentMapping {
                     r: vk::ComponentSwizzle::Identity,
                     g: vk::ComponentSwizzle::Identity,
                     b: vk::ComponentSwizzle::Identity,
                     a: vk::ComponentSwizzle::Identity,
                 },
                 subresource_range: vk::ImageSubresourceRange {
-                    aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                    base_mip_level: 0,
-                    level_count: 1,
-                    base_array_layer: 0,
-                    layer_count: 1,
+                    aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                    base_mip_level   : 0,
+                    level_count      : 1,
+                    base_array_layer : 0,
+                    layer_count      : 1,
                 },
                 image,
             };

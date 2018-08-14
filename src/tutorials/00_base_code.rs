@@ -11,8 +11,8 @@ const WINDOW_HEIGHT: u32 = 600;
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop : EventsLoop,
+    _window     : winit::Window,
 }
 
 impl VulkanApp {

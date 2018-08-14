@@ -33,17 +33,17 @@ impl QueueFamilyIndices {
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop         : EventsLoop,
+    _window             : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
-    _physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>, // Logical Device
-    _graphics_queue: vk::Queue,
+    _entry              : EntryV1,
+    instance            : ash::Instance<V1_0>,
+    debug_report_loader : ash::extensions::DebugReport,
+    debug_callback      : vk::DebugReportCallbackEXT,
+    _physical_device    : vk::PhysicalDevice,
+    device              : ash::Device<V1_0>, // Logical Device
+    _graphics_queue     : vk::Queue,
 }
 
 impl VulkanApp {
@@ -108,12 +108,12 @@ impl VulkanApp {
 
         let queue_priorities = [1.0_f32];
         let queue_create_info = vk::DeviceQueueCreateInfo {
-            s_type: vk::StructureType::DeviceQueueCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::DeviceQueueCreateFlags::empty(),
-            queue_family_index: indices.graphics_family as u32,
-            p_queue_priorities: queue_priorities.as_ptr(),
-            queue_count: queue_priorities.len() as u32,
+            s_type             : vk::StructureType::DeviceQueueCreateInfo,
+            p_next             : ptr::null(),
+            flags              : vk::DeviceQueueCreateFlags::empty(),
+            queue_family_index : indices.graphics_family as u32,
+            p_queue_priorities : queue_priorities.as_ptr(),
+            queue_count        : queue_priorities.len() as u32,
         };
 
         let physical_device_features = vk::PhysicalDeviceFeatures {
@@ -123,16 +123,16 @@ impl VulkanApp {
         let enable_layer_names = validation.get_layers_names();
 
         let device_create_info = vk::DeviceCreateInfo {
-            s_type: vk::StructureType::DeviceCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::DeviceCreateFlags::empty(),
-            queue_create_info_count: 1,
-            p_queue_create_infos: &queue_create_info,
-            enabled_layer_count:    if validation.is_enable { enable_layer_names.len() }    else { 0 } as u32,
-            pp_enabled_layer_names: if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
-            enabled_extension_count: 0,
-            pp_enabled_extension_names: ptr::null(),
-            p_enabled_features: &physical_device_features,
+            s_type                     : vk::StructureType::DeviceCreateInfo,
+            p_next                     : ptr::null(),
+            flags                      : vk::DeviceCreateFlags::empty(),
+            queue_create_info_count    : 1,
+            p_queue_create_infos       : &queue_create_info,
+            enabled_layer_count        : if validation.is_enable { enable_layer_names.len() }    else { 0 } as u32,
+            pp_enabled_layer_names     : if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
+            enabled_extension_count    : 0,
+            pp_enabled_extension_names : ptr::null(),
+            p_enabled_features         : &physical_device_features,
         };
 
         let device: ash::Device<V1_0> = unsafe {

@@ -29,15 +29,15 @@ const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
 
 struct QueueFamilyIndices {
     graphics_family: i32,
-    present_family:  i32,
+    present_family : i32,
 }
 
 impl QueueFamilyIndices {
 
     pub fn new() -> QueueFamilyIndices {
         QueueFamilyIndices {
-            graphics_family: -1,
-            present_family:  -1,
+            graphics_family : -1,
+            present_family  : -1,
         }
     }
 
@@ -47,47 +47,47 @@ impl QueueFamilyIndices {
 }
 
 struct SurfaceStuff {
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
+    surface_loader : ash::extensions::Surface,
+    surface        : vk::SurfaceKHR,
 }
 struct SwapChainStuff {
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    swapchain_images: Vec<vk::Image>,
-    swapchain_format: vk::Format,
-    swapchain_extent: vk::Extent2D,
+    swapchain_loader : ash::extensions::Swapchain,
+    swapchain        : vk::SwapchainKHR,
+    swapchain_images : Vec<vk::Image>,
+    swapchain_format : vk::Format,
+    swapchain_extent : vk::Extent2D,
 }
 
 struct SwapChainSupportDetail {
-    capabilities: vk::SurfaceCapabilitiesKHR,
-    formats: Vec<vk::SurfaceFormatKHR>,
-    present_modes: Vec<vk::PresentModeKHR>,
+    capabilities  : vk::SurfaceCapabilitiesKHR,
+    formats       : Vec<vk::SurfaceFormatKHR>,
+    present_modes : Vec<vk::PresentModeKHR>,
 }
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop         : EventsLoop,
+    _window             : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry              : EntryV1,
+    instance            : ash::Instance<V1_0>,
+    surface_loader      : ash::extensions::Surface,
+    surface             : vk::SurfaceKHR,
+    debug_report_loader : ash::extensions::DebugReport,
+    debug_callback      : vk::DebugReportCallbackEXT,
 
-    _physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>,
+    _physical_device    : vk::PhysicalDevice,
+    device              : ash::Device<V1_0>,
 
-    _graphics_queue: vk::Queue,
-    _present_queue: vk::Queue,
+    _graphics_queue     : vk::Queue,
+    _present_queue      : vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    _swapchain_images: Vec<vk::Image>,
-    _swapchain_format: vk::Format,
-    _swapchain_extent: vk::Extent2D,
+    swapchain_loader    : ash::extensions::Swapchain,
+    swapchain           : vk::SwapchainKHR,
+    _swapchain_images   : Vec<vk::Image>,
+    _swapchain_format   : vk::Format,
+    _swapchain_extent   : vk::Extent2D,
 }
 
 impl VulkanApp {
@@ -127,10 +127,10 @@ impl VulkanApp {
             device,
 
             _graphics_queue: graphics_queue,
-            _present_queue: present_queue,
+            _present_queue : present_queue,
 
-            swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain: swapchain_stuff.swapchain,
+            swapchain_loader : swapchain_stuff.swapchain_loader,
+            swapchain        : swapchain_stuff.swapchain,
             _swapchain_format: swapchain_stuff.swapchain_format,
             _swapchain_images: swapchain_stuff.swapchain_images,
             _swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -195,12 +195,12 @@ impl VulkanApp {
         let mut queue_create_infos = vec![];
         for &queue_family in unique_queue_families.iter() {
             let queue_create_info = vk::DeviceQueueCreateInfo {
-                s_type: vk::StructureType::DeviceQueueCreateInfo,
-                p_next: ptr::null(),
-                flags: vk::DeviceQueueCreateFlags::empty(),
-                queue_family_index: queue_family,
-                p_queue_priorities: queue_priorities.as_ptr(),
-                queue_count: queue_priorities.len() as u32,
+                s_type             : vk::StructureType::DeviceQueueCreateInfo,
+                p_next             : ptr::null(),
+                flags              : vk::DeviceQueueCreateFlags::empty(),
+                queue_family_index : queue_family,
+                p_queue_priorities : queue_priorities.as_ptr(),
+                queue_count        : queue_priorities.len() as u32,
             };
             queue_create_infos.push(queue_create_info);
         }
@@ -216,16 +216,16 @@ impl VulkanApp {
         ];
 
         let device_create_info = vk::DeviceCreateInfo {
-            s_type: vk::StructureType::DeviceCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::DeviceCreateFlags::empty(),
-            queue_create_info_count: queue_create_infos.len() as u32,
-            p_queue_create_infos:    queue_create_infos.as_ptr(),
-            enabled_layer_count:    if validation.is_enable { enable_layer_names.len() }    else { 0 } as u32,
-            pp_enabled_layer_names: if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
-            enabled_extension_count:    enable_extension_names.len() as u32,
-            pp_enabled_extension_names: enable_extension_names.as_ptr(),
-            p_enabled_features: &physical_device_features,
+            s_type                     : vk::StructureType::DeviceCreateInfo,
+            p_next                     : ptr::null(),
+            flags                      : vk::DeviceCreateFlags::empty(),
+            queue_create_info_count    : queue_create_infos.len() as u32,
+            p_queue_create_infos       : queue_create_infos.as_ptr(),
+            enabled_layer_count        : if validation.is_enable { enable_layer_names.len() }    else { 0 } as u32,
+            pp_enabled_layer_names     : if validation.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
+            enabled_extension_count    : enable_extension_names.len() as u32,
+            pp_enabled_extension_names : enable_extension_names.as_ptr(),
+            p_enabled_features         : &physical_device_features,
         };
 
         let device: ash::Device<V1_0> = unsafe {
@@ -326,24 +326,24 @@ impl VulkanApp {
         };
 
         let swapchain_create_info = vk::SwapchainCreateInfoKHR {
-            s_type: vk::StructureType::SwapchainCreateInfoKhr,
-            p_next: ptr::null(),
-            flags: vk::SwapchainCreateFlagsKHR::empty(),
-            surface: surface_stuff.surface,
-            min_image_count: image_count,
-            image_color_space: surface_format.color_space,
-            image_format: surface_format.format,
-            image_extent: extent,
-            image_usage: vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            s_type                   : vk::StructureType::SwapchainCreateInfoKhr,
+            p_next                   : ptr::null(),
+            flags                    : vk::SwapchainCreateFlagsKHR::empty(),
+            surface                  : surface_stuff.surface,
+            min_image_count          : image_count,
+            image_color_space        : surface_format.color_space,
+            image_format             : surface_format.format,
+            image_extent             : extent,
+            image_usage              : vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             image_sharing_mode,
-            p_queue_family_indices: queue_family_indices.as_ptr(),
+            p_queue_family_indices   : queue_family_indices.as_ptr(),
             queue_family_index_count,
-            pre_transform: swapchain_support.capabilities.current_transform,
-            composite_alpha: vk::COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            pre_transform            : swapchain_support.capabilities.current_transform,
+            composite_alpha          : vk::COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             present_mode,
-            clipped: vk::VK_TRUE,
-            old_swapchain: vk::SwapchainKHR::null(),
-            image_array_layers: 1,
+            clipped                  : vk::VK_TRUE,
+            old_swapchain            : vk::SwapchainKHR::null(),
+            image_array_layers       : 1,
         };
 
         let swapchain_loader = ash::extensions::Swapchain::new(instance, device)

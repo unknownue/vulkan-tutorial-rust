@@ -36,57 +36,57 @@ struct VulkanApp23 {
     window: winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry                     : EntryV1,
+    instance                   : ash::Instance<V1_0>,
+    surface_loader             : ash::extensions::Surface,
+    surface                    : vk::SurfaceKHR,
+    debug_report_loader        : ash::extensions::DebugReport,
+    debug_callback             : vk::DebugReportCallbackEXT,
 
-    physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>,
+    physical_device            : vk::PhysicalDevice,
+    device                     : ash::Device<V1_0>,
 
-    queue_family: QueueFamilyIndices,
-    graphics_queue: vk::Queue,
-    present_queue: vk::Queue,
+    queue_family               : QueueFamilyIndices,
+    graphics_queue             : vk::Queue,
+    present_queue              : vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    swapchain_images: Vec<vk::Image>,
-    swapchain_format: vk::Format,
-    swapchain_extent: vk::Extent2D,
-    swapchain_imageviews: Vec<vk::ImageView>,
-    swapchain_framebuffers: Vec<vk::Framebuffer>,
+    swapchain_loader           : ash::extensions::Swapchain,
+    swapchain                  : vk::SwapchainKHR,
+    swapchain_images           : Vec<vk::Image>,
+    swapchain_format           : vk::Format,
+    swapchain_extent           : vk::Extent2D,
+    swapchain_imageviews       : Vec<vk::ImageView>,
+    swapchain_framebuffers     : Vec<vk::Framebuffer>,
 
-    render_pass: vk::RenderPass,
-    ubo_layout: vk::DescriptorSetLayout,
-    pipeline_layout: vk::PipelineLayout,
-    graphics_pipeline: vk::Pipeline,
+    render_pass                : vk::RenderPass,
+    ubo_layout                 : vk::DescriptorSetLayout,
+    pipeline_layout            : vk::PipelineLayout,
+    graphics_pipeline          : vk::Pipeline,
 
-    texture_image: vk::Image,
-    texture_image_memory: vk::DeviceMemory,
+    texture_image              : vk::Image,
+    texture_image_memory       : vk::DeviceMemory,
 
-    vertex_buffer: vk::Buffer,
-    vertex_buffer_memory: vk::DeviceMemory,
-    index_buffer: vk::Buffer,
-    index_buffer_memory: vk::DeviceMemory,
+    vertex_buffer              : vk::Buffer,
+    vertex_buffer_memory       : vk::DeviceMemory,
+    index_buffer               : vk::Buffer,
+    index_buffer_memory        : vk::DeviceMemory,
 
-    uniform_transform: UniformBufferObject,
-    uniform_buffers: Vec<vk::Buffer>,
-    uniform_buffers_memory: Vec<vk::DeviceMemory>,
+    uniform_transform          : UniformBufferObject,
+    uniform_buffers            : Vec<vk::Buffer>,
+    uniform_buffers_memory     : Vec<vk::DeviceMemory>,
 
-    descriptor_pool: vk::DescriptorPool,
-    descriptor_sets: Vec<vk::DescriptorSet>,
+    descriptor_pool            : vk::DescriptorPool,
+    descriptor_sets            : Vec<vk::DescriptorSet>,
 
-    command_pool: vk::CommandPool,
-    command_buffers: Vec<vk::CommandBuffer>,
+    command_pool               : vk::CommandPool,
+    command_buffers            : Vec<vk::CommandBuffer>,
 
-    image_available_semaphores: Vec<vk::Semaphore>,
-    render_finished_semaphores: Vec<vk::Semaphore>,
-    in_flight_fences: Vec<vk::Fence>,
-    current_frame: usize,
+    image_available_semaphores : Vec<vk::Semaphore>,
+    render_finished_semaphores : Vec<vk::Semaphore>,
+    in_flight_fences           : Vec<vk::Fence>,
+    current_frame              : usize,
 
-    is_framebuffer_resized: bool,
+    is_framebuffer_resized     : bool,
 }
 
 impl VulkanApp23 {
@@ -178,7 +178,7 @@ impl VulkanApp23 {
 
             image_available_semaphores: sync_ojbects.image_available_semaphores,
             render_finished_semaphores: sync_ojbects.render_finished_semaphores,
-            in_flight_fences:           sync_ojbects.inflight_fences,
+            in_flight_fences          : sync_ojbects.inflight_fences,
             current_frame: 0,
 
             is_framebuffer_resized: false,
@@ -240,25 +240,25 @@ impl VulkanApp23 {
         -> (vk::Image, vk::DeviceMemory) {
 
         let image_create_info = vk::ImageCreateInfo {
-            s_type: vk::StructureType::ImageCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::ImageCreateFlags::empty(),
-            image_type: vk::ImageType::Type2d,
+            s_type                   : vk::StructureType::ImageCreateInfo,
+            p_next                   : ptr::null(),
+            flags                    : vk::ImageCreateFlags::empty(),
+            image_type               : vk::ImageType::Type2d,
             format,
             extent: vk::Extent3D {
                 width,
                 height,
                 depth: 1,
             },
-            mip_levels: 1,
-            array_layers: 1,
-            samples: vk::SAMPLE_COUNT_1_BIT,
+            mip_levels               : 1,
+            array_layers             : 1,
+            samples                  : vk::SAMPLE_COUNT_1_BIT,
             tiling,
             usage,
-            sharing_mode: vk::SharingMode::Exclusive,
-            queue_family_index_count: 0,
-            p_queue_family_indices: ptr::null(),
-            initial_layout: vk::ImageLayout::Undefined,
+            sharing_mode             : vk::SharingMode::Exclusive,
+            queue_family_index_count : 0,
+            p_queue_family_indices   : ptr::null(),
+            initial_layout           : vk::ImageLayout::Undefined,
         };
 
         let texture_image = unsafe {
@@ -268,10 +268,10 @@ impl VulkanApp23 {
 
         let image_memory_requirement = device.get_image_memory_requirements(texture_image);
         let memory_allocate_info = vk::MemoryAllocateInfo {
-            s_type: vk::StructureType::MemoryAllocateInfo,
-            p_next: ptr::null(),
-            allocation_size: image_memory_requirement.size,
-            memory_type_index: find_memory_type(image_memory_requirement.memory_type_bits, required_memory_properties, device_memory_properties)
+            s_type            : vk::StructureType::MemoryAllocateInfo,
+            p_next            : ptr::null(),
+            allocation_size   : image_memory_requirement.size,
+            memory_type_index : find_memory_type(image_memory_requirement.memory_type_bits, required_memory_properties, device_memory_properties)
         };
 
         let texture_image_memory = unsafe {
@@ -290,11 +290,11 @@ impl VulkanApp23 {
     fn begin_single_time_command(device: &ash::Device<V1_0>, command_pool: vk::CommandPool) -> vk::CommandBuffer {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::CommandBufferAllocateInfo,
-            p_next: ptr::null(),
-            command_buffer_count: 1,
+            s_type               : vk::StructureType::CommandBufferAllocateInfo,
+            p_next               : ptr::null(),
+            command_buffer_count : 1,
             command_pool,
-            level: vk::CommandBufferLevel::Primary,
+            level                : vk::CommandBufferLevel::Primary,
         };
 
         let command_buffer = unsafe {
@@ -303,10 +303,10 @@ impl VulkanApp23 {
         }[0];
 
         let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-            s_type: vk::StructureType::CommandBufferBeginInfo,
-            p_next: ptr::null(),
-            p_inheritance_info: ptr::null(),
-            flags: vk::COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            s_type             : vk::StructureType::CommandBufferBeginInfo,
+            p_next             : ptr::null(),
+            p_inheritance_info : ptr::null(),
+            flags              : vk::COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
         };
 
         unsafe {
@@ -330,15 +330,15 @@ impl VulkanApp23 {
 
         let submit_infos = [
             vk::SubmitInfo {
-                s_type: vk::StructureType::SubmitInfo,
-                p_next: ptr::null(),
-                wait_semaphore_count: 0,
-                p_wait_semaphores: ptr::null(),
-                p_wait_dst_stage_mask: ptr::null(),
-                command_buffer_count: 1,
-                p_command_buffers: buffers_to_submit.as_ptr(),
-                signal_semaphore_count: 0,
-                p_signal_semaphores: ptr::null(),
+                s_type                 : vk::StructureType::SubmitInfo,
+                p_next                 : ptr::null(),
+                wait_semaphore_count   : 0,
+                p_wait_semaphores      : ptr::null(),
+                p_wait_dst_stage_mask  : ptr::null(),
+                command_buffer_count   : 1,
+                p_command_buffers      : buffers_to_submit.as_ptr(),
+                signal_semaphore_count : 0,
+                p_signal_semaphores    : ptr::null(),
             },
         ];
 
@@ -378,21 +378,21 @@ impl VulkanApp23 {
 
         let image_barriers = [
             vk::ImageMemoryBarrier {
-                s_type: vk::StructureType::ImageMemoryBarrier,
-                p_next: ptr::null(),
+                s_type                 : vk::StructureType::ImageMemoryBarrier,
+                p_next                 : ptr::null(),
                 src_access_mask,
                 dst_access_mask,
                 old_layout,
                 new_layout,
-                src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
-                dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
+                src_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
+                dst_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
                 image,
                 subresource_range: vk::ImageSubresourceRange {
-                    aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                    base_mip_level: 0,
-                    level_count: 1,
-                    base_array_layer: 0,
-                    layer_count: 1,
+                    aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                    base_mip_level   : 0,
+                    level_count      : 1,
+                    base_array_layer : 0,
+                    layer_count      : 1,
                 }
             },
         ];
@@ -418,20 +418,20 @@ impl VulkanApp23 {
         let buffer_image_regions = [
             vk::BufferImageCopy {
                 image_subresource: vk::ImageSubresourceLayers {
-                    aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
-                    mip_level: 0,
-                    base_array_layer: 0,
-                    layer_count: 1,
+                    aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                    mip_level        : 0,
+                    base_array_layer : 0,
+                    layer_count      : 1,
                 },
                 image_extent: vk::Extent3D {
                     width,
                     height,
                     depth: 1,
                 },
-                buffer_offset: 0,
-                buffer_image_height: 0,
-                buffer_row_length: 0,
-                image_offset: vk::Offset3D { x: 0, y: 0, z: 0 },
+                buffer_offset       : 0,
+                buffer_image_height : 0,
+                buffer_row_length   : 0,
+                image_offset        : vk::Offset3D { x: 0, y: 0, z: 0 },
             },
         ];
 
@@ -445,11 +445,11 @@ impl VulkanApp23 {
     fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer, pipeline_layout: vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::CommandBufferAllocateInfo,
-            p_next: ptr::null(),
-            command_buffer_count: framebuffers.len() as u32,
+            s_type               : vk::StructureType::CommandBufferAllocateInfo,
+            p_next               : ptr::null(),
+            command_buffer_count : framebuffers.len() as u32,
             command_pool,
-            level: vk::CommandBufferLevel::Primary,
+            level                : vk::CommandBufferLevel::Primary,
         };
 
         let command_buffers = unsafe {
@@ -460,10 +460,10 @@ impl VulkanApp23 {
         for (i, &command_buffer) in command_buffers.iter().enumerate() {
 
             let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-                s_type: vk::StructureType::CommandBufferBeginInfo,
-                p_next: ptr::null(),
-                p_inheritance_info: ptr::null(),
-                flags: vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                s_type             : vk::StructureType::CommandBufferBeginInfo,
+                p_next             : ptr::null(),
+                p_inheritance_info : ptr::null(),
+                flags              : vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
             };
 
             unsafe {
@@ -480,16 +480,16 @@ impl VulkanApp23 {
             ];
 
             let render_pass_begin_info = vk::RenderPassBeginInfo {
-                s_type: vk::StructureType::RenderPassBeginInfo,
-                p_next: ptr::null(),
+                s_type            : vk::StructureType::RenderPassBeginInfo,
+                p_next            : ptr::null(),
                 render_pass,
-                framebuffer: framebuffers[i],
+                framebuffer       : framebuffers[i],
                 render_area: vk::Rect2D {
                     offset: vk::Offset2D { x: 0, y: 0 },
                     extent: surface_extent,
                 },
-                clear_value_count: clear_values.len() as u32,
-                p_clear_values: clear_values.as_ptr(),
+                clear_value_count : clear_values.len() as u32,
+                p_clear_values    : clear_values.as_ptr(),
             };
 
             unsafe {
@@ -559,59 +559,55 @@ impl VulkanApp23 {
 
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
-        let vert_shader_create_info = vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineShaderStageCreateFlags::empty(),
-            module: vert_shader_module,
-            p_name: main_function_name.as_ptr(),
-            p_specialization_info: ptr::null(),
-            stage: vk::SHADER_STAGE_VERTEX_BIT,
-        };
-
-        let frag_shader_create_info = vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineShaderStageCreateFlags::empty(),
-            module: frag_shader_module,
-            p_name: main_function_name.as_ptr(),
-            p_specialization_info: ptr::null(),
-            stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-        };
-
         let shader_stages = [
-            vert_shader_create_info,
-            frag_shader_create_info,
+            vk::PipelineShaderStageCreateInfo { // Vertex Shader
+                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                p_next                : ptr::null(),
+                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
+                module                : vert_shader_module,
+                p_name                : main_function_name.as_ptr(),
+                p_specialization_info : ptr::null(),
+                stage                 : vk::SHADER_STAGE_VERTEX_BIT,
+            },
+            vk::PipelineShaderStageCreateInfo { // Fragment Shader
+                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                p_next                : ptr::null(),
+                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
+                module                : frag_shader_module,
+                p_name                : main_function_name.as_ptr(),
+                p_specialization_info : ptr::null(),
+                stage                 : vk::SHADER_STAGE_FRAGMENT_BIT,
+            },
         ];
 
-        let binding_description = VertexV1::get_binding_description();
+        let binding_description   = VertexV1::get_binding_description();
         let attribute_description = VertexV1::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
-            s_type: vk::StructureType::PipelineVertexInputStateCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineVertexInputStateCreateFlags::empty(),
-            vertex_attribute_description_count: attribute_description.len() as u32,
-            p_vertex_attribute_descriptions: attribute_description.as_ptr(),
-            vertex_binding_description_count: binding_description.len() as u32,
-            p_vertex_binding_descriptions: binding_description.as_ptr(),
+            s_type                             : vk::StructureType::PipelineVertexInputStateCreateInfo,
+            p_next                             : ptr::null(),
+            flags                              : vk::PipelineVertexInputStateCreateFlags::empty(),
+            vertex_attribute_description_count : attribute_description.len() as u32,
+            p_vertex_attribute_descriptions    : attribute_description.as_ptr(),
+            vertex_binding_description_count   : binding_description.len() as u32,
+            p_vertex_binding_descriptions      : binding_description.as_ptr(),
         };
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
-            s_type: vk::StructureType::PipelineInputAssemblyStateCreateInfo,
-            flags: vk::PipelineInputAssemblyStateCreateFlags::empty(),
-            p_next: ptr::null(),
-            primitive_restart_enable: vk::VK_FALSE,
-            topology: vk::PrimitiveTopology::TriangleList,
+            s_type                   : vk::StructureType::PipelineInputAssemblyStateCreateInfo,
+            flags                    : vk::PipelineInputAssemblyStateCreateFlags::empty(),
+            p_next                   : ptr::null(),
+            primitive_restart_enable : vk::VK_FALSE,
+            topology                 : vk::PrimitiveTopology::TriangleList,
         };
 
         let viewports = [
             vk::Viewport {
-                x: 0.0,
-                y: 0.0,
-                width:  swapchain_extent.width  as f32,
-                height: swapchain_extent.height as f32,
-                min_depth: 0.0,
-                max_depth: 1.0,
+                x         : 0.0,
+                y         : 0.0,
+                width     :  swapchain_extent.width as f32,
+                height    : swapchain_extent.height as f32,
+                min_depth : 0.0,
+                max_depth : 1.0,
             },
         ];
 
@@ -623,103 +619,104 @@ impl VulkanApp23 {
         ];
 
         let viewport_state_create_info = vk::PipelineViewportStateCreateInfo {
-            s_type: vk::StructureType::PipelineViewportStateCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineViewportStateCreateFlags::empty(),
-            scissor_count: scissors.len() as u32,
-            p_scissors: scissors.as_ptr(),
-            viewport_count: viewports.len() as u32,
-            p_viewports: viewports.as_ptr(),
+            s_type         : vk::StructureType::PipelineViewportStateCreateInfo,
+            p_next         : ptr::null(),
+            flags          : vk::PipelineViewportStateCreateFlags::empty(),
+            scissor_count  : scissors.len()  as u32,
+            p_scissors     : scissors.as_ptr(),
+            viewport_count : viewports.len() as u32,
+            p_viewports    : viewports.as_ptr(),
         };
 
         let rasterization_statue_create_info = vk::PipelineRasterizationStateCreateInfo {
-            s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineRasterizationStateCreateFlags::empty(),
-            depth_clamp_enable: vk::VK_FALSE,
-            cull_mode: vk::CULL_MODE_BACK_BIT,
-            front_face: vk::FrontFace::Clockwise,
-            line_width: 1.0,
-            polygon_mode: vk::PolygonMode::Fill,
-            rasterizer_discard_enable: vk::VK_FALSE,
-            depth_bias_clamp: 0.0,
-            depth_bias_constant_factor: 0.0,
-            depth_bias_enable: vk::VK_FALSE,
-            depth_bias_slope_factor: 0.0,
+            s_type                     : vk::StructureType::PipelineRasterizationStateCreateInfo,
+            p_next                     : ptr::null(),
+            flags                      : vk::PipelineRasterizationStateCreateFlags::empty(),
+            depth_clamp_enable         : vk::VK_FALSE,
+            cull_mode                  : vk::CULL_MODE_BACK_BIT,
+            front_face                 : vk::FrontFace::Clockwise,
+            line_width                 : 1.0,
+            polygon_mode               : vk::PolygonMode::Fill,
+            rasterizer_discard_enable  : vk::VK_FALSE,
+            depth_bias_clamp           : 0.0,
+            depth_bias_constant_factor : 0.0,
+            depth_bias_enable          : vk::VK_FALSE,
+            depth_bias_slope_factor    : 0.0,
         };
+
         let multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo {
-            s_type: vk::StructureType::PipelineMultisampleStateCreateInfo,
-            flags: vk::PipelineMultisampleStateCreateFlags::empty(),
-            p_next: ptr::null(),
-            rasterization_samples: vk::SAMPLE_COUNT_1_BIT,
-            sample_shading_enable: vk::VK_FALSE,
-            min_sample_shading: 0.0,
-            p_sample_mask: ptr::null(),
-            alpha_to_one_enable: 0,
-            alpha_to_coverage_enable: 0,
+            s_type                   : vk::StructureType::PipelineMultisampleStateCreateInfo,
+            flags                    : vk::PipelineMultisampleStateCreateFlags::empty(),
+            p_next                   : ptr::null(),
+            rasterization_samples    : vk::SAMPLE_COUNT_1_BIT,
+            sample_shading_enable    : vk::VK_FALSE,
+            min_sample_shading       : 0.0,
+            p_sample_mask            : ptr::null(),
+            alpha_to_one_enable      : vk::VK_FALSE,
+            alpha_to_coverage_enable : vk::VK_FALSE,
         };
 
         let stencil_state = vk::StencilOpState {
-            fail_op: vk::StencilOp::Keep,
-            pass_op: vk::StencilOp::Keep,
-            depth_fail_op: vk::StencilOp::Keep,
-            compare_op: vk::CompareOp::Always,
-            compare_mask: 0,
-            write_mask: 0,
-            reference: 0,
+            fail_op       : vk::StencilOp::Keep,
+            pass_op       : vk::StencilOp::Keep,
+            depth_fail_op : vk::StencilOp::Keep,
+            compare_op    : vk::CompareOp::Always,
+            compare_mask  : 0,
+            write_mask    : 0,
+            reference     : 0,
         };
 
         let depth_state_create_info = vk::PipelineDepthStencilStateCreateInfo {
-            s_type: vk::StructureType::PipelineDepthStencilStateCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineDepthStencilStateCreateFlags::empty(),
-            depth_test_enable: vk::VK_FALSE,
-            depth_write_enable: vk::VK_FALSE,
-            depth_compare_op: vk::CompareOp::LessOrEqual,
-            depth_bounds_test_enable: vk::VK_FALSE,
-            stencil_test_enable: vk::VK_FALSE,
-            front: stencil_state,
-            back:  stencil_state,
-            max_depth_bounds: 1.0,
-            min_depth_bounds: 0.0,
+            s_type                   : vk::StructureType::PipelineDepthStencilStateCreateInfo,
+            p_next                   : ptr::null(),
+            flags                    : vk::PipelineDepthStencilStateCreateFlags::empty(),
+            depth_test_enable        : vk::VK_FALSE,
+            depth_write_enable       : vk::VK_FALSE,
+            depth_compare_op         : vk::CompareOp::LessOrEqual,
+            depth_bounds_test_enable : vk::VK_FALSE,
+            stencil_test_enable      : vk::VK_FALSE,
+            front                    : stencil_state,
+            back                     : stencil_state,
+            max_depth_bounds         : 1.0,
+            min_depth_bounds         : 0.0,
         };
 
         let color_blend_attachment_states = [
             vk::PipelineColorBlendAttachmentState {
-                blend_enable: vk::VK_FALSE,
-                color_write_mask: vk::ColorComponentFlags::all(),
-                src_color_blend_factor: vk::BlendFactor::One,
-                dst_color_blend_factor: vk::BlendFactor::Zero,
-                color_blend_op: vk::BlendOp::Add,
-                src_alpha_blend_factor: vk::BlendFactor::One,
-                dst_alpha_blend_factor: vk::BlendFactor::Zero,
-                alpha_blend_op: vk::BlendOp::Add,
+                blend_enable           : vk::VK_FALSE,
+                color_write_mask       : vk::ColorComponentFlags::all(),
+                src_color_blend_factor : vk::BlendFactor::One,
+                dst_color_blend_factor : vk::BlendFactor::Zero,
+                color_blend_op         : vk::BlendOp::Add,
+                src_alpha_blend_factor : vk::BlendFactor::One,
+                dst_alpha_blend_factor : vk::BlendFactor::Zero,
+                alpha_blend_op         : vk::BlendOp::Add,
             },
         ];
 
         let color_blend_state = vk::PipelineColorBlendStateCreateInfo {
-            s_type: vk::StructureType::PipelineColorBlendStateCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineColorBlendStateCreateFlags::empty(),
-            logic_op_enable: vk::VK_FALSE,
-            logic_op: vk::LogicOp::Copy,
-            attachment_count: color_blend_attachment_states.len() as u32,
-            p_attachments: color_blend_attachment_states.as_ptr(),
-            blend_constants: [0.0, 0.0, 0.0, 0.0],
+            s_type           : vk::StructureType::PipelineColorBlendStateCreateInfo,
+            p_next           : ptr::null(),
+            flags            : vk::PipelineColorBlendStateCreateFlags::empty(),
+            logic_op_enable  : vk::VK_FALSE,
+            logic_op         : vk::LogicOp::Copy,
+            attachment_count : color_blend_attachment_states.len() as u32,
+            p_attachments    : color_blend_attachment_states.as_ptr(),
+            blend_constants  : [0.0, 0.0, 0.0, 0.0],
         };
 
         let set_layouts = [
-            ubo_set_layout
+            ubo_set_layout,
         ];
 
         let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
-            s_type: vk::StructureType::PipelineLayoutCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineLayoutCreateFlags::empty(),
-            set_layout_count: set_layouts.len() as u32,
-            p_set_layouts: set_layouts.as_ptr(),
-            push_constant_range_count: 0,
-            p_push_constant_ranges: ptr::null(),
+            s_type                    : vk::StructureType::PipelineLayoutCreateInfo,
+            p_next                    : ptr::null(),
+            flags                     : vk::PipelineLayoutCreateFlags::empty(),
+            set_layout_count          : set_layouts.len() as u32,
+            p_set_layouts             : set_layouts.as_ptr(),
+            push_constant_range_count : 0,
+            p_push_constant_ranges    : ptr::null(),
         };
 
         let pipeline_layout = unsafe {
@@ -729,25 +726,25 @@ impl VulkanApp23 {
 
         let graphic_pipeline_create_infos = [
             vk::GraphicsPipelineCreateInfo {
-                s_type: vk::StructureType::GraphicsPipelineCreateInfo,
-                p_next: ptr::null(),
-                flags: vk::PipelineCreateFlags::empty(),
-                stage_count: shader_stages.len() as u32,
-                p_stages: shader_stages.as_ptr(),
-                p_vertex_input_state: &vertex_input_state_create_info,
-                p_input_assembly_state: &vertex_input_assembly_state_info,
-                p_tessellation_state: ptr::null(),
-                p_viewport_state: &viewport_state_create_info,
-                p_rasterization_state: &rasterization_statue_create_info,
-                p_multisample_state: &multisample_state_create_info,
-                p_depth_stencil_state: &depth_state_create_info,
-                p_color_blend_state: &color_blend_state,
-                p_dynamic_state: ptr::null(),
-                layout: pipeline_layout,
+                s_type                 : vk::StructureType::GraphicsPipelineCreateInfo,
+                p_next                 : ptr::null(),
+                flags                  : vk::PipelineCreateFlags::empty(),
+                stage_count            : shader_stages.len() as u32,
+                p_stages               : shader_stages.as_ptr(),
+                p_vertex_input_state   : &vertex_input_state_create_info,
+                p_input_assembly_state : &vertex_input_assembly_state_info,
+                p_tessellation_state   : ptr::null(),
+                p_viewport_state       : &viewport_state_create_info,
+                p_rasterization_state  : &rasterization_statue_create_info,
+                p_multisample_state    : &multisample_state_create_info,
+                p_depth_stencil_state  : &depth_state_create_info,
+                p_color_blend_state    : &color_blend_state,
+                p_dynamic_state        : ptr::null(),
+                layout                 : pipeline_layout,
                 render_pass,
-                subpass: 0,
-                base_pipeline_handle: vk::Pipeline::null(),
-                base_pipeline_index: -1,
+                subpass                : 0,
+                base_pipeline_handle   : vk::Pipeline::null(),
+                base_pipeline_index    : -1,
             },
         ];
 
@@ -850,15 +847,15 @@ impl VulkanApp for VulkanApp23 {
 
         let submit_infos = [
             vk::SubmitInfo {
-                s_type: vk::StructureType::SubmitInfo,
-                p_next: ptr::null(),
-                wait_semaphore_count: wait_semaphores.len() as u32,
-                p_wait_semaphores: wait_semaphores.as_ptr(),
-                p_wait_dst_stage_mask: wait_stages.as_ptr(),
-                command_buffer_count: 1,
-                p_command_buffers: &self.command_buffers[image_index as usize],
-                signal_semaphore_count: signal_semaphores.len() as u32,
-                p_signal_semaphores: signal_semaphores.as_ptr(),
+                s_type                 : vk::StructureType::SubmitInfo,
+                p_next                 : ptr::null(),
+                wait_semaphore_count   : wait_semaphores.len() as u32,
+                p_wait_semaphores      : wait_semaphores.as_ptr(),
+                p_wait_dst_stage_mask  : wait_stages.as_ptr(),
+                command_buffer_count   : 1,
+                p_command_buffers      : &self.command_buffers[image_index as usize],
+                signal_semaphore_count : signal_semaphores.len() as u32,
+                p_signal_semaphores    : signal_semaphores.as_ptr(),
             }
         ];
 
@@ -875,14 +872,14 @@ impl VulkanApp for VulkanApp23 {
         ];
 
         let present_info = vk::PresentInfoKHR {
-            s_type: vk::StructureType::PresentInfoKhr,
-            p_next: ptr::null(),
-            wait_semaphore_count: 1,
-            p_wait_semaphores: signal_semaphores.as_ptr(),
-            swapchain_count: 1,
-            p_swapchains: swapchains.as_ptr(),
-            p_image_indices: &image_index,
-            p_results: ptr::null_mut(),
+            s_type               : vk::StructureType::PresentInfoKhr,
+            p_next               : ptr::null(),
+            wait_semaphore_count : 1,
+            p_wait_semaphores    : signal_semaphores.as_ptr(),
+            swapchain_count      : 1,
+            p_swapchains         : swapchains.as_ptr(),
+            p_image_indices      : &image_index,
+            p_results            : ptr::null_mut(),
         };
 
         let result = unsafe {

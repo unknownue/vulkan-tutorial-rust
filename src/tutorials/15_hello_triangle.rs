@@ -25,46 +25,46 @@ const WINDOW_TITLE: &'static str = "15.Hello Triangle";
 const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
 struct SyncObjects {
-    image_available_semaphores: Vec<vk::Semaphore>,
-    render_finished_semaphores: Vec<vk::Semaphore>,
-    inflight_fences: Vec<vk::Fence>,
+    image_available_semaphores : Vec<vk::Semaphore>,
+    render_finished_semaphores : Vec<vk::Semaphore>,
+    inflight_fences            : Vec<vk::Fence>,
 }
 
 struct VulkanApp {
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry                     : EntryV1,
+    instance                   : ash::Instance<V1_0>,
+    surface_loader             : ash::extensions::Surface,
+    surface                    : vk::SurfaceKHR,
+    debug_report_loader        : ash::extensions::DebugReport,
+    debug_callback             : vk::DebugReportCallbackEXT,
 
-    _physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>,
+    _physical_device           : vk::PhysicalDevice,
+    device                     : ash::Device<V1_0>,
 
-    graphics_queue: vk::Queue,
-    present_queue: vk::Queue,
+    graphics_queue             : vk::Queue,
+    present_queue              : vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    _swapchain_images: Vec<vk::Image>,
-    _swapchain_format: vk::Format,
-    _swapchain_extent: vk::Extent2D,
-    swapchain_imageviews: Vec<vk::ImageView>,
-    swapchain_framebuffers: Vec<vk::Framebuffer>,
+    swapchain_loader           : ash::extensions::Swapchain,
+    swapchain                  : vk::SwapchainKHR,
+    _swapchain_images          : Vec<vk::Image>,
+    _swapchain_format          : vk::Format,
+    _swapchain_extent          : vk::Extent2D,
+    swapchain_imageviews       : Vec<vk::ImageView>,
+    swapchain_framebuffers     : Vec<vk::Framebuffer>,
 
-    render_pass: vk::RenderPass,
-    pipeline_layout: vk::PipelineLayout,
-    graphics_pipeline: vk::Pipeline,
+    render_pass                : vk::RenderPass,
+    pipeline_layout            : vk::PipelineLayout,
+    graphics_pipeline          : vk::Pipeline,
 
-    command_pool: vk::CommandPool,
-    command_buffers: Vec<vk::CommandBuffer>,
+    command_pool               : vk::CommandPool,
+    command_buffers            : Vec<vk::CommandBuffer>,
 
-    image_available_semaphores: Vec<vk::Semaphore>,
-    render_finished_semaphores: Vec<vk::Semaphore>,
-    in_flight_fences: Vec<vk::Fence>,
-    current_frame: usize,
+    image_available_semaphores : Vec<vk::Semaphore>,
+    render_finished_semaphores : Vec<vk::Semaphore>,
+    in_flight_fences           : Vec<vk::Fence>,
+    current_frame              : usize,
 }
 
 impl VulkanApp {
@@ -123,7 +123,7 @@ impl VulkanApp {
 
             image_available_semaphores: sync_ojbects.image_available_semaphores,
             render_finished_semaphores: sync_ojbects.render_finished_semaphores,
-            in_flight_fences:           sync_ojbects.inflight_fences,
+            in_flight_fences          : sync_ojbects.inflight_fences,
             current_frame: 0,
         }
     }
@@ -157,15 +157,15 @@ impl VulkanApp {
 
         let submit_infos = [
             vk::SubmitInfo {
-                s_type: vk::StructureType::SubmitInfo,
-                p_next: ptr::null(),
-                wait_semaphore_count: wait_semaphores.len() as u32,
-                p_wait_semaphores: wait_semaphores.as_ptr(),
-                p_wait_dst_stage_mask: wait_stages.as_ptr(),
-                command_buffer_count: 1,
-                p_command_buffers: &self.command_buffers[image_index as usize],
-                signal_semaphore_count: signal_semaphores.len() as u32,
-                p_signal_semaphores: signal_semaphores.as_ptr(),
+                s_type                 : vk::StructureType::SubmitInfo,
+                p_next                 : ptr::null(),
+                wait_semaphore_count   : wait_semaphores.len() as u32,
+                p_wait_semaphores      : wait_semaphores.as_ptr(),
+                p_wait_dst_stage_mask  : wait_stages.as_ptr(),
+                command_buffer_count   : 1,
+                p_command_buffers      : &self.command_buffers[image_index as usize],
+                signal_semaphore_count : signal_semaphores.len() as u32,
+                p_signal_semaphores    : signal_semaphores.as_ptr(),
             }
         ];
 
@@ -179,14 +179,14 @@ impl VulkanApp {
         ];
 
         let present_info = vk::PresentInfoKHR {
-            s_type: vk::StructureType::PresentInfoKhr,
-            p_next: ptr::null(),
-            wait_semaphore_count: 1,
-            p_wait_semaphores: signal_semaphores.as_ptr(),
-            swapchain_count: 1,
-            p_swapchains: swapchains.as_ptr(),
-            p_image_indices: &image_index,
-            p_results: ptr::null_mut(),
+            s_type               : vk::StructureType::PresentInfoKhr,
+            p_next               : ptr::null(),
+            wait_semaphore_count : 1,
+            p_wait_semaphores    : signal_semaphores.as_ptr(),
+            swapchain_count      : 1,
+            p_swapchains         : swapchains.as_ptr(),
+            p_image_indices      : &image_index,
+            p_results            : ptr::null_mut(),
         };
 
         unsafe {
@@ -202,19 +202,19 @@ impl VulkanApp {
         let mut sync_objects = SyncObjects {
             image_available_semaphores: vec![],
             render_finished_semaphores: vec![],
-            inflight_fences: vec![],
+            inflight_fences           : vec![],
         };
 
         let semaphore_create_info = vk::SemaphoreCreateInfo {
-            s_type: vk::StructureType::SemaphoreCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::SemaphoreCreateFlags::empty(),
+            s_type : vk::StructureType::SemaphoreCreateInfo,
+            p_next : ptr::null(),
+            flags  : vk::SemaphoreCreateFlags::empty(),
         };
 
         let fence_create_info = vk::FenceCreateInfo {
-            s_type: vk::StructureType::FenceCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::FENCE_CREATE_SIGNALED_BIT,
+            s_type : vk::StructureType::FenceCreateInfo,
+            p_next : ptr::null(),
+            flags  : vk::FENCE_CREATE_SIGNALED_BIT,
         };
 
         for _ in 0..MAX_FRAMES_IN_FLIGHT {
@@ -278,8 +278,8 @@ impl Drop for VulkanApp {
 // Fix content -------------------------------------------------------------------------------
 struct ProgramProc {
     // winit stuff
-    events_loop: EventsLoop,
-    window: winit::Window,
+    events_loop : EventsLoop,
+    window      : winit::Window,
 }
 
 impl ProgramProc {

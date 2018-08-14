@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
     utility::vulkan::*,
-    utility::structures::*,
+    utility::constants::*,
 };
 
 extern crate winit;
@@ -24,43 +24,32 @@ use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "09.Shader Modules";
-const WINDOW_WIDTH:  u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const VALIDATION: ValidationInfo = ValidationInfo {
-    is_enable: true,
-    required_validation_layers: [
-        "VK_LAYER_LUNARG_standard_validation",
-    ],
-};
-const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
-    names: [vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
-};
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop          : EventsLoop,
+    _window              : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry               : EntryV1,
+    instance             : ash::Instance<V1_0>,
+    surface_loader       : ash::extensions::Surface,
+    surface              : vk::SurfaceKHR,
+    debug_report_loader  : ash::extensions::DebugReport,
+    debug_callback       : vk::DebugReportCallbackEXT,
 
-    _physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>,
+    _physical_device     : vk::PhysicalDevice,
+    device               : ash::Device<V1_0>,
 
-    _graphics_queue: vk::Queue,
-    _present_queue: vk::Queue,
+    _graphics_queue      : vk::Queue,
+    _present_queue       : vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    _swapchain_images: Vec<vk::Image>,
-    _swapchain_format: vk::Format,
-    _swapchain_extent: vk::Extent2D,
-    swapchain_imageviews: Vec<vk::ImageView>,
+    swapchain_loader     : ash::extensions::Swapchain,
+    swapchain            : vk::SwapchainKHR,
+    _swapchain_images    : Vec<vk::Image>,
+    _swapchain_format    : vk::Format,
+    _swapchain_extent    : vk::Extent2D,
+    swapchain_imageviews : Vec<vk::ImageView>,
 }
 
 impl VulkanApp {
@@ -102,10 +91,10 @@ impl VulkanApp {
             device,
 
             _graphics_queue: graphics_queue,
-            _present_queue: present_queue,
+            _present_queue : present_queue,
 
-            swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain: swapchain_stuff.swapchain,
+            swapchain_loader : swapchain_stuff.swapchain_loader,
+            swapchain        : swapchain_stuff.swapchain,
             _swapchain_format: swapchain_stuff.swapchain_format,
             _swapchain_images: swapchain_stuff.swapchain_images,
             _swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -122,31 +111,26 @@ impl VulkanApp {
 
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
-        let vert_shader_create_info = vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineShaderStageCreateFlags::empty(),
-            module: vert_shader_module,
-            p_name: main_function_name.as_ptr(),
-            p_specialization_info: ptr::null(),
-            stage: vk::SHADER_STAGE_VERTEX_BIT,
-        };
-
-        let frag_shader_create_info = vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::PipelineShaderStageCreateFlags::empty(),
-            module: frag_shader_module,
-            p_name: main_function_name.as_ptr(),
-            p_specialization_info: ptr::null(),
-            stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-        };
-
         let _shader_stages = [
-            vert_shader_create_info,
-            frag_shader_create_info,
+            vk::PipelineShaderStageCreateInfo { // Vertex Shader
+                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                p_next                : ptr::null(),
+                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
+                module                : vert_shader_module,
+                p_name                : main_function_name.as_ptr(),
+                p_specialization_info : ptr::null(),
+                stage                 : vk::SHADER_STAGE_VERTEX_BIT,
+            },
+            vk::PipelineShaderStageCreateInfo { // Fragment Shader
+                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                p_next                : ptr::null(),
+                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
+                module                : frag_shader_module,
+                p_name                : main_function_name.as_ptr(),
+                p_specialization_info : ptr::null(),
+                stage                 : vk::SHADER_STAGE_FRAGMENT_BIT,
+            },
         ];
-
 
         unsafe {
             device.destroy_shader_module(vert_shader_module, None);
@@ -155,16 +139,17 @@ impl VulkanApp {
     }
 
     fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::ShaderModule {
-        let vertex_shader_info = vk::ShaderModuleCreateInfo {
-            s_type: vk::StructureType::ShaderModuleCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::ShaderModuleCreateFlags::empty(),
-            code_size: code.len(),
-            p_code: code.as_ptr() as *const u32,
+
+        let shader_module_create_info = vk::ShaderModuleCreateInfo {
+            s_type    : vk::StructureType::ShaderModuleCreateInfo,
+            p_next    : ptr::null(),
+            flags     : vk::ShaderModuleCreateFlags::empty(),
+            code_size : code.len(),
+            p_code    : code.as_ptr() as *const u32,
         };
 
         unsafe {
-            device.create_shader_module(&vertex_shader_info, None)
+            device.create_shader_module(&shader_module_create_info, None)
                 .expect("Failed to create Shader Module!")
         }
     }

@@ -32,15 +32,15 @@ impl QueueFamilyIndices {
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop         : EventsLoop,
+    _window             : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
-    _physical_device: vk::PhysicalDevice,
+    _entry              : EntryV1,
+    instance            : ash::Instance<V1_0>,
+    debug_report_loader : ash::extensions::DebugReport,
+    debug_callback      : vk::DebugReportCallbackEXT,
+    _physical_device    : vk::PhysicalDevice,
 }
 
 impl VulkanApp {

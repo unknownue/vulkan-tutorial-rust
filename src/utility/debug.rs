@@ -82,15 +82,15 @@ pub fn setup_debug_callback(is_enable_debug: bool, entry: &ash::Entry<V1_0>, ins
     } else {
 
         let debug_create_info = vk::DebugReportCallbackCreateInfoEXT {
-            s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
-            p_next: ptr::null(),
-            flags: vk::DEBUG_REPORT_ERROR_BIT_EXT
-//                | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
-                // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
-                | vk::DEBUG_REPORT_WARNING_BIT_EXT
-                | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-            pfn_callback: vulkan_debug_callback,
-            p_user_data: ptr::null_mut(),
+            s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
+            p_next       : ptr::null(),
+            flags        :  vk::DEBUG_REPORT_ERROR_BIT_EXT
+                       // | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
+                       // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
+                          | vk::DEBUG_REPORT_WARNING_BIT_EXT
+                          | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+            pfn_callback : vulkan_debug_callback,
+            p_user_data  : ptr::null_mut(),
         };
 
         let debug_call_back = unsafe {

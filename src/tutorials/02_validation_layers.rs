@@ -44,14 +44,14 @@ unsafe extern "system" fn vulkan_debug_callback(
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop         : EventsLoop,
+    _window             : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry              : EntryV1,
+    instance            : ash::Instance<V1_0>,
+    debug_report_loader : ash::extensions::DebugReport,
+    debug_callback      : vk::DebugReportCallbackEXT,
 }
 
 impl VulkanApp {
@@ -94,16 +94,16 @@ impl VulkanApp {
             panic!("Validation layers requested, but not available!");
         }
 
-        let app_name = CString::new(WINDOW_TITLE).unwrap();
+        let app_name    = CString::new(WINDOW_TITLE).unwrap();
         let engine_name = CString::new("Vulkan Engine").unwrap();
         let app_info = vk::ApplicationInfo {
-            p_application_name: app_name.as_ptr(),
-            s_type: vk::StructureType::ApplicationInfo,
-            p_next: ptr::null(),
-            application_version: APPLICATION_VERSION,
-            p_engine_name: engine_name.as_ptr(),
-            engine_version: ENGINE_VERSION,
-            api_version: API_VERSION,
+            p_application_name  : app_name.as_ptr(),
+            s_type              : vk::StructureType::ApplicationInfo,
+            p_next              : ptr::null(),
+            application_version : APPLICATION_VERSION,
+            p_engine_name       : engine_name.as_ptr(),
+            engine_version      : ENGINE_VERSION,
+            api_version         : API_VERSION,
         };
 
         // VK_EXT debug report has been requested here.
@@ -117,14 +117,14 @@ impl VulkanApp {
             .collect();
 
         let create_info = vk::InstanceCreateInfo {
-            s_type: vk::StructureType::InstanceCreateInfo,
-            p_next: ptr::null(),
-            flags: vk::InstanceCreateFlags::empty(),
-            p_application_info: &app_info,
-            pp_enabled_layer_names: if VALIDATION.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
-            enabled_layer_count: if VALIDATION.is_enable { enable_layer_names.len() } else { 0 } as u32,
-            pp_enabled_extension_names: extension_names.as_ptr(),
-            enabled_extension_count: extension_names.len() as u32,
+            s_type                     : vk::StructureType::InstanceCreateInfo,
+            p_next                     : ptr::null(),
+            flags                      : vk::InstanceCreateFlags::empty(),
+            p_application_info         : &app_info,
+            pp_enabled_layer_names     : if VALIDATION.is_enable { enable_layer_names.as_ptr() } else { ptr::null() },
+            enabled_layer_count        : if VALIDATION.is_enable { enable_layer_names.len() } else { 0 } as u32,
+            pp_enabled_extension_names : extension_names.as_ptr(),
+            enabled_extension_count    : extension_names.len() as u32,
         };
 
         let instance: ash::Instance<V1_0> = unsafe {
@@ -184,15 +184,15 @@ impl VulkanApp {
         } else {
 
             let debug_create_info = vk::DebugReportCallbackCreateInfoEXT {
-                s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
-                p_next: ptr::null(),
-                flags: vk::DEBUG_REPORT_ERROR_BIT_EXT
-                     | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
-                    // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
-                    | vk::DEBUG_REPORT_WARNING_BIT_EXT
-                    | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                pfn_callback: vulkan_debug_callback,
-                p_user_data: ptr::null_mut(),
+                s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
+                p_next       : ptr::null(),
+                flags        :  vk::DEBUG_REPORT_ERROR_BIT_EXT
+                              | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
+                           // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
+                              | vk::DEBUG_REPORT_WARNING_BIT_EXT
+                              | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                pfn_callback : vulkan_debug_callback,
+                p_user_data  : ptr::null_mut(),
             };
 
             let debug_call_back = unsafe {

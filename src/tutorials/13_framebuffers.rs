@@ -25,34 +25,34 @@ const WINDOW_TITLE: &'static str = "13.Framebuffers";
 
 struct VulkanApp {
     // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
+    events_loop            : EventsLoop,
+    _window                : winit::Window,
 
     // vulkan stuff
-    _entry: EntryV1,
-    instance: ash::Instance<V1_0>,
-    surface_loader: ash::extensions::Surface,
-    surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    _entry                 : EntryV1,
+    instance               : ash::Instance<V1_0>,
+    surface_loader         : ash::extensions::Surface,
+    surface                : vk::SurfaceKHR,
+    debug_report_loader    : ash::extensions::DebugReport,
+    debug_callback         : vk::DebugReportCallbackEXT,
 
-    _physical_device: vk::PhysicalDevice,
-    device: ash::Device<V1_0>,
+    _physical_device       : vk::PhysicalDevice,
+    device                 : ash::Device<V1_0>,
 
-    _graphics_queue: vk::Queue,
-    _present_queue: vk::Queue,
+    _graphics_queue        : vk::Queue,
+    _present_queue         : vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
-    swapchain: vk::SwapchainKHR,
-    _swapchain_images: Vec<vk::Image>,
-    _swapchain_format: vk::Format,
-    _swapchain_extent: vk::Extent2D,
-    swapchain_imageviews: Vec<vk::ImageView>,
-    swapchain_framebuffers: Vec<vk::Framebuffer>,
+    swapchain_loader       : ash::extensions::Swapchain,
+    swapchain              : vk::SwapchainKHR,
+    _swapchain_images      : Vec<vk::Image>,
+    _swapchain_format      : vk::Format,
+    _swapchain_extent      : vk::Extent2D,
+    swapchain_imageviews   : Vec<vk::ImageView>,
+    swapchain_framebuffers : Vec<vk::Framebuffer>,
 
-    render_pass: vk::RenderPass,
-    pipeline_layout: vk::PipelineLayout,
-    graphics_pipeline: vk::Pipeline,
+    render_pass            : vk::RenderPass,
+    pipeline_layout        : vk::PipelineLayout,
+    graphics_pipeline      : vk::Pipeline,
 }
 
 impl VulkanApp {
@@ -96,10 +96,10 @@ impl VulkanApp {
             device,
 
             _graphics_queue: graphics_queue,
-            _present_queue: present_queue,
+            _present_queue : present_queue,
 
-            swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain: swapchain_stuff.swapchain,
+            swapchain_loader : swapchain_stuff.swapchain_loader,
+            swapchain        : swapchain_stuff.swapchain,
             _swapchain_format: swapchain_stuff.swapchain_format,
             _swapchain_images: swapchain_stuff.swapchain_images,
             _swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -122,15 +122,15 @@ impl VulkanApp {
             ];
 
             let framebuffer_create_info = vk::FramebufferCreateInfo {
-                s_type: vk::StructureType::FramebufferCreateInfo,
-                p_next: ptr::null(),
-                flags: vk::FramebufferCreateFlags::empty(),
+                s_type           : vk::StructureType::FramebufferCreateInfo,
+                p_next           : ptr::null(),
+                flags            : vk::FramebufferCreateFlags::empty(),
                 render_pass,
-                attachment_count: attachments.len() as u32,
-                p_attachments: attachments.as_ptr(),
-                width:  swapchain_extent.width,
-                height: swapchain_extent.height,
-                layers: 1,
+                attachment_count : attachments.len() as u32,
+                p_attachments    : attachments.as_ptr(),
+                width            : swapchain_extent.width,
+                height           : swapchain_extent.height,
+                layers           : 1,
             };
 
             let framebuffer = unsafe {
