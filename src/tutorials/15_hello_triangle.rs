@@ -82,7 +82,7 @@ impl VulkanApp {
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
         let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &family_indices);
         let swapchain_imageviews = create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let render_pass = VulkanApp::create_render_pass(&device, swapchain_stuff.swapchain_format);
         let (graphics_pipeline, pipeline_layout) = create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent);
         let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &family_indices);
@@ -195,6 +195,74 @@ impl VulkanApp {
         }
 
         self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format) -> vk::RenderPass {
+
+        let color_attachment = vk::AttachmentDescription {
+            format           : surface_format,
+            flags            : vk::AttachmentDescriptionFlags::empty(),
+            samples          : vk::SAMPLE_COUNT_1_BIT,
+            load_op          : vk::AttachmentLoadOp::Clear,
+            store_op         : vk::AttachmentStoreOp::Store,
+            stencil_load_op  : vk::AttachmentLoadOp::DontCare,
+            stencil_store_op : vk::AttachmentStoreOp::DontCare,
+            initial_layout   : vk::ImageLayout::Undefined,
+            final_layout     : vk::ImageLayout::PresentSrcKhr,
+        };
+
+        let color_attachment_ref = vk::AttachmentReference {
+            attachment : 0,
+            layout     : vk::ImageLayout::ColorAttachmentOptimal,
+        };
+
+        let subpasses = [
+            vk::SubpassDescription {
+                color_attachment_count     : 1,
+                p_color_attachments        : &color_attachment_ref,
+                p_depth_stencil_attachment : ptr::null(),
+                flags                      : vk::SubpassDescriptionFlags::empty(),
+                pipeline_bind_point        : vk::PipelineBindPoint::Graphics,
+                input_attachment_count     : 0,
+                p_input_attachments        : ptr::null(),
+                p_resolve_attachments      : ptr::null(),
+                preserve_attachment_count  : 0,
+                p_preserve_attachments     : ptr::null(),
+            },
+        ];
+
+        let render_pass_attachments = [
+            color_attachment,
+        ];
+
+        let subpass_dependencies = [
+            vk::SubpassDependency {
+                src_subpass      : vk::VK_SUBPASS_EXTERNAL,
+                dst_subpass      : 0,
+                src_stage_mask   : vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                dst_stage_mask   : vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                src_access_mask  : vk::AccessFlags::empty(),
+                dst_access_mask  : vk::ACCESS_COLOR_ATTACHMENT_READ_BIT | vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                dependency_flags : vk::DependencyFlags::empty(),
+            },
+        ];
+
+        let renderpass_create_info = vk::RenderPassCreateInfo {
+            s_type           : vk::StructureType::RenderPassCreateInfo,
+            flags            : vk::RenderPassCreateFlags::empty(),
+            p_next           : ptr::null(),
+            attachment_count : render_pass_attachments.len() as u32,
+            p_attachments    : render_pass_attachments.as_ptr(),
+            subpass_count    : subpasses.len() as u32,
+            p_subpasses      : subpasses.as_ptr(),
+            dependency_count : subpass_dependencies.len() as u32,
+            p_dependencies   : subpass_dependencies.as_ptr(),
+        };
+
+        unsafe {
+            device.create_render_pass(&renderpass_create_info, None)
+                .expect("Failed to create render pass!")
+        }
     }
 
     fn create_sync_objects(device: &ash::Device<V1_0>) -> SyncObjects {

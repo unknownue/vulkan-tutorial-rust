@@ -1,6 +1,6 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.25.0"
+version = "0.26.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
@@ -96,3 +96,6 @@ path = "src/tutorials/24_sampler.rs"
 [[bin]]
 name = "25"
 path = "src/tutorials/25_texture_mapping.rs"
+[[bin]]
+name = "26"
+path = "src/tutorials/26_depth_buffering.rs"

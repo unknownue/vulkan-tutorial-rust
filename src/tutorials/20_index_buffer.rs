@@ -415,7 +415,7 @@ impl VulkanApp {
             vk::Viewport {
                 x         : 0.0,
                 y         : 0.0,
-                width     :  swapchain_extent.width as f32,
+                width     : swapchain_extent.width as f32,
                 height    : swapchain_extent.height as f32,
                 min_depth : 0.0,
                 max_depth : 1.0,

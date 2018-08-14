@@ -19,7 +19,7 @@ extern crate memoffset;
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0 };
 use ash::version::DeviceV1_0;
-use cgmath::{ Matrix4, Deg, Point3, Vector3, SquareMatrix };
+use cgmath::{ Matrix4, Deg, Point3, Vector3 };
 
 type EntryV1 = ash::Entry<V1_0>;
 
@@ -217,8 +217,8 @@ impl VulkanApp25 {
             index_buffer_memory,
 
             uniform_transform: UniformBufferObject {
-                model: Matrix4::<f32>::identity(),
-                view: Matrix4::look_at(Point3::new(1.5, 1.5, 1.5), Point3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 1.0)),
+                model: Matrix4::from_angle_z(Deg(-90.0)),
+                view: Matrix4::look_at(Point3::new(2.0, 2.0, 2.0), Point3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 1.0)),
                 proj: cgmath::perspective(Deg(45.0), swapchain_stuff.swapchain_extent.width as f32 / swapchain_stuff.swapchain_extent.height as f32, 0.1, 10.0),
             },
             uniform_buffers,
@@ -532,7 +532,7 @@ impl VulkanApp25 {
             vk::Viewport {
                 x         : 0.0,
                 y         : 0.0,
-                width     :  swapchain_extent.width as f32,
+                width     : swapchain_extent.width as f32,
                 height    : swapchain_extent.height as f32,
                 min_depth : 0.0,
                 max_depth : 1.0,

@@ -359,13 +359,13 @@ pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window
 pub fn create_image_views(device: &ash::Device<V1_0>, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
 
     let swapchain_imageviews: Vec<vk::ImageView> = images.iter().map(|&image| {
-        create_image_view(device, image, surface_format)
+        create_image_view(device, image, surface_format, vk::IMAGE_ASPECT_COLOR_BIT)
     }).collect();
 
     swapchain_imageviews
 }
 
-fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::Format) -> vk::ImageView {
+pub fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::Format, aspect_flags: vk::ImageAspectFlags) -> vk::ImageView {
 
     let imageview_create_info = vk::ImageViewCreateInfo {
         s_type    : vk::StructureType::ImageViewCreateInfo,
@@ -380,7 +380,7 @@ fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::F
             a: vk::ComponentSwizzle::Identity,
         },
         subresource_range: vk::ImageSubresourceRange {
-            aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+            aspect_mask      : aspect_flags,
             base_mip_level   : 0,
             level_count      : 1,
             base_array_layer : 0,
@@ -431,21 +431,35 @@ pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format
         layout     : vk::ImageLayout::ColorAttachmentOptimal,
     };
 
-    let subpass = vk::SubpassDescription {
-        color_attachment_count     : 1,
-        p_color_attachments        : &color_attachment_ref,
-        p_depth_stencil_attachment : ptr::null(),
-        flags                      : vk::SubpassDescriptionFlags::empty(),
-        pipeline_bind_point        : vk::PipelineBindPoint::Graphics,
-        input_attachment_count     : 0,
-        p_input_attachments        : ptr::null(),
-        p_resolve_attachments      : ptr::null(),
-        preserve_attachment_count  : 0,
-        p_preserve_attachments     : ptr::null(),
-    };
+    let subpasses = [
+        vk::SubpassDescription {
+            color_attachment_count     : 1,
+            p_color_attachments        : &color_attachment_ref,
+            p_depth_stencil_attachment : ptr::null(),
+            flags                      : vk::SubpassDescriptionFlags::empty(),
+            pipeline_bind_point        : vk::PipelineBindPoint::Graphics,
+            input_attachment_count     : 0,
+            p_input_attachments        : ptr::null(),
+            p_resolve_attachments      : ptr::null(),
+            preserve_attachment_count  : 0,
+            p_preserve_attachments     : ptr::null(),
+        },
+    ];
 
     let render_pass_attachments = [
         color_attachment,
+    ];
+
+    let subpass_dependencies = [
+        vk::SubpassDependency {
+            src_subpass      : vk::VK_SUBPASS_EXTERNAL,
+            dst_subpass      : 0,
+            src_stage_mask   : vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            dst_stage_mask   : vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            src_access_mask  : vk::AccessFlags::empty(),
+            dst_access_mask  : vk::ACCESS_COLOR_ATTACHMENT_READ_BIT | vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            dependency_flags : vk::DependencyFlags::empty(),
+        },
     ];
 
     let renderpass_create_info = vk::RenderPassCreateInfo {
@@ -454,10 +468,10 @@ pub fn create_render_pass(device: &ash::Device<V1_0>, surface_format: vk::Format
         p_next           : ptr::null(),
         attachment_count : render_pass_attachments.len() as u32,
         p_attachments    : render_pass_attachments.as_ptr(),
-        subpass_count    : 1,
-        p_subpasses      : &subpass,
-        dependency_count : 0,
-        p_dependencies   : ptr::null(),
+        subpass_count    : subpasses.len() as u32,
+        p_subpasses      : subpasses.as_ptr(),
+        dependency_count : subpass_dependencies.len() as u32,
+        p_dependencies   : subpass_dependencies.as_ptr(),
     };
 
     unsafe {
@@ -696,7 +710,7 @@ pub fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: vk::RenderPa
             render_pass,
             attachment_count : attachments.len() as u32,
             p_attachments    : attachments.as_ptr(),
-            width            :  swapchain_extent.width,
+            width            : swapchain_extent.width,
             height           : swapchain_extent.height,
             layers           : 1,
         };
@@ -1220,7 +1234,7 @@ pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_
     (texture_image, texture_image_memory)
 }
 
-pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, _format: vk::Format, old_layout: vk::ImageLayout, new_layout: vk::ImageLayout) {
+pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, format: vk::Format, old_layout: vk::ImageLayout, new_layout: vk::ImageLayout) {
 
     let command_buffer = begin_single_time_command(device, command_pool);
 
@@ -1241,9 +1255,25 @@ pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::Com
         dst_access_mask   = vk::ACCESS_SHADER_READ_BIT;
         source_stage      = vk::PIPELINE_STAGE_TRANSFER_BIT;
         destination_stage = vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if old_layout == vk::ImageLayout::Undefined && new_layout == vk::ImageLayout::DepthStencilAttachmentOptimal {
+
+        src_access_mask   = vk::AccessFlags::empty();
+        dst_access_mask   = vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        source_stage      = vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = vk::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else {
         panic!("Unsupported layout transition!")
     }
+
+    let aspect_mask = if new_layout == vk::ImageLayout::DepthStencilAttachmentOptimal {
+        if has_stencil_component(format) {
+            vk::IMAGE_ASPECT_DEPTH_BIT | vk::IMAGE_ASPECT_STENCIL_BIT
+        } else {
+            vk::IMAGE_ASPECT_DEPTH_BIT
+        }
+    } else {
+        vk::IMAGE_ASPECT_COLOR_BIT
+    };
 
     let image_barriers = [
         vk::ImageMemoryBarrier {
@@ -1257,7 +1287,7 @@ pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::Com
             dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             image,
             subresource_range: vk::ImageSubresourceRange {
-                aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                aspect_mask,
                 base_mip_level   : 0,
                 level_count      : 1,
                 base_array_layer : 0,
@@ -1278,6 +1308,10 @@ pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::Com
     }
 
     end_single_time_command(device, command_pool, submit_queue, command_buffer);
+}
+
+pub fn has_stencil_component(format: vk::Format) -> bool {
+    format == vk::Format::D32SfloatS8Uint || format == vk::Format::D24UnormS8Uint
 }
 
 pub fn copy_buffer_to_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, buffer: vk::Buffer, image: vk::Image, width: uint32_t, height: uint32_t) {
@@ -1314,7 +1348,7 @@ pub fn copy_buffer_to_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
 
 pub fn create_texture_image_view(device: &ash::Device<V1_0>, texture_image: vk::Image) -> vk::ImageView {
 
-    let texture_image_view = create_image_view(device, texture_image, vk::Format::R8g8b8a8Unorm);
+    let texture_image_view = create_image_view(device, texture_image, vk::Format::R8g8b8a8Unorm, vk::IMAGE_ASPECT_COLOR_BIT);
     texture_image_view
 }
 
@@ -1349,9 +1383,15 @@ pub fn create_texture_sampler(device: &ash::Device<V1_0>) -> vk::Sampler {
 
 pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory) {
 
-    let image = image::open(image_path).unwrap();
-    let (image_width, image_height) = (image.width(), image.height());
-    let image_data = image.to_rgba().into_raw();
+    let mut image_object = image::open(image_path).unwrap();
+    image_object = image_object.flipv();
+    let (image_width, image_height) = (image_object.width(), image_object.height());
+    let image_data = match &image_object {
+        | image::DynamicImage::ImageLuma8(_)
+        | image::DynamicImage::ImageRgb8(_) => image_object.to_rgba().into_raw(),
+        | image::DynamicImage::ImageLumaA8(_)
+        | image::DynamicImage::ImageRgba8(_) => image_object.raw_pixels(),
+    };
     let image_size = (::std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;
 
     if image_size <= 0 {
@@ -1397,3 +1437,5 @@ pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
 
     (texture_image, texture_image_memory)
 }
+
+

@@ -187,10 +187,16 @@ impl VulkanApp23 {
 
     fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory) {
 
-        let image = image::open(image_path).unwrap();
-        let image_data = image.raw_pixels();
-        let (image_width, image_height) = (image.width(), image.height());
+        let mut image_object = image::open(image_path).unwrap();
+        image_object = image_object.flipv();
+        let (image_width, image_height) = (image_object.width(), image_object.height());
         let image_size = (std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;
+        let image_data = match &image_object {
+            | image::DynamicImage::ImageLuma8(_)
+            | image::DynamicImage::ImageRgb8(_) => image_object.to_rgba().into_raw(),
+            | image::DynamicImage::ImageLumaA8(_)
+            | image::DynamicImage::ImageRgba8(_) => image_object.raw_pixels(),
+        };
 
         if image_size <= 0 {
             panic!("Failed to load texture image!")
@@ -604,7 +610,7 @@ impl VulkanApp23 {
             vk::Viewport {
                 x         : 0.0,
                 y         : 0.0,
-                width     :  swapchain_extent.width as f32,
+                width     : swapchain_extent.width as f32,
                 height    : swapchain_extent.height as f32,
                 min_depth : 0.0,
                 max_depth : 1.0,

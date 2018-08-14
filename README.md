@@ -13,7 +13,7 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 ## Status
 
-Currently finish work on [25-texture-mapping](https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler).
+Currently finish work on [26-depth-buffering](https://vulkan-tutorial.com/Depth_buffering).
 
 ## Usage
 
@@ -53,6 +53,7 @@ Here replace `example_number` with option in the following table:
 | 23             | 23_texture_image.rs              | [Link](https://vulkan-tutorial.com/Texture_mapping/Images)   |
 | 24             | 24_sampler.rs                    | [Link](https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler) |
 | 25             | 25_texture_mapping.rs            | [Link](https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler) |
+| 26             | 26_depth_buffering.rs            | [Link](https://vulkan-tutorial.com/Depth_buffering)          |
 
 ### example usage
 
@@ -63,3 +64,4 @@ $ cargo run --bin 00
 ## Notices
 
 - Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
+
