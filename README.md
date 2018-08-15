@@ -63,5 +63,6 @@ $ cargo run --bin 00
 
 ## Notices
 
+- All textures and model using in the tutorials are not included in this repository. Please place those resources in the `assets` directory.
 - Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
 
