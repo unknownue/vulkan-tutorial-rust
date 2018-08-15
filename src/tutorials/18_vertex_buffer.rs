@@ -227,10 +227,16 @@ impl VulkanApp {
             device.bind_buffer_memory(vertex_buffer, vertex_buffer_memory, 0)
                 .expect("Failed to bind Buffer");
 
-            let data_ptr = device.map_memory(vertex_buffer_memory, 0, vertex_buffer_create_info.size, vk::MemoryMapFlags::empty())
-                .expect("Failed to Map Memory");
+            let data_ptr = device.map_memory(
+                vertex_buffer_memory,
+                0,
+                vertex_buffer_create_info.size,
+                vk::MemoryMapFlags::empty()
+            ).expect("Failed to Map Memory");
+
             let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, vertex_buffer_create_info.size);
             vert_align.copy_from_slice(&VERTICES_DATA);
+
             device.unmap_memory(vertex_buffer_memory);
         }
 

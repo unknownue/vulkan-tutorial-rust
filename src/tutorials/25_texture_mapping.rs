@@ -217,9 +217,13 @@ impl VulkanApp25 {
             index_buffer_memory,
 
             uniform_transform: UniformBufferObject {
-                model: Matrix4::from_angle_z(Deg(-90.0)),
+                model: Matrix4::from_angle_z(Deg(90.0)),
                 view: Matrix4::look_at(Point3::new(2.0, 2.0, 2.0), Point3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 1.0)),
-                proj: cgmath::perspective(Deg(45.0), swapchain_stuff.swapchain_extent.width as f32 / swapchain_stuff.swapchain_extent.height as f32, 0.1, 10.0),
+                proj: {
+                    let mut proj = cgmath::perspective(Deg(45.0), swapchain_stuff.swapchain_extent.width as f32 / swapchain_stuff.swapchain_extent.height as f32, 0.1, 10.0);
+                    proj[1][1] = proj[1][1] * -1.0;
+                    proj
+                },
             },
             uniform_buffers,
             uniform_buffers_memory,
@@ -562,7 +566,7 @@ impl VulkanApp25 {
             flags                      : vk::PipelineRasterizationStateCreateFlags::empty(),
             depth_clamp_enable         : vk::VK_FALSE,
             cull_mode                  : vk::CULL_MODE_BACK_BIT,
-            front_face                 : vk::FrontFace::Clockwise,
+            front_face                 : vk::FrontFace::CounterClockwise,
             line_width                 : 1.0,
             polygon_mode               : vk::PolygonMode::Fill,
             rasterizer_discard_enable  : vk::VK_FALSE,
