@@ -6,6 +6,7 @@ use ash::vk::types::uint32_t;
 use winit;
 use image;
 use image::GenericImage;
+use tobj;
 
 type EntryV1 = ash::Entry<V1_0>;
 
@@ -359,13 +360,13 @@ pub fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR, window
 pub fn create_image_views(device: &ash::Device<V1_0>, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
 
     let swapchain_imageviews: Vec<vk::ImageView> = images.iter().map(|&image| {
-        create_image_view(device, image, surface_format, vk::IMAGE_ASPECT_COLOR_BIT)
+        create_image_view(device, image, surface_format, vk::IMAGE_ASPECT_COLOR_BIT, 1)
     }).collect();
 
     swapchain_imageviews
 }
 
-pub fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::Format, aspect_flags: vk::ImageAspectFlags) -> vk::ImageView {
+pub fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: vk::Format, aspect_flags: vk::ImageAspectFlags, mip_levels: uint32_t) -> vk::ImageView {
 
     let imageview_create_info = vk::ImageViewCreateInfo {
         s_type    : vk::StructureType::ImageViewCreateInfo,
@@ -382,7 +383,7 @@ pub fn create_image_view(device: &ash::Device<V1_0>, image: vk::Image, format: v
         subresource_range: vk::ImageSubresourceRange {
             aspect_mask      : aspect_flags,
             base_mip_level   : 0,
-            level_count      : 1,
+            level_count      : mip_levels,
             base_array_layer : 0,
             layer_count      : 1,
         },
@@ -1182,8 +1183,7 @@ pub fn create_uniform_buffers(device: &ash::Device<V1_0>, device_memory_properti
     (uniform_buffers, uniform_buffers_memory)
 }
 
-
-pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_t, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
+pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_t, mip_levels: uint32_t, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
     -> (vk::Image, vk::DeviceMemory) {
 
     let image_create_info = vk::ImageCreateInfo {
@@ -1197,7 +1197,7 @@ pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_
             height,
             depth: 1,
         },
-        mip_levels               : 1,
+        mip_levels,
         array_layers             : 1,
         samples                  : vk::SAMPLE_COUNT_1_BIT,
         tiling,
@@ -1234,7 +1234,7 @@ pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_
     (texture_image, texture_image_memory)
 }
 
-pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, format: vk::Format, old_layout: vk::ImageLayout, new_layout: vk::ImageLayout) {
+pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, format: vk::Format, old_layout: vk::ImageLayout, new_layout: vk::ImageLayout, mip_levels: uint32_t) {
 
     let command_buffer = begin_single_time_command(device, command_pool);
 
@@ -1289,7 +1289,7 @@ pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::Com
             subresource_range: vk::ImageSubresourceRange {
                 aspect_mask,
                 base_mip_level   : 0,
-                level_count      : 1,
+                level_count      : mip_levels,
                 base_array_layer : 0,
                 layer_count      : 1,
             }
@@ -1346,10 +1346,9 @@ pub fn copy_buffer_to_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
 }
 
 
-pub fn create_texture_image_view(device: &ash::Device<V1_0>, texture_image: vk::Image) -> vk::ImageView {
+pub fn create_texture_image_view(device: &ash::Device<V1_0>, texture_image: vk::Image, mip_levels: uint32_t) -> vk::ImageView {
 
-    let texture_image_view = create_image_view(device, texture_image, vk::Format::R8g8b8a8Unorm, vk::IMAGE_ASPECT_COLOR_BIT);
-    texture_image_view
+    create_image_view(device, texture_image, vk::Format::R8g8b8a8Unorm, vk::IMAGE_ASPECT_COLOR_BIT, mip_levels)
 }
 
 pub fn create_texture_sampler(device: &ash::Device<V1_0>) -> vk::Sampler {
@@ -1360,17 +1359,17 @@ pub fn create_texture_sampler(device: &ash::Device<V1_0>) -> vk::Sampler {
         flags                    : vk::SamplerCreateFlags::empty(),
         mag_filter               : vk::Filter::Linear,
         min_filter               : vk::Filter::Linear,
-        mipmap_mode              : vk::SamplerMipmapMode::Linear,
         address_mode_u           : vk::SamplerAddressMode::Repeat,
         address_mode_v           : vk::SamplerAddressMode::Repeat,
         address_mode_w           : vk::SamplerAddressMode::Repeat,
-        mip_lod_bias             : 0.0,
         anisotropy_enable        : vk::VK_TRUE,
         max_anisotropy           : 16.0,
         compare_enable           : vk::VK_FALSE,
         compare_op               : vk::CompareOp::Always,
+        mipmap_mode              : vk::SamplerMipmapMode::Linear,
         min_lod                  : 0.0,
         max_lod                  : 0.0,
+        mip_lod_bias             : 0.0,
         border_color             : vk::BorderColor::IntOpaqueBlack,
         unnormalized_coordinates : vk::VK_FALSE,
     };
@@ -1383,7 +1382,7 @@ pub fn create_texture_sampler(device: &ash::Device<V1_0>) -> vk::Sampler {
 
 pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory) {
 
-    let mut image_object = image::open(image_path).unwrap();
+    let mut image_object = image::open(image_path).unwrap(); // this function is slow in debug mode.
     image_object = image_object.flipv();
     let (image_width, image_height) = (image_object.width(), image_object.height());
     let image_data = match &image_object {
@@ -1417,6 +1416,7 @@ pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
     let (texture_image, texture_image_memory) = create_image(
         device,
         image_width, image_height,
+        1,
         vk::Format::R8g8b8a8Unorm,
         vk::ImageTiling::Optimal,
         vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,
@@ -1424,11 +1424,11 @@ pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
         device_memory_properties
     );
 
-    transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal);
+    transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal, 1);
 
     copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
 
-    transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal);
+    transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal, 1);
 
     unsafe {
         device.destroy_buffer(staging_buffer, None);
@@ -1444,15 +1444,16 @@ pub fn create_depth_resources(instance: &ash::Instance<V1_0>, device: &ash::Devi
     let (depth_image, depth_image_memory) = create_image(
         device,
         swapchain_extent.width, swapchain_extent.height,
+        1,
         depth_format,
         vk::ImageTiling::Optimal,
         vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         device_memory_properties
     );
-    let depth_image_view = create_image_view(device, depth_image, depth_format, vk::IMAGE_ASPECT_DEPTH_BIT);
+    let depth_image_view = create_image_view(device, depth_image, depth_format, vk::IMAGE_ASPECT_DEPTH_BIT, 1);
 
-    transition_image_layout(device, command_pool, submit_queue, depth_image, depth_format, vk::ImageLayout::Undefined, vk::ImageLayout::DepthStencilAttachmentOptimal);
+    transition_image_layout(device, command_pool, submit_queue, depth_image, depth_format, vk::ImageLayout::Undefined, vk::ImageLayout::DepthStencilAttachmentOptimal, 1);
 
     (depth_image, depth_image_view, depth_image_memory)
 }
@@ -1485,4 +1486,42 @@ pub fn find_supported_format(instance: &ash::Instance<V1_0>, physical_device: vk
     panic!("Failed to find supported format!")
 }
 
+pub fn load_model(model_path: &Path) -> (Vec<VertexV3>, Vec<vk::uint32_t>) {
 
+    let model_obj = tobj::load_obj(model_path)
+        .expect("Failed to load model object!");
+
+    let mut vertices = vec![];
+    let mut indices  = vec![];
+
+    let (models, _) = model_obj;
+    for m in models.iter() {
+        let mesh = &m.mesh;
+
+        if mesh.texcoords.len() == 0 {
+            panic!("Missing texture coordinate for the model.")
+        }
+
+        let total_vertices_count = mesh.positions.len() / 3;
+        for i in 0..total_vertices_count {
+            let vertex = VertexV3 {
+                pos: [
+                    mesh.positions[i * 3],
+                    mesh.positions[i * 3 + 1],
+                    mesh.positions[i * 3 + 2],
+                    1.0,
+                ],
+                color: [1.0, 1.0, 1.0, 1.0],
+                tex_coord: [
+                    mesh.texcoords[i * 2],
+                    mesh.texcoords[i * 2 + 1],
+                ],
+            };
+            vertices.push(vertex);
+        }
+
+        indices = mesh.indices.clone();
+    }
+
+    (vertices, indices)
+}

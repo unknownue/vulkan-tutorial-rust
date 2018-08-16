@@ -189,7 +189,7 @@ impl VulkanApp23 {
 
     fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory) {
 
-        let mut image_object = image::open(image_path).unwrap();
+        let mut image_object = image::open(image_path).unwrap(); // this function is slow in debug mode.
         image_object = image_object.flipv();
         let (image_width, image_height) = (image_object.width(), image_object.height());
         let image_size = (std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;

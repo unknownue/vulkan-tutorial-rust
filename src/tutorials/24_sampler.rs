@@ -297,6 +297,7 @@ impl VulkanApp24 {
         let (texture_image, texture_image_memory) = create_image(
             device,
             image_width, image_height,
+            1,
             vk::Format::R8g8b8a8Unorm,
             vk::ImageTiling::Optimal,
             vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,
@@ -304,11 +305,11 @@ impl VulkanApp24 {
             device_memory_properties
         );
 
-        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal);
+        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal, 1);
 
         copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
 
-        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal);
+        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::TransferDstOptimal, vk::ImageLayout::ShaderReadOnlyOptimal, 1);
 
         unsafe {
             device.destroy_buffer(staging_buffer, None);

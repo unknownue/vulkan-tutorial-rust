@@ -14,6 +14,8 @@ extern crate cgmath;
 #[macro_use]
 extern crate memoffset;
 extern crate image;
+extern crate tobj;
+
 
 #[cfg(target_os = "macos")]
 extern crate metal_rs;

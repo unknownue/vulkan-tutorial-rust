@@ -13,7 +13,7 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 ## Status
 
-Currently finish work on [27-model-loading](https://vulkan-tutorial.com/Loading_models).
+Currently finish work on [28-mipmapping](https://vulkan-tutorial.com/Generating_Mipmaps).
 
 ## Usage
 
@@ -55,6 +55,7 @@ Here replace `example_number` with option in the following table:
 | 25             | 25_texture_mapping.rs            | [Link](https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler) |                                     |
 | 26             | 26_depth_buffering.rs            | [Link](https://vulkan-tutorial.com/Depth_buffering)          |                                     |
 | 27             | 27_model_loading.rs              | [Link](https://vulkan-tutorial.com/Loading_models)           | Test this example in release mode.  |
+| 28             | 28_mipmapping.rs                 | [Link](https://vulkan-tutorial.com/Generating_Mipmaps)       | Test this example in release mode.  |
 
 ### example usage
 

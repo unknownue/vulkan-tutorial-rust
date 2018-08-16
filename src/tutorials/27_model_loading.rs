@@ -117,7 +117,7 @@ struct VulkanApp27 {
     texture_sampler            : vk::Sampler,
     texture_image_memory       : vk::DeviceMemory,
 
-    _vertices                   : Vec<VertexV3>,
+    _vertices                  : Vec<VertexV3>,
     indices                    : Vec<vk::types::uint32_t>,
 
     vertex_buffer              : vk::Buffer,
@@ -169,7 +169,7 @@ impl VulkanApp27 {
         let swapchain_framebuffers = VulkanApp27::create_framebuffers(&device, render_pass, &swapchain_imageviews, depth_image_view, swapchain_stuff.swapchain_extent);
         let (vertices, indices) = VulkanApp27::load_model(&Path::new(MODEL_PATH));
         let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
-        let texture_image_view = create_texture_image_view(&device, texture_image);
+        let texture_image_view = create_texture_image_view(&device, texture_image, 1);
         let texture_sampler = create_texture_sampler(&device);
         let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &vertices);
         let (index_buffer, index_buffer_memory) = create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &indices);

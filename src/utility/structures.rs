@@ -96,6 +96,49 @@ impl VertexV1 {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct VertexV3 {
+    pub pos:       [f32; 4],
+    pub color:     [f32; 4],
+    pub tex_coord: [f32; 2],
+}
+impl VertexV3 {
+
+    pub fn get_binding_descriptions() -> [vk::VertexInputBindingDescription; 1] {
+        [
+            vk::VertexInputBindingDescription {
+                binding   : 0,
+                stride    : ::std::mem::size_of::<Self>() as u32,
+                input_rate: vk::VertexInputRate::Vertex,
+            },
+        ]
+    }
+
+    pub fn get_attribute_descriptions() -> [vk::VertexInputAttributeDescription; 3] {
+        [
+            vk::VertexInputAttributeDescription {
+                binding  : 0,
+                location : 0,
+                format   : vk::Format::R32g32b32a32Sfloat,
+                offset   : offset_of!(Self, pos) as u32,
+            },
+            vk::VertexInputAttributeDescription {
+                binding  : 0,
+                location : 1,
+                format   : vk::Format::R32g32b32a32Sfloat,
+                offset   : offset_of!(Self, color) as u32,
+            },
+            vk::VertexInputAttributeDescription {
+                binding  : 0,
+                location : 2,
+                format   : vk::Format::R32g32Sfloat,
+                offset   : offset_of!(Self, tex_coord) as u32,
+            },
+        ]
+    }
+}
+
+
 pub const RECT_VERTICES_DATA: [VertexV1; 4] = [
     VertexV1 { pos: [-0.5, -0.5], color: [1.0, 0.0, 0.0, 1.0], },
     VertexV1 { pos: [ 0.5, -0.5], color: [0.0, 1.0, 0.0, 1.0], },
@@ -105,4 +148,5 @@ pub const RECT_VERTICES_DATA: [VertexV1; 4] = [
 pub const RECT_INDICES_DATA: [vk::types::uint32_t; 6] = [
     0, 1, 2, 2, 3, 0
 ];
+
 
