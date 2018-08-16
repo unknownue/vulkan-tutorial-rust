@@ -1438,4 +1438,51 @@ pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
     (texture_image, texture_image_memory)
 }
 
+pub fn create_depth_resources(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue, swapchain_extent: vk::Extent2D, device_memory_properties: &vk::PhysicalDeviceMemoryProperties) -> (vk::Image, vk::ImageView, vk::DeviceMemory) {
+
+    let depth_format = find_depth_format(instance, physical_device);
+    let (depth_image, depth_image_memory) = create_image(
+        device,
+        swapchain_extent.width, swapchain_extent.height,
+        depth_format,
+        vk::ImageTiling::Optimal,
+        vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        device_memory_properties
+    );
+    let depth_image_view = create_image_view(device, depth_image, depth_format, vk::IMAGE_ASPECT_DEPTH_BIT);
+
+    transition_image_layout(device, command_pool, submit_queue, depth_image, depth_format, vk::ImageLayout::Undefined, vk::ImageLayout::DepthStencilAttachmentOptimal);
+
+    (depth_image, depth_image_view, depth_image_memory)
+}
+
+pub fn find_depth_format(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> vk::Format {
+    find_supported_format(
+        instance, physical_device,
+        &[
+            vk::Format::D32Sfloat,
+            vk::Format::D32SfloatS8Uint,
+            vk::Format::D24UnormS8Uint,
+        ],
+        vk::ImageTiling::Optimal,
+        vk::FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+    )
+}
+
+pub fn find_supported_format(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, candidate_formats: &[vk::Format], tiling: vk::ImageTiling, features: vk::FormatFeatureFlags) -> vk::Format {
+
+    for &format in candidate_formats.iter() {
+
+        let format_properties = instance.get_physical_device_format_properties(physical_device, format);
+        if tiling == vk::ImageTiling::Linear && format_properties.linear_tiling_features.subset(features) {
+            return format.clone()
+        } else if tiling == vk::ImageTiling::Optimal && format_properties.optimal_tiling_features.subset(features) {
+            return format.clone()
+        }
+    }
+
+    panic!("Failed to find supported format!")
+}
+
 

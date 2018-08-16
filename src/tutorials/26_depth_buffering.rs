@@ -178,7 +178,7 @@ impl VulkanApp26 {
         let command_pool = create_command_pool(&device, &queue_family);
         let (depth_image, depth_image_view, depth_image_memory) = VulkanApp26::create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties);
         let swapchain_framebuffers = VulkanApp26::create_framebuffers(&device, render_pass, &swapchain_imageviews, depth_image_view, swapchain_stuff.swapchain_extent);
-        let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new("textures/texture.jpg"));
+        let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new("assets/texture.jpg"));
         let texture_image_view = create_texture_image_view(&device, texture_image);
         let texture_sampler = create_texture_sampler(&device);
         let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_TEX_COORD_VERTICES_DATA);
