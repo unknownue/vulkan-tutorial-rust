@@ -1051,7 +1051,7 @@ impl VulkanApp for VulkanApp27 {
         self.depth_image_view   = depth_resources.1;
         self.depth_image_memory = depth_resources.2;
 
-        self.swapchain_framebuffers = create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
+        self.swapchain_framebuffers = VulkanApp27::create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.depth_image_view, self.swapchain_extent);
         self.command_buffers = VulkanApp27::create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent, self.vertex_buffer, self.index_buffer, self.pipeline_layout, &self.descriptor_sets, self.indices.len() as u32);
     }
 
