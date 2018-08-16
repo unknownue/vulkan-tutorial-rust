@@ -29,7 +29,7 @@ use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "25.Texture Mapping";
-
+const TEXTURE_PATH: &'static str = "assets/texture.jpg";
 
 #[derive(Debug, Clone, Copy)]
 pub struct VertexV2 {
@@ -162,7 +162,7 @@ impl VulkanApp25 {
         let (graphics_pipeline, pipeline_layout) = VulkanApp25::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
         let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new("VulkanApp24"));
+        let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
         let texture_image_view = create_texture_image_view(&device, texture_image);
         let texture_sampler = create_texture_sampler(&device);
         let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_TEX_COORD_VERTICES_DATA);

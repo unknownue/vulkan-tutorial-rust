@@ -29,6 +29,8 @@ use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "24.Sampler";
+const TEXTURE_PATH: &'static str = "assets/texture.jpg";
+
 
 struct VulkanApp24 {
 
@@ -113,7 +115,7 @@ impl VulkanApp24 {
         let (graphics_pipeline, pipeline_layout) = VulkanApp24::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
         let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (texture_image, texture_image_memory) = VulkanApp24::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new("assets/texture.jpg"));
+        let (texture_image, texture_image_memory) = VulkanApp24::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
         let texture_image_view = VulkanApp24::create_texture_image_view(&device, texture_image);
         let texture_sampler = VulkanApp24::create_texture_sampler(&device);
         let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_VERTICES_DATA);
