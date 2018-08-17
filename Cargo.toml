@@ -1,6 +1,6 @@
 [package]
 name = "vulkan-tutorial-rust"
-version = "0.28.0"
+version = "0.29.0"
 authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
@@ -106,3 +106,6 @@ path = "src/tutorials/27_model_loading.rs"
 [[bin]]
 name = "28"
 path = "src/tutorials/28_mipmapping.rs"
+[[bin]]
+name = "29"
+path = "src/tutorials/29_multisampling.rs"

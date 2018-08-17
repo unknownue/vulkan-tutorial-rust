@@ -298,6 +298,7 @@ impl VulkanApp24 {
             device,
             image_width, image_height,
             1,
+            vk::SAMPLE_COUNT_1_BIT,
             vk::Format::R8g8b8a8Unorm,
             vk::ImageTiling::Optimal,
             vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,

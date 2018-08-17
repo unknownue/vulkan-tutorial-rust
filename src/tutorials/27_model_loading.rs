@@ -165,7 +165,7 @@ impl VulkanApp27 {
         let ubo_layout = VulkanApp27::create_descriptor_set_layout(&device);
         let (graphics_pipeline, pipeline_layout) = VulkanApp27::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (depth_image, depth_image_view, depth_image_memory) = create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties);
+        let (depth_image, depth_image_view, depth_image_memory) = create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, vk::SAMPLE_COUNT_1_BIT);
         let swapchain_framebuffers = VulkanApp27::create_framebuffers(&device, render_pass, &swapchain_imageviews, depth_image_view, swapchain_stuff.swapchain_extent);
         let (vertices, indices) = VulkanApp27::load_model(&Path::new(MODEL_PATH));
         let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
@@ -1046,7 +1046,7 @@ impl VulkanApp for VulkanApp27 {
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        let depth_resources = create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties);
+        let depth_resources = create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties, vk::SAMPLE_COUNT_1_BIT);
         self.depth_image        = depth_resources.0;
         self.depth_image_view   = depth_resources.1;
         self.depth_image_memory = depth_resources.2;

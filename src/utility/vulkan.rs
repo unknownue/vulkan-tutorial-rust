@@ -2,7 +2,7 @@
 use ash;
 use ash::vk;
 use ash::version::{ V1_0, InstanceV1_0, EntryV1_0, DeviceV1_0 };
-use ash::vk::types::uint32_t;
+use ash::vk::types::{ uint32_t, int32_t };
 use winit;
 use image;
 use image::GenericImage;
@@ -13,6 +13,7 @@ type EntryV1 = ash::Entry<V1_0>;
 use std::ptr;
 use std::ffi::CString;
 use std::path::Path;
+use std::cmp::max;
 
 use super::{
     debug,
@@ -93,11 +94,11 @@ pub fn pick_physical_device(instance: &ash::Instance<V1_0>, surface_stuff: &Surf
         let swapchain_support = query_swapchain_support(**physical_device, surface_stuff);
         let is_suitable = is_physical_device_suitable(instance, **physical_device, surface_stuff, &swapchain_support, required_device_extensions);
 
-        if is_suitable {
-            let device_properties = instance.get_physical_device_properties(**physical_device);
-            let device_name = super::tools::vk_to_string(&device_properties.device_name);
-            println!("Using GPU: {}", device_name);
-        }
+        // if is_suitable {
+        //     let device_properties = instance.get_physical_device_properties(**physical_device);
+        //     let device_name = super::tools::vk_to_string(&device_properties.device_name);
+        //     println!("Using GPU: {}", device_name);
+        // }
 
         is_suitable
     });
@@ -1183,7 +1184,7 @@ pub fn create_uniform_buffers(device: &ash::Device<V1_0>, device_memory_properti
     (uniform_buffers, uniform_buffers_memory)
 }
 
-pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_t, mip_levels: uint32_t, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
+pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_t, mip_levels: uint32_t, num_samples: vk::SampleCountFlags, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties)
     -> (vk::Image, vk::DeviceMemory) {
 
     let image_create_info = vk::ImageCreateInfo {
@@ -1199,7 +1200,7 @@ pub fn create_image(device: &ash::Device<V1_0>, width: uint32_t, height: uint32_
         },
         mip_levels,
         array_layers             : 1,
-        samples                  : vk::SAMPLE_COUNT_1_BIT,
+        samples                  : num_samples,
         tiling,
         usage,
         sharing_mode             : vk::SharingMode::Exclusive,
@@ -1261,6 +1262,12 @@ pub fn transition_image_layout(device: &ash::Device<V1_0>, command_pool: vk::Com
         dst_access_mask   = vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         source_stage      = vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destination_stage = vk::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    } else if old_layout == vk::ImageLayout::Undefined && new_layout == vk::ImageLayout::ColorAttachmentOptimal {
+
+        src_access_mask   = vk::AccessFlags::empty();
+        dst_access_mask   = vk::ACCESS_COLOR_ATTACHMENT_READ_BIT | vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        source_stage      = vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     } else {
         panic!("Unsupported layout transition!")
     }
@@ -1417,6 +1424,7 @@ pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
         device,
         image_width, image_height,
         1,
+        vk::SAMPLE_COUNT_1_BIT,
         vk::Format::R8g8b8a8Unorm,
         vk::ImageTiling::Optimal,
         vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,
@@ -1438,13 +1446,14 @@ pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::Comman
     (texture_image, texture_image_memory)
 }
 
-pub fn create_depth_resources(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue, swapchain_extent: vk::Extent2D, device_memory_properties: &vk::PhysicalDeviceMemoryProperties) -> (vk::Image, vk::ImageView, vk::DeviceMemory) {
+pub fn create_depth_resources(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue, swapchain_extent: vk::Extent2D, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, msaa_samples: vk::SampleCountFlags) -> (vk::Image, vk::ImageView, vk::DeviceMemory) {
 
     let depth_format = find_depth_format(instance, physical_device);
     let (depth_image, depth_image_memory) = create_image(
         device,
         swapchain_extent.width, swapchain_extent.height,
         1,
+        msaa_samples,
         depth_format,
         vk::ImageTiling::Optimal,
         vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -1524,4 +1533,145 @@ pub fn load_model(model_path: &Path) -> (Vec<VertexV3>, Vec<vk::uint32_t>) {
     }
 
     (vertices, indices)
+}
+
+pub fn generate_mipmaps(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, tex_width: u32, tex_height: u32, mip_levels: uint32_t) {
+
+    let command_buffer = begin_single_time_command(device, command_pool);
+
+    let mut image_barrier = vk::ImageMemoryBarrier {
+        s_type                 : vk::StructureType::ImageMemoryBarrier,
+        p_next                 : ptr::null(),
+        src_access_mask        : vk::AccessFlags::empty(),
+        dst_access_mask        : vk::AccessFlags::empty(),
+        old_layout             : vk::ImageLayout::Undefined,
+        new_layout             : vk::ImageLayout::Undefined,
+        src_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
+        dst_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
+        image,
+        subresource_range: vk::ImageSubresourceRange {
+            aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+            base_mip_level   : 0,
+            level_count      : 1,
+            base_array_layer : 0,
+            layer_count      : 1,
+        }
+    };
+
+    let mut mip_width  = tex_width  as int32_t;
+    let mut mip_height = tex_height as int32_t;
+
+    for i in 1..mip_levels {
+
+        image_barrier.subresource_range.base_mip_level = i - 1;
+        image_barrier.old_layout      = vk::ImageLayout::TransferDstOptimal;
+        image_barrier.new_layout      = vk::ImageLayout::TransferSrcOptimal;
+        image_barrier.src_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
+        image_barrier.dst_access_mask = vk::ACCESS_TRANSFER_READ_BIT;
+
+        unsafe {
+            device.cmd_pipeline_barrier(
+                command_buffer,
+                vk::PIPELINE_STAGE_TRANSFER_BIT,
+                vk::PIPELINE_STAGE_TRANSFER_BIT,
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &[image_barrier.clone()],
+            );
+        }
+
+        let blits = [
+            vk::ImageBlit {
+                src_subresource: vk::ImageSubresourceLayers {
+                    aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                    mip_level        : i - 1,
+                    base_array_layer : 0,
+                    layer_count      : 1,
+                },
+                src_offsets: [
+                    vk::Offset3D { x: 0, y: 0, z: 0 },
+                    vk::Offset3D { x: mip_width, y: mip_height, z: 1 },
+                ],
+                dst_subresource: vk::ImageSubresourceLayers {
+                    aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                    mip_level        : i,
+                    base_array_layer : 0,
+                    layer_count      : 1,
+                },
+                dst_offsets: [
+                    vk::Offset3D { x: 0, y: 0, z: 0 },
+                    vk::Offset3D {
+                        x: max(mip_width  / 2, 1),
+                        y: max(mip_height / 2, 1),
+                        z: 1
+                    },
+                ],
+            },
+        ];
+
+        unsafe {
+            device.cmd_blit_image(
+                command_buffer,
+                image,
+                vk::ImageLayout::TransferSrcOptimal,
+                image,
+                vk::ImageLayout::TransferDstOptimal,
+                &blits,
+                vk::Filter::Linear
+            );
+        }
+
+        image_barrier.old_layout      = vk::ImageLayout::TransferSrcOptimal;
+        image_barrier.new_layout      = vk::ImageLayout::ShaderReadOnlyOptimal;
+        image_barrier.src_access_mask = vk::ACCESS_TRANSFER_READ_BIT;
+        image_barrier.dst_access_mask = vk::ACCESS_SHADER_READ_BIT;
+
+        unsafe {
+            device.cmd_pipeline_barrier(
+                command_buffer,
+                vk::PIPELINE_STAGE_TRANSFER_BIT,
+                vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &[image_barrier.clone()],
+            );
+        }
+
+        mip_width  = max(mip_width  / 2, 1);
+        mip_height = max(mip_height / 2, 1);
+    }
+
+
+    image_barrier.subresource_range.base_mip_level = mip_levels - 1;
+    image_barrier.old_layout      = vk::ImageLayout::TransferDstOptimal;
+    image_barrier.new_layout      = vk::ImageLayout::ShaderReadOnlyOptimal;
+    image_barrier.src_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
+    image_barrier.dst_access_mask = vk::ACCESS_SHADER_READ_BIT;
+
+    unsafe {
+        device.cmd_pipeline_barrier(
+            command_buffer,
+            vk::PIPELINE_STAGE_TRANSFER_BIT,
+            vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            vk::DependencyFlags::empty(),
+            &[],
+            &[],
+            &[image_barrier.clone()],
+        );
+    }
+
+    end_single_time_command(device, command_pool, submit_queue, command_buffer);
+}
+
+pub fn check_mipmap_support(instance: &ash::Instance<V1_0>, physcial_device: vk::PhysicalDevice, image_format: vk::Format) {
+
+    let format_properties = instance.get_physical_device_format_properties(physcial_device, image_format);
+
+    let is_sample_image_filter_linear_support = format_properties.optimal_tiling_features.subset(vk::FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+
+    if is_sample_image_filter_linear_support == false {
+        panic!("Texture Image format does not support linear blitting!")
+    }
 }

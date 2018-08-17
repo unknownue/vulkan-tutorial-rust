@@ -125,7 +125,7 @@ impl VulkanApp28 {
         let ubo_layout = VulkanApp28::create_descriptor_set_layout(&device);
         let (graphics_pipeline, pipeline_layout) = VulkanApp28::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
         let command_pool = create_command_pool(&device, &queue_family);
-        let (depth_image, depth_image_view, depth_image_memory) = create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties);
+        let (depth_image, depth_image_view, depth_image_memory) = create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, vk::SAMPLE_COUNT_1_BIT);
         let swapchain_framebuffers = VulkanApp28::create_framebuffers(&device, render_pass, &swapchain_imageviews, depth_image_view, swapchain_stuff.swapchain_extent);
         let (vertices, indices) = load_model(&Path::new(MODEL_PATH));
         VulkanApp28::check_mipmap_support(&instance, physical_device, vk::Format::R8g8b8a8Unorm);
@@ -219,7 +219,7 @@ impl VulkanApp28 {
         }
     }
 
-    pub fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory, uint32_t) {
+    fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory, uint32_t) {
 
         let mut image_object = image::open(image_path).unwrap(); // this function is slow in debug mode.
         image_object = image_object.flipv();
@@ -257,6 +257,7 @@ impl VulkanApp28 {
             device,
             image_width, image_height,
             mip_levels,
+            vk::SAMPLE_COUNT_1_BIT,
             vk::Format::R8g8b8a8Unorm,
             vk::ImageTiling::Optimal,
             vk::IMAGE_USAGE_TRANSFER_SRC_BIT | vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,
@@ -1197,7 +1198,7 @@ impl VulkanApp for VulkanApp28 {
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        let depth_resources = create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties);
+        let depth_resources = create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties, vk::SAMPLE_COUNT_1_BIT);
         self.depth_image        = depth_resources.0;
         self.depth_image_view   = depth_resources.1;
         self.depth_image_memory = depth_resources.2;
