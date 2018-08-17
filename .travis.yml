@@ -1,0 +1,7 @@
+language: rust
+
+rust:
+- stable
+
+script:
+- cargo build --manifest-path vulkan-tutorial-rust/Cargo.toml
