@@ -24,4 +24,7 @@ extern crate cocoa;
 #[cfg(target_os = "macos")]
 extern crate objc;
 
+#[cfg(target_os = "windows")]
+extern crate winapi;
+
 pub mod utility;

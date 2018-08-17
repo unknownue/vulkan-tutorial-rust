@@ -5,7 +5,6 @@ use ash::version::{ EntryV1_0, InstanceV1_0 };
 #[allow(unused_imports)]
 use ash::extensions::{ Surface, MacOSSurface, Win32Surface, XlibSurface, DebugReport };
 
-use std::mem;
 use std::ptr;
 
 #[cfg(target_os = "macos")]
@@ -75,6 +74,7 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
     use winit::os::macos::WindowExt;
+    use std::mem;
 
     let wnd: cocoa_id = mem::transmute(window.get_nswindow());
 
