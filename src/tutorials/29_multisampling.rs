@@ -2,8 +2,8 @@
 extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
+    utility::share,
     utility::debug::*,
-    utility::vulkan::*,
     utility::structures::*,
     utility::constants::*,
     utility::window::{ VulkanApp, ProgramProc },
@@ -116,36 +116,36 @@ impl VulkanApp29 {
 
         // init vulkan stuff
         let entry = EntryV1::new().unwrap();
-        let instance = create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
-        let surface_stuff = create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
+        let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
+        let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
-        let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
+        let physical_device = share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
         let msaa_samples = VulkanApp29::get_max_usable_sample_count(&instance, physical_device);
         let physical_device_memory_properties = instance.get_physical_device_memory_properties(physical_device);
-        let (device, queue_family) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let (device, queue_family) = share::create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
-        let swapchain_imageviews = create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let swapchain_stuff = share::create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
+        let swapchain_imageviews = share::v1::create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
         let render_pass = VulkanApp29::create_render_pass(&instance, &device, physical_device, swapchain_stuff.swapchain_format, msaa_samples);
-        let ubo_layout = VulkanApp29::create_descriptor_set_layout(&device);
+        let ubo_layout = share::v2::create_descriptor_set_layout(&device);
         let (graphics_pipeline, pipeline_layout) = VulkanApp29::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout, msaa_samples);
-        let command_pool = create_command_pool(&device, &queue_family);
+        let command_pool = share::v1::create_command_pool(&device, &queue_family);
         let (color_image, color_image_view, color_image_memory) = VulkanApp29::create_color_resources(&device, command_pool, graphics_queue, swapchain_stuff.swapchain_format, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, msaa_samples);
-        let (depth_image, depth_image_view, depth_image_memory) = create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, msaa_samples);
+        let (depth_image, depth_image_view, depth_image_memory) = share::v1::create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, msaa_samples);
         let swapchain_framebuffers = VulkanApp29::create_framebuffers(&device, render_pass, &swapchain_imageviews, depth_image_view, color_image_view, swapchain_stuff.swapchain_extent);
-        let (vertices, indices) = load_model(&Path::new(MODEL_PATH));
-        check_mipmap_support(&instance, physical_device, vk::Format::R8g8b8a8Unorm);
+        let (vertices, indices) = share::load_model(&Path::new(MODEL_PATH));
+        share::check_mipmap_support(&instance, physical_device, vk::Format::R8g8b8a8Unorm);
         let (texture_image, texture_image_memory, mip_levels) = VulkanApp29::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
-        let texture_image_view = create_texture_image_view(&device, texture_image, mip_levels);
+        let texture_image_view = share::v1::create_texture_image_view(&device, texture_image, mip_levels);
         let texture_sampler = VulkanApp29::create_texture_sampler(&device, mip_levels);
-        let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &vertices);
-        let (index_buffer, index_buffer_memory) = create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &indices);
-        let (uniform_buffers, uniform_buffers_memory) = create_uniform_buffers(&device, &physical_device_memory_properties, swapchain_stuff.swapchain_images.len());
-        let descriptor_pool = VulkanApp29::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
-        let descriptor_sets = VulkanApp29::create_descriptor_sets(&device, descriptor_pool, ubo_layout, &uniform_buffers, texture_image_view, texture_sampler, swapchain_stuff.swapchain_images.len());
+        let (vertex_buffer, vertex_buffer_memory) = share::v1::create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &vertices);
+        let (index_buffer, index_buffer_memory) = share::v1::create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &indices);
+        let (uniform_buffers, uniform_buffers_memory) = share::v1::create_uniform_buffers(&device, &physical_device_memory_properties, swapchain_stuff.swapchain_images.len());
+        let descriptor_pool = share::v2::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
+        let descriptor_sets = share::v2::create_descriptor_sets(&device, descriptor_pool, ubo_layout, &uniform_buffers, texture_image_view, texture_sampler, swapchain_stuff.swapchain_images.len());
         let command_buffers = VulkanApp29::create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent, vertex_buffer, index_buffer, pipeline_layout, &descriptor_sets, indices.len() as u32);
-        let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
+        let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp29 {
@@ -255,7 +255,7 @@ impl VulkanApp29 {
 
         let color_format = swapchain_format;
 
-        let (color_image, color_image_memory) = create_image(
+        let (color_image, color_image_memory) = share::v1::create_image(
             device,
             swapchain_extent.width, swapchain_extent.height,
             1,
@@ -267,9 +267,9 @@ impl VulkanApp29 {
             device_memory_properties
         );
 
-        let color_image_view = create_image_view(device, color_image, color_format, vk::IMAGE_ASPECT_COLOR_BIT, 1);
+        let color_image_view = share::v1::create_image_view(device, color_image, color_format, vk::IMAGE_ASPECT_COLOR_BIT, 1);
 
-        transition_image_layout(device, command_pool, submit_queue, color_image, color_format, vk::ImageLayout::Undefined, vk::ImageLayout::ColorAttachmentOptimal, 1);
+        share::v1::transition_image_layout(device, command_pool, submit_queue, color_image, color_format, vk::ImageLayout::Undefined, vk::ImageLayout::ColorAttachmentOptimal, 1);
 
         (color_image, color_image_view, color_image_memory)
     }
@@ -292,7 +292,7 @@ impl VulkanApp29 {
             panic!("Failed to load texture image!")
         }
 
-        let (staging_buffer, staging_buffer_memory) = create_buffer(
+        let (staging_buffer, staging_buffer_memory) = share::create_buffer(
             device,
             image_size,
             vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -308,7 +308,7 @@ impl VulkanApp29 {
             device.unmap_memory(staging_buffer_memory);
         }
 
-        let (texture_image, texture_image_memory) = create_image(
+        let (texture_image, texture_image_memory) = share::v1::create_image(
             device,
             image_width, image_height,
             mip_levels,
@@ -320,11 +320,11 @@ impl VulkanApp29 {
             device_memory_properties
         );
 
-        transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal, mip_levels);
+        share::v1::transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal, mip_levels);
 
-        copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
+        share::copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
 
-        generate_mipmaps(device, command_pool, submit_queue, texture_image, image_width, image_height, mip_levels);
+        share::v1::generate_mipmaps(device, command_pool, submit_queue, texture_image, image_width, image_height, mip_levels);
 
         unsafe {
             device.destroy_buffer(staging_buffer, None);
@@ -387,7 +387,7 @@ impl VulkanApp29 {
 
         let depth_attachment = vk::AttachmentDescription {
             flags            : vk::AttachmentDescriptionFlags::empty(),
-            format           : find_depth_format(instance, physcial_device),
+            format           : share::find_depth_format(instance, physcial_device),
             samples          : msaa_samples,
             load_op          : vk::AttachmentLoadOp::Clear,
             store_op         : vk::AttachmentStoreOp::DontCare,
@@ -514,8 +514,8 @@ impl VulkanApp29 {
         let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/26-shader-depth.vert.spv"));
         let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/26-shader-depth.frag.spv"));
 
-        let vert_shader_module = create_shader_module(device, vert_shader_code);
-        let frag_shader_module = create_shader_module(device, frag_shader_code);
+        let vert_shader_module = share::create_shader_module(device, vert_shader_code);
+        let frag_shader_module = share::create_shader_module(device, frag_shader_code);
 
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
@@ -719,139 +719,6 @@ impl VulkanApp29 {
         }
 
         (graphics_pipelines[0], pipeline_layout)
-    }
-
-    fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size: usize) -> vk::DescriptorPool {
-
-        let pool_sizes = [
-            vk::DescriptorPoolSize { // transform descriptor pool
-                typ              : vk::DescriptorType::UniformBuffer,
-                descriptor_count : swapchain_images_size as u32
-            },
-            vk::DescriptorPoolSize { // sampler descriptor pool
-                typ              : vk::DescriptorType::CombinedImageSampler,
-                descriptor_count : swapchain_images_size as u32,
-            }
-        ];
-
-        let descriptor_pool_create_info = vk::DescriptorPoolCreateInfo {
-            s_type          : vk::StructureType::DescriptorPoolCreateInfo,
-            p_next          : ptr::null(),
-            flags           : vk::DescriptorPoolCreateFlags::empty(),
-            max_sets        : swapchain_images_size as u32,
-            pool_size_count : pool_sizes.len() as u32,
-            p_pool_sizes    : pool_sizes.as_ptr(),
-        };
-
-        unsafe {
-            device.create_descriptor_pool(&descriptor_pool_create_info, None)
-                .expect("Failed to create Descriptor Pool!")
-        }
-    }
-
-    fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::DescriptorPool, descriptor_set_layout: vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, texture_image_view: vk::ImageView, texture_sampler: vk::Sampler, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
-
-        let mut layouts: Vec<vk::DescriptorSetLayout> = vec![];
-        for _ in 0..swapchain_images_size {
-            layouts.push(descriptor_set_layout);
-        }
-
-        let descriptor_set_allocate_info = vk::DescriptorSetAllocateInfo {
-            s_type               : vk::StructureType::DescriptorSetAllocateInfo,
-            p_next               : ptr::null(),
-            descriptor_pool,
-            descriptor_set_count : swapchain_images_size as u32,
-            p_set_layouts        : layouts.as_ptr()
-        };
-
-        let descriptor_sets = unsafe {
-            device.allocate_descriptor_sets(&descriptor_set_allocate_info)
-                .expect("Failed to allocate descriptor sets!")
-        };
-
-        for (i, &descritptor_set) in descriptor_sets.iter().enumerate() {
-            let descriptor_buffer_infos = [
-                vk::DescriptorBufferInfo {
-                    buffer : uniforms_buffers[i],
-                    offset : 0,
-                    range  : ::std::mem::size_of::<UniformBufferObject>() as u64,
-                },
-            ];
-
-            let descriptor_image_infos = [
-                vk::DescriptorImageInfo {
-                    sampler      : texture_sampler,
-                    image_view   : texture_image_view,
-                    image_layout : vk::ImageLayout::ShaderReadOnlyOptimal,
-                },
-            ];
-
-            let descriptor_write_sets = [
-                vk::WriteDescriptorSet { // transform uniform
-                    s_type              : vk::StructureType::WriteDescriptorSet,
-                    p_next              : ptr::null(),
-                    dst_set             : descritptor_set,
-                    dst_binding         : 0,
-                    dst_array_element   : 0,
-                    descriptor_count    : 1,
-                    descriptor_type     : vk::DescriptorType::UniformBuffer,
-                    p_image_info        : ptr::null(),
-                    p_buffer_info       : descriptor_buffer_infos.as_ptr(),
-                    p_texel_buffer_view : ptr::null(),
-                },
-                vk::WriteDescriptorSet { // sampler uniform
-                    s_type              : vk::StructureType::WriteDescriptorSet,
-                    p_next              : ptr::null(),
-                    dst_set             : descritptor_set,
-                    dst_binding         : 1,
-                    dst_array_element   : 0,
-                    descriptor_count    : 1,
-                    descriptor_type     : vk::DescriptorType::CombinedImageSampler,
-                    p_image_info        : descriptor_image_infos.as_ptr(),
-                    p_buffer_info       : ptr::null(),
-                    p_texel_buffer_view : ptr::null(),
-                }
-            ];
-
-            unsafe {
-                device.update_descriptor_sets(&descriptor_write_sets, &[]);
-            }
-        }
-
-        descriptor_sets
-    }
-
-    fn create_descriptor_set_layout(device: &ash::Device<V1_0>) -> vk::DescriptorSetLayout {
-
-        let ubo_layout_bindings = [
-            vk::DescriptorSetLayoutBinding { // transform uniform
-                binding              : 0,
-                descriptor_type      : vk::DescriptorType::UniformBuffer,
-                descriptor_count     : 1,
-                stage_flags          : vk::SHADER_STAGE_VERTEX_BIT,
-                p_immutable_samplers : ptr::null(),
-            },
-            vk::DescriptorSetLayoutBinding { // sampler uniform
-                binding              : 1,
-                descriptor_type      : vk::DescriptorType::CombinedImageSampler,
-                descriptor_count     : 1,
-                stage_flags          : vk::SHADER_STAGE_FRAGMENT_BIT,
-                p_immutable_samplers : ptr::null(),
-            }
-        ];
-
-        let ubo_layout_create_info = vk::DescriptorSetLayoutCreateInfo {
-            s_type        : vk::StructureType::DescriptorSetLayoutCreateInfo,
-            p_next        : ptr::null(),
-            flags         : vk::DescriptorSetLayoutCreateFlags::empty(),
-            binding_count : ubo_layout_bindings.len() as u32,
-            p_bindings    : ubo_layout_bindings.as_ptr(),
-        };
-
-        unsafe {
-            device.create_descriptor_set_layout(&ubo_layout_create_info, None)
-                .expect("Failed to create Descriptor Set Layout!")
-        }
     }
 
     fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer, pipeline_layout: vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>, index_count: vk::uint32_t) -> Vec<vk::CommandBuffer> {
@@ -1118,14 +985,14 @@ impl VulkanApp for VulkanApp29 {
             .expect("Failed to wait device idle!");
         self.cleanup_swapchain();
 
-        let swapchain_stuff = create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
+        let swapchain_stuff = share::create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
         self.swapchain_loader = swapchain_stuff.swapchain_loader;
         self.swapchain        = swapchain_stuff.swapchain;
         self.swapchain_images = swapchain_stuff.swapchain_images;
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;
 
-        self.swapchain_imageviews = create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
+        self.swapchain_imageviews = share::v1::create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
         self.render_pass = VulkanApp29::create_render_pass(&self.instance, &self.device, self.physical_device, self.swapchain_format, self.msaa_samples);
         let (graphics_pipeline, pipeline_layout) = VulkanApp29::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent, self.ubo_layout, self.msaa_samples);
         self.graphics_pipeline = graphics_pipeline;
@@ -1136,7 +1003,7 @@ impl VulkanApp for VulkanApp29 {
         self.color_image_view   = color_resources.1;
         self.color_image_memory = color_resources.2;
 
-        let depth_resources = create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties, self.msaa_samples);
+        let depth_resources = share::v1::create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties, self.msaa_samples);
         self.depth_image        = depth_resources.0;
         self.depth_image_view   = depth_resources.1;
         self.depth_image_memory = depth_resources.2;

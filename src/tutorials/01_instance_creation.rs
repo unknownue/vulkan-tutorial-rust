@@ -69,7 +69,7 @@ impl VulkanApp {
             api_version         : API_VERSION,
         };
 
-        let extension_names = utility::required_extension_names();
+        let extension_names = utility::platforms::required_extension_names();
 
         let create_info = vk::InstanceCreateInfo {
             s_type                     : vk::StructureType::InstanceCreateInfo,

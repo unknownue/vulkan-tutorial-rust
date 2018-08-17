@@ -2,8 +2,8 @@
 extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
+    utility::share,
     utility::debug::*,
-    utility::vulkan::*,
     utility::structures::*,
     utility::constants::*,
     utility::window::{ VulkanApp, ProgramProc },
@@ -11,7 +11,6 @@ use vulkan_tutorial_rust::{
 
 extern crate winit;
 extern crate ash;
-extern crate num;
 extern crate cgmath;
 #[macro_use]
 extern crate memoffset;
@@ -147,31 +146,31 @@ impl VulkanApp25 {
 
         // init vulkan stuff
         let entry = EntryV1::new().unwrap();
-        let instance = create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
-        let surface_stuff = create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
+        let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
+        let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
-        let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
+        let physical_device = share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
         let physical_device_memory_properties = instance.get_physical_device_memory_properties(physical_device);
-        let (device, queue_family) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let (device, queue_family) = share::create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
-        let swapchain_imageviews = create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
-        let render_pass = create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let swapchain_stuff = share::create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
+        let swapchain_imageviews = share::v1::create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
         let ubo_layout = VulkanApp25::create_descriptor_set_layout(&device);
         let (graphics_pipeline, pipeline_layout) = VulkanApp25::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
-        let swapchain_framebuffers = create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
-        let command_pool = create_command_pool(&device, &queue_family);
-        let (texture_image, texture_image_memory) = create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
-        let texture_image_view = create_texture_image_view(&device, texture_image, 1);
-        let texture_sampler = create_texture_sampler(&device);
-        let (vertex_buffer, vertex_buffer_memory) = create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_TEX_COORD_VERTICES_DATA);
-        let (index_buffer, index_buffer_memory) = create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_INDICES_DATA);
-        let (uniform_buffers, uniform_buffers_memory) = create_uniform_buffers(&device, &physical_device_memory_properties, swapchain_stuff.swapchain_images.len());
+        let swapchain_framebuffers = share::v1::create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
+        let command_pool = share::v1::create_command_pool(&device, &queue_family);
+        let (texture_image, texture_image_memory) = share::v1::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
+        let texture_image_view = share::v1::create_texture_image_view(&device, texture_image, 1);
+        let texture_sampler = share::v1::create_texture_sampler(&device);
+        let (vertex_buffer, vertex_buffer_memory) = share::v1::create_vertex_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_TEX_COORD_VERTICES_DATA);
+        let (index_buffer, index_buffer_memory) = share::v1::create_index_buffer(&device, &physical_device_memory_properties, command_pool, graphics_queue, &RECT_INDICES_DATA);
+        let (uniform_buffers, uniform_buffers_memory) = share::v1::create_uniform_buffers(&device, &physical_device_memory_properties, swapchain_stuff.swapchain_images.len());
         let descriptor_pool = VulkanApp25::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
         let descriptor_sets = VulkanApp25::create_descriptor_sets(&device, descriptor_pool, ubo_layout, &uniform_buffers, texture_image_view, texture_sampler, swapchain_stuff.swapchain_images.len());
         let command_buffers = VulkanApp25::create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent, vertex_buffer, index_buffer, pipeline_layout, &descriptor_sets);
-        let sync_ojbects = create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
+        let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp25 {
@@ -486,8 +485,8 @@ impl VulkanApp25 {
         let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/25-shader-textures.vert.spv"));
         let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/25-shader-textures.frag.spv"));
 
-        let vert_shader_module = create_shader_module(device, vert_shader_code);
-        let frag_shader_module = create_shader_module(device, frag_shader_code);
+        let vert_shader_module = share::create_shader_module(device, vert_shader_code);
+        let frag_shader_module = share::create_shader_module(device, frag_shader_code);
 
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
@@ -852,20 +851,20 @@ impl VulkanApp for VulkanApp25 {
             .expect("Failed to wait device idle!");
         self.cleanup_swapchain();
 
-        let swapchain_stuff = create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
+        let swapchain_stuff = share::create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
         self.swapchain_loader = swapchain_stuff.swapchain_loader;
         self.swapchain        = swapchain_stuff.swapchain;
         self.swapchain_images = swapchain_stuff.swapchain_images;
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;
 
-        self.swapchain_imageviews = create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
-        self.render_pass = create_render_pass(&self.device, self.swapchain_format);
+        self.swapchain_imageviews = share::v1::create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
+        self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
         let (graphics_pipeline, pipeline_layout) = VulkanApp25::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent, self.ubo_layout);
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        self.swapchain_framebuffers = create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
+        self.swapchain_framebuffers = share::v1::create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
         self.command_buffers = VulkanApp25::create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent, self.vertex_buffer, self.index_buffer, self.pipeline_layout, &self.descriptor_sets);
     }
 

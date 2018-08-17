@@ -2,6 +2,7 @@
 extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
+    utility::share,
     utility::debug::ValidationInfo,
     utility::constants::*,
 };
@@ -56,7 +57,7 @@ impl VulkanApp {
 
         // init vulkan stuff
         let entry = EntryV1::new().unwrap();
-        let instance = utility::vulkan::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
+        let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
         let (logical_device, graphics_queue) = VulkanApp::create_logical_device(&instance, physical_device, &VALIDATION);

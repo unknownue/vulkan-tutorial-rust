@@ -2,6 +2,7 @@
 extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
+    utility::share,
     utility::debug::ValidationInfo,
     utility::constants::*,
 };
@@ -73,7 +74,7 @@ impl VulkanApp {
 
         // init vulkan stuff
         let entry = EntryV1::new().unwrap();
-        let instance = utility::vulkan::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
+        let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = VulkanApp::create_surface(&entry, &instance, &window);
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance, &surface_stuff);
@@ -104,7 +105,7 @@ impl VulkanApp {
     fn create_surface(entry: &EntryV1, instance: &ash::Instance<V1_0>, window: &winit::Window) -> SurfaceStuff {
 
         let surface = unsafe {
-            utility::create_surface(entry, instance, window)
+            utility::platforms::create_surface(entry, instance, window)
                 .expect("Failed to create surface.")
         };
         let surface_loader = ash::extensions::Surface::new(entry, instance)

@@ -107,7 +107,7 @@ impl VulkanApp {
         };
 
         // VK_EXT debug report has been requested here.
-        let extension_names = utility::required_extension_names();
+        let extension_names = utility::platforms::required_extension_names();
 
         let requred_validation_layer_raw_names: Vec<CString> = VALIDATION.required_validation_layers.iter()
             .map(|layer_name| CString::new(*layer_name).unwrap())

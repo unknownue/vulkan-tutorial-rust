@@ -2,14 +2,13 @@
 extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
+    utility::share,
     utility::debug::*,
-    utility::vulkan::*,
     utility::constants::*,
 };
 
 extern crate winit;
 extern crate ash;
-extern crate num;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
@@ -62,15 +61,15 @@ impl VulkanApp {
 
         // init vulkan stuff
         let entry = EntryV1::new().unwrap();
-        let instance = create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
-        let surface_stuff = create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
+        let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
+        let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
-        let physical_device = pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
-        let (device, family_indices) = create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
+        let physical_device = share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
+        let (device, family_indices) = share::create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
-        let swapchain_stuff = create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &family_indices);
-        let swapchain_imageviews = create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let swapchain_stuff = share::create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &family_indices);
+        let swapchain_imageviews = share::v1::create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
         let _pipeline = VulkanApp::create_graphics_pipeline(&device);
 
         // cleanup(); the 'drop' function will take care of it.
