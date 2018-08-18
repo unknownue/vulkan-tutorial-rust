@@ -2,7 +2,7 @@
 
 A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
 
-[![Build Status](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust)[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+[![Build Status](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust)[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 The codes have been tested on macOS and Windows.
 
@@ -15,9 +15,9 @@ It's recommended to compile the examples of [ash](https://github.com/MaikKlein/a
 
 ## Status
 
-Vulkan is quit hard. All examples on official websize have been finished. :beers:
+Vulkan is quit hard. All examples on official website have been finished. :beers:
 
-This repository will maintain when the websize updates.
+This repository will maintain when the website updates.
 
 ## Usage
 

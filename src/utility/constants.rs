@@ -1,10 +1,7 @@
 
 
 use ash;
-use ash::vk::{
-    uint32_t,
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-};
+use ash::vk::uint32_t;
 use utility::debug::ValidationInfo;
 use utility::structures::DeviceExtension;
 
@@ -23,10 +20,10 @@ pub const VALIDATION: ValidationInfo = ValidationInfo {
     ],
 };
 pub const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
-    names: [VK_KHR_SWAPCHAIN_EXTENSION_NAME],
+    names: [ash::vk::VK_KHR_SWAPCHAIN_EXTENSION_NAME],
 };
 pub const MAX_FRAMES_IN_FLIGHT: usize = 2;
-pub const IS_PAINT_FPS_COUNTER: bool = true;
+pub const IS_PAINT_FPS_COUNTER: bool = false;
 
 impl DeviceExtension {
 
