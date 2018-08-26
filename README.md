@@ -6,12 +6,20 @@ A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) base
 
 The codes have been tested on macOS and Windows.
 
-It's recommended to compile the examples of [ash](https://github.com/MaikKlein/ash) first before compiling this repository.
+The API of ash crate is more similar to C++ when compared with [Vulkano crate](https://crates.io/crates/vulkano).
+
+If you prefer using vulkano, [vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs) may be a better choose.
 
 ## Main Dependencies
 
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
 - [ash](https://github.com/MaikKlein/ash)
+
+## Configuration
+
+The environment configuration is same as [ash](https://github.com/MaikKlein/ash#example).
+
+It's recommended to compile the examples of ash first before compiling this repository.
 
 ## Status
 
