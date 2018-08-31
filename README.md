@@ -80,6 +80,7 @@ $ cargo run --bin 00
 
 - All textures and models using in the tutorials are not included in this repository. Please place those resources in the `assets` directory.
 - Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
+- It's recommended to use `vk::PresentModeKHR::Fifo` as present mode instead of `vk::PresentModeKHR::Immediate`, if you want to keep 60.0 fps.
 
 ## Screen Shot
 
