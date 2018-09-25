@@ -82,6 +82,14 @@ $ cargo run --bin 00
 - Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
 - It's recommended to use `vk::PresentModeKHR::Fifo` as present mode instead of `vk::PresentModeKHR::Immediate`, if you want to keep 60.0 fps.
 
+## Assets
+https://vulkan-tutorial.com/resources/chalet.obj.zip
+
+https://vulkan-tutorial.com/resources/chalet.jpg
+
+https://pixabay.com/en/statue-sculpture-fig-historically-1275469/
+
+
 ## Screen Shot
 
 ![screenshot_all](./screenshots/screenshot_all.png)
