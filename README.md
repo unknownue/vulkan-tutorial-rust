@@ -4,7 +4,7 @@ A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) base
 
 [![Build Status](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The codes have been tested on ![macOS](assets/macos.png)macOS and ![Windows](assets/windows.png)Windows.
+The codes have been tested on <img src="./assets/windows.png" alt="Windows" height="22px" valign="bottom">Windows and <img src="./assets/apple.png" alt="macOS" height="22px" valign="bottom">macOS.
 
 The API of ash crate is more similar to C++ when compared with using [Vulkano](https://crates.io/crates/vulkano).
 
