@@ -4,7 +4,7 @@ A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) base
 
 [![Build Status](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The codes have been tested on <img src="./assets/windows.png" alt="Windows" height="22px" valign="bottom">Windows and <img src="./assets/apple.png" alt="macOS" height="22px" valign="bottom">macOS.
+The codes have been tested on <img src="./assets/windows.png" alt="Windows" height="22px" valign="bottom"> Windows and <img src="./assets/apple.png" alt="macOS" height="22px" valign="bottom"> macOS.
 
 The API of ash crate is more similar to C++ when compared with using [Vulkano](https://crates.io/crates/vulkano).
 
@@ -76,20 +76,19 @@ Here replace `example_number` with option in the following table:
 $ cargo run --bin 00
 ```
 
+## Assets
+
+All textures and models using in the tutorials are not included in this repository. Please place those resources in the `assets` directory. Following is the links of all assets:
+
+[CC0 licensed imag](https://pixabay.com/en/statue-sculpture-fig-historically-1275469/)
+[chalet obj](https://vulkan-tutorial.com/resources/chalet.obj.zip)
+[chalet texture](https://vulkan-tutorial.com/resources/chalet.jpg)
+
 ## Notices
 
-- All textures and models using in the tutorials are not included in this repository. Please place those resources in the `assets` directory.
 - Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
 - It's recommended to use `vk::PresentModeKHR::Fifo` as present mode instead of `vk::PresentModeKHR::Immediate`, if you want to keep 60.0 fps.
 
-## Assets
-https://vulkan-tutorial.com/resources/chalet.obj.zip
-
-https://vulkan-tutorial.com/resources/chalet.jpg
-
-https://pixabay.com/en/statue-sculpture-fig-historically-1275469/
-
-
 ## Screen Shot
 
-![screenshot_all](./screenshots/screenshot_all.png)
+![All snapshots](snapshot/snapshot_all.png)
