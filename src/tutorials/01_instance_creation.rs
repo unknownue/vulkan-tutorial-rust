@@ -10,7 +10,8 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0, EntryV1_0 };
+use ash::version::InstanceV1_0;
+use ash::version::EntryV1_0;
 use std::ptr;
 use std::ffi::CString;
 
@@ -22,7 +23,7 @@ struct VulkanApp {
     events_loop : EventsLoop,
     _window     : winit::Window,
 
-    instance    : ash::Instance<V1_0>,
+    instance    : ash::Instance,
 }
 
 impl VulkanApp {
@@ -53,16 +54,16 @@ impl VulkanApp {
             .expect("Failed to create window.")
     }
 
-    fn create_instance() -> ash::Instance<V1_0> {
+    fn create_instance() -> ash::Instance {
 
         let entry = ash::Entry::new().unwrap();
 
         let app_name    = CString::new(WINDOW_TITLE).unwrap();
         let engine_name = CString::new("Vulkan Engine").unwrap();
         let app_info = vk::ApplicationInfo {
-            p_application_name  : app_name.as_ptr(),
-            s_type              : vk::StructureType::ApplicationInfo,
+            s_type              : vk::StructureType::APPLICATION_INFO,
             p_next              : ptr::null(),
+            p_application_name  : app_name.as_ptr(),
             application_version : APPLICATION_VERSION,
             p_engine_name       : engine_name.as_ptr(),
             engine_version      : ENGINE_VERSION,
@@ -72,7 +73,7 @@ impl VulkanApp {
         let extension_names = utility::platforms::required_extension_names();
 
         let create_info = vk::InstanceCreateInfo {
-            s_type                     : vk::StructureType::InstanceCreateInfo,
+            s_type                     : vk::StructureType::INSTANCE_CREATE_INFO,
             p_next                     : ptr::null(),
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &app_info,
@@ -82,7 +83,7 @@ impl VulkanApp {
             enabled_extension_count    : extension_names.len() as u32,
         };
 
-        let instance: ash::Instance<V1_0> = unsafe { entry.create_instance(&create_info, None)
+        let instance: ash::Instance = unsafe { entry.create_instance(&create_info, None)
             .expect("Failed to create instance!")
         };
 

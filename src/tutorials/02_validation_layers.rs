@@ -11,12 +11,11 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::EntryV1_0;
 use std::ptr;
 use std::ffi::{ CStr, CString };
-
-type EntryV1 = ash::Entry<V1_0>;
+use std::os::raw::{ c_void, c_char };
 
 // Constants
 const WINDOW_TITLE: &'static str = "02.Validation Layers";
@@ -30,15 +29,15 @@ const VALIDATION: ValidationInfo = ValidationInfo {
 unsafe extern "system" fn vulkan_debug_callback(
     _: vk::DebugReportFlagsEXT,
     _: vk::DebugReportObjectTypeEXT,
-    _: vk::uint64_t,
-    _: vk::size_t,
-    _: vk::int32_t,
-    _: *const vk::c_char,
-    p_message: *const vk::c_char,
-    _: *mut vk::c_void,
+    _: u64,
+    _: usize,
+    _: i32,
+    _: *const c_char,
+    p_message: *const c_char,
+    _: *mut c_void,
 ) -> u32 {
     println!("{:?}", CStr::from_ptr(p_message));
-    vk::VK_FALSE
+    vk::FALSE
 }
 
 
@@ -48,8 +47,8 @@ struct VulkanApp {
     _window             : winit::Window,
 
     // vulkan stuff
-    _entry              : EntryV1,
-    instance            : ash::Instance<V1_0>,
+    _entry              : ash::Entry,
+    instance            : ash::Instance,
     debug_report_loader : ash::extensions::DebugReport,
     debug_callback      : vk::DebugReportCallbackEXT,
 }
@@ -63,7 +62,7 @@ impl VulkanApp {
         let window = VulkanApp::init_window(&events_loop);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = VulkanApp::create_instance(&entry);
         let (debug_report_loader, debug_callback) = VulkanApp::setup_debug_callback(&entry, &instance);
 
@@ -88,7 +87,7 @@ impl VulkanApp {
             .expect("Failed to create window.")
     }
 
-    fn create_instance(entry: &EntryV1) -> ash::Instance<V1_0> {
+    fn create_instance(entry: &ash::Entry) -> ash::Instance {
 
         if VALIDATION.is_enable && VulkanApp::check_validation_layer_support(entry) == false {
             panic!("Validation layers requested, but not available!");
@@ -98,7 +97,7 @@ impl VulkanApp {
         let engine_name = CString::new("Vulkan Engine").unwrap();
         let app_info = vk::ApplicationInfo {
             p_application_name  : app_name.as_ptr(),
-            s_type              : vk::StructureType::ApplicationInfo,
+            s_type              : vk::StructureType::APPLICATION_INFO,
             p_next              : ptr::null(),
             application_version : APPLICATION_VERSION,
             p_engine_name       : engine_name.as_ptr(),
@@ -117,7 +116,7 @@ impl VulkanApp {
             .collect();
 
         let create_info = vk::InstanceCreateInfo {
-            s_type                     : vk::StructureType::InstanceCreateInfo,
+            s_type                     : vk::StructureType::INSTANCE_CREATE_INFO,
             p_next                     : ptr::null(),
             flags                      : vk::InstanceCreateFlags::empty(),
             p_application_info         : &app_info,
@@ -127,7 +126,7 @@ impl VulkanApp {
             enabled_extension_count    : extension_names.len() as u32,
         };
 
-        let instance: ash::Instance<V1_0> = unsafe {
+        let instance: ash::Instance = unsafe {
             entry.create_instance(&create_info, None)
                 .expect("Failed to create Instance!")
         };
@@ -135,7 +134,7 @@ impl VulkanApp {
         instance
     }
 
-    fn check_validation_layer_support(entry: &EntryV1) -> bool {
+    fn check_validation_layer_support(entry: &ash::Entry) -> bool {
         // if support validation layer, then return true
 
         let layer_properties = entry.enumerate_instance_layer_properties()
@@ -173,25 +172,24 @@ impl VulkanApp {
         true
     }
 
-    fn setup_debug_callback(entry: &EntryV1, instance: &ash::Instance<V1_0>)
+    fn setup_debug_callback(entry: &ash::Entry, instance: &ash::Instance)
         -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
 
-        let debug_report_loader = ash::extensions::DebugReport::new(entry, instance)
-            .expect("Unable to load Debug Report!");
+        let debug_report_loader = ash::extensions::DebugReport::new(entry, instance);
 
         if VALIDATION.is_enable == false {
-            (debug_report_loader, ash::vk::types::DebugReportCallbackEXT::null())
+            (debug_report_loader, ash::vk::DebugReportCallbackEXT::null())
         } else {
 
             let debug_create_info = vk::DebugReportCallbackCreateInfoEXT {
-                s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
-                p_next       : ptr::null(),
-                flags        :  vk::DEBUG_REPORT_ERROR_BIT_EXT
-                              | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
-                           // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
-                              | vk::DEBUG_REPORT_WARNING_BIT_EXT
-                              | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                pfn_callback : vulkan_debug_callback,
+                s_type : vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
+                p_next : ptr::null(),
+                flags  : vk::DebugReportFlagsEXT::ERROR
+                    | vk::DebugReportFlagsEXT::INFORMATION
+                    // | vk::DebugReportFlagsEXT::DEBUG
+                    | vk::DebugReportFlagsEXT::WARNING
+                    | vk::DebugReportFlagsEXT::PERFORMANCE_WARNING,
+                pfn_callback : Some(vulkan_debug_callback),
                 p_user_data  : ptr::null_mut(),
             };
 

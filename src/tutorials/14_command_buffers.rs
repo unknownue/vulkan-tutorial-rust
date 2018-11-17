@@ -13,10 +13,8 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
-
-type EntryV1 = ash::Entry<V1_0>;
 
 use std::ptr;
 
@@ -29,15 +27,15 @@ struct VulkanApp {
     _window                : winit::Window,
 
     // vulkan stuff
-    _entry                 : EntryV1,
-    instance               : ash::Instance<V1_0>,
+    _entry                 : ash::Entry,
+    instance               : ash::Instance,
     surface_loader         : ash::extensions::Surface,
     surface                : vk::SurfaceKHR,
     debug_report_loader    : ash::extensions::DebugReport,
     debug_callback         : vk::DebugReportCallbackEXT,
 
     _physical_device       : vk::PhysicalDevice,
-    device                 : ash::Device<V1_0>,
+    device                 : ash::Device,
 
     _graphics_queue        : vk::Queue,
     _present_queue         : vk::Queue,
@@ -67,7 +65,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
@@ -120,10 +118,10 @@ impl VulkanApp {
         }
     }
 
-    fn create_command_pool(device: &ash::Device<V1_0>, queue_families: &QueueFamilyIndices) -> vk::CommandPool {
+    fn create_command_pool(device: &ash::Device, queue_families: &QueueFamilyIndices) -> vk::CommandPool {
 
         let command_pool_create_info = vk::CommandPoolCreateInfo {
-            s_type             : vk::StructureType::CommandPoolCreateInfo,
+            s_type             : vk::StructureType::COMMAND_POOL_CREATE_INFO,
             p_next             : ptr::null(),
             flags              : vk::CommandPoolCreateFlags::empty(),
             queue_family_index : queue_families.graphics_family as u32,
@@ -135,14 +133,14 @@ impl VulkanApp {
         }
     }
 
-    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D) -> Vec<vk::CommandBuffer> {
+    fn create_command_buffers(device: &ash::Device, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type               : vk::StructureType::CommandBufferAllocateInfo,
+            s_type               : vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
             p_next               : ptr::null(),
             command_buffer_count : framebuffers.len() as u32,
             command_pool,
-            level                : vk::CommandBufferLevel::Primary,
+            level                : vk::CommandBufferLevel::PRIMARY,
         };
 
         let command_buffers = unsafe {
@@ -153,10 +151,10 @@ impl VulkanApp {
         for (i, &command_buffer) in command_buffers.iter().enumerate() {
 
             let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-                s_type             : vk::StructureType::CommandBufferBeginInfo,
+                s_type             : vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
                 p_next             : ptr::null(),
                 p_inheritance_info : ptr::null(),
-                flags              : vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                flags              : vk::CommandBufferUsageFlags::SIMULTANEOUS_USE,
             };
 
             unsafe {
@@ -173,7 +171,7 @@ impl VulkanApp {
             ];
 
             let render_pass_begin_info = vk::RenderPassBeginInfo {
-                s_type: vk::StructureType::RenderPassBeginInfo,
+                s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
                 p_next            : ptr::null(),
                 render_pass,
                 framebuffer       : framebuffers[i],
@@ -186,8 +184,8 @@ impl VulkanApp {
             };
 
             unsafe {
-                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
-                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline);
+                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::INLINE);
+                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::GRAPHICS, graphics_pipeline);
                 device.cmd_draw(command_buffer, 3, 1, 0, 0);
 
                 device.cmd_end_render_pass(command_buffer);

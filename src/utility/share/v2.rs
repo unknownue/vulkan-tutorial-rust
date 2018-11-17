@@ -1,28 +1,26 @@
 
-
 use ash;
 use ash::vk;
-use ash::version::{ V1_0, DeviceV1_0 };
 
 use std::ptr;
 
 use super::*;
 
-pub fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size: usize) -> vk::DescriptorPool {
+pub fn create_descriptor_pool(device: &ash::Device, swapchain_images_size: usize) -> vk::DescriptorPool {
 
     let pool_sizes = [
         vk::DescriptorPoolSize { // transform descriptor pool
-            typ              : vk::DescriptorType::UniformBuffer,
+            ty               : vk::DescriptorType::UNIFORM_BUFFER,
             descriptor_count : swapchain_images_size as u32
         },
         vk::DescriptorPoolSize { // sampler descriptor pool
-            typ              : vk::DescriptorType::CombinedImageSampler,
+            ty               : vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
             descriptor_count : swapchain_images_size as u32,
         }
     ];
 
     let descriptor_pool_create_info = vk::DescriptorPoolCreateInfo {
-        s_type          : vk::StructureType::DescriptorPoolCreateInfo,
+        s_type          : vk::StructureType::DESCRIPTOR_POOL_CREATE_INFO,
         p_next          : ptr::null(),
         flags           : vk::DescriptorPoolCreateFlags::empty(),
         max_sets        : swapchain_images_size as u32,
@@ -36,7 +34,7 @@ pub fn create_descriptor_pool(device: &ash::Device<V1_0>, swapchain_images_size:
     }
 }
 
-pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::DescriptorPool, descriptor_set_layout: vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, texture_image_view: vk::ImageView, texture_sampler: vk::Sampler, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
+pub fn create_descriptor_sets(device: &ash::Device, descriptor_pool: vk::DescriptorPool, descriptor_set_layout: vk::DescriptorSetLayout, uniforms_buffers: &Vec<vk::Buffer>, texture_image_view: vk::ImageView, texture_sampler: vk::Sampler, swapchain_images_size: usize) -> Vec<vk::DescriptorSet> {
 
     let mut layouts: Vec<vk::DescriptorSetLayout> = vec![];
     for _ in 0..swapchain_images_size {
@@ -44,7 +42,7 @@ pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::D
     }
 
     let descriptor_set_allocate_info = vk::DescriptorSetAllocateInfo {
-        s_type               : vk::StructureType::DescriptorSetAllocateInfo,
+        s_type               : vk::StructureType::DESCRIPTOR_SET_ALLOCATE_INFO,
         p_next               : ptr::null(),
         descriptor_pool,
         descriptor_set_count : swapchain_images_size as u32,
@@ -69,31 +67,31 @@ pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::D
             vk::DescriptorImageInfo {
                 sampler      : texture_sampler,
                 image_view   : texture_image_view,
-                image_layout : vk::ImageLayout::ShaderReadOnlyOptimal,
+                image_layout : vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             },
         ];
 
         let descriptor_write_sets = [
             vk::WriteDescriptorSet { // transform uniform
-                s_type              : vk::StructureType::WriteDescriptorSet,
+                s_type              : vk::StructureType::WRITE_DESCRIPTOR_SET,
                 p_next              : ptr::null(),
                 dst_set             : descritptor_set,
                 dst_binding         : 0,
                 dst_array_element   : 0,
                 descriptor_count    : 1,
-                descriptor_type     : vk::DescriptorType::UniformBuffer,
+                descriptor_type     : vk::DescriptorType::UNIFORM_BUFFER,
                 p_image_info        : ptr::null(),
                 p_buffer_info       : descriptor_buffer_infos.as_ptr(),
                 p_texel_buffer_view : ptr::null(),
             },
             vk::WriteDescriptorSet { // sampler uniform
-                s_type              : vk::StructureType::WriteDescriptorSet,
+                s_type              : vk::StructureType::WRITE_DESCRIPTOR_SET,
                 p_next              : ptr::null(),
                 dst_set             : descritptor_set,
                 dst_binding         : 1,
                 dst_array_element   : 0,
                 descriptor_count    : 1,
-                descriptor_type     : vk::DescriptorType::CombinedImageSampler,
+                descriptor_type     : vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
                 p_image_info        : descriptor_image_infos.as_ptr(),
                 p_buffer_info       : ptr::null(),
                 p_texel_buffer_view : ptr::null(),
@@ -108,27 +106,27 @@ pub fn create_descriptor_sets(device: &ash::Device<V1_0>, descriptor_pool: vk::D
     descriptor_sets
 }
 
-pub fn create_descriptor_set_layout(device: &ash::Device<V1_0>) -> vk::DescriptorSetLayout {
+pub fn create_descriptor_set_layout(device: &ash::Device) -> vk::DescriptorSetLayout {
 
     let ubo_layout_bindings = [
         vk::DescriptorSetLayoutBinding { // transform uniform
             binding              : 0,
-            descriptor_type      : vk::DescriptorType::UniformBuffer,
+            descriptor_type      : vk::DescriptorType::UNIFORM_BUFFER,
             descriptor_count     : 1,
-            stage_flags          : vk::SHADER_STAGE_VERTEX_BIT,
+            stage_flags          : vk::ShaderStageFlags::VERTEX,
             p_immutable_samplers : ptr::null(),
         },
         vk::DescriptorSetLayoutBinding { // sampler uniform
             binding              : 1,
-            descriptor_type      : vk::DescriptorType::CombinedImageSampler,
+            descriptor_type      : vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
             descriptor_count     : 1,
-            stage_flags          : vk::SHADER_STAGE_FRAGMENT_BIT,
+            stage_flags          : vk::ShaderStageFlags::FRAGMENT,
             p_immutable_samplers : ptr::null(),
         }
     ];
 
     let ubo_layout_create_info = vk::DescriptorSetLayoutCreateInfo {
-        s_type        : vk::StructureType::DescriptorSetLayoutCreateInfo,
+        s_type        : vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         p_next        : ptr::null(),
         flags         : vk::DescriptorSetLayoutCreateFlags::empty(),
         binding_count : ubo_layout_bindings.len() as u32,

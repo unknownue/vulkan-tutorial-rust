@@ -16,9 +16,8 @@ extern crate memoffset;
 extern crate image;
 extern crate tobj;
 
-
 #[cfg(target_os = "macos")]
-extern crate metal_rs;
+extern crate metal;
 #[cfg(target_os = "macos")]
 extern crate cocoa;
 #[cfg(target_os = "macos")]

@@ -13,10 +13,8 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
-
-type EntryV1 = ash::Entry<V1_0>;
 
 use std::ptr;
 
@@ -28,15 +26,15 @@ struct VulkanApp {
     window: winit::Window,
 
     // vulkan stuff
-    _entry                     : EntryV1,
-    instance                   : ash::Instance<V1_0>,
+    _entry                     : ash::Entry,
+    instance                   : ash::Instance,
     surface_loader             : ash::extensions::Surface,
     surface                    : vk::SurfaceKHR,
     debug_report_loader        : ash::extensions::DebugReport,
     debug_callback             : vk::DebugReportCallbackEXT,
 
     physical_device            : vk::PhysicalDevice,
-    device                     : ash::Device<V1_0>,
+    device                     : ash::Device,
 
     queue_family               : QueueFamilyIndices,
     graphics_queue             : vk::Queue,
@@ -72,7 +70,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
@@ -144,12 +142,12 @@ impl VulkanApp {
                 .expect("Failed to wait for Fence!");
         }
 
-        let image_index = unsafe {
+        let (image_index, _is_sub_optimal) = unsafe {
             let result = self.swapchain_loader.acquire_next_image_khr(self.swapchain, std::u64::MAX, self.image_available_semaphores[self.current_frame], vk::Fence::null());
             match result {
                 | Ok(image_index) => image_index,
                 | Err(vk_result) => match vk_result {
-                    | vk::types::Result::ErrorOutOfDateKhr => {
+                    | vk::Result::ERROR_OUT_OF_DATE_KHR => {
                         self.recreate_swapchain();
                         return
                     },
@@ -162,7 +160,7 @@ impl VulkanApp {
             self.image_available_semaphores[self.current_frame],
         ];
         let wait_stages = [
-            vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
         ];
         let signal_semaphores = [
             self.render_finished_semaphores[self.current_frame],
@@ -170,7 +168,7 @@ impl VulkanApp {
 
         let submit_infos = [
             vk::SubmitInfo {
-                s_type                 : vk::StructureType::SubmitInfo,
+                s_type                 : vk::StructureType::SUBMIT_INFO,
                 p_next                 : ptr::null(),
                 wait_semaphore_count   : wait_semaphores.len() as u32,
                 p_wait_semaphores      : wait_semaphores.as_ptr(),
@@ -195,7 +193,7 @@ impl VulkanApp {
         ];
 
         let present_info = vk::PresentInfoKHR {
-            s_type               : vk::StructureType::PresentInfoKhr,
+            s_type               : vk::StructureType::PRESENT_INFO_KHR,
             p_next               : ptr::null(),
             wait_semaphore_count : 1,
             p_wait_semaphores    : signal_semaphores.as_ptr(),
@@ -211,8 +209,8 @@ impl VulkanApp {
         let is_resized = match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
-                | vk::Result::ErrorOutOfDateKhr
-                | vk::Result::SuboptimalKhr => {
+                | vk::Result::ERROR_OUT_OF_DATE_KHR
+                | vk::Result::SUBOPTIMAL_KHR => {
                     true
                 }
                 | _ => panic!("Failed to execute queue present.")
@@ -235,8 +233,10 @@ impl VulkanApp {
         };
         // ------------------------
 
-        self.device.device_wait_idle()
-            .expect("Failed to wait device idle!");
+        unsafe {
+            self.device.device_wait_idle()
+                .expect("Failed to wait device idle!")
+        };
         self.cleanup_swapchain();
 
         let swapchain_stuff = share::create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
@@ -349,8 +349,10 @@ impl ProgramProc {
             ControlFlow::Continue
         });
 
-        vulkan_app.device.device_wait_idle()
-            .expect("Failed to wait device idle!");
+        unsafe {
+            vulkan_app.device.device_wait_idle()
+                .expect("Failed to wait device idle!")
+        };
     }
 }
 

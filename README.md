@@ -80,7 +80,7 @@ $ cargo run --bin 00
 
 All textures and models using in the tutorials are not included in this repository. Please place those resources in the `assets` directory. Following is the links of all assets:
 
-[CC0 licensed imag](https://pixabay.com/en/statue-sculpture-fig-historically-1275469/)
+[CC0 licensed images](https://pixabay.com/en/statue-sculpture-fig-historically-1275469/)
 [chalet obj](https://vulkan-tutorial.com/resources/chalet.obj.zip)
 [chalet texture](https://vulkan-tutorial.com/resources/chalet.jpg)
 

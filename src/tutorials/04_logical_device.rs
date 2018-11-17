@@ -12,12 +12,10 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
 
 use std::ptr;
-
-type EntryV1 = ash::Entry<V1_0>;
 
 // Constants
 const WINDOW_TITLE: &'static str = "04.Logical Device";
@@ -38,12 +36,12 @@ struct VulkanApp {
     _window             : winit::Window,
 
     // vulkan stuff
-    _entry              : EntryV1,
-    instance            : ash::Instance<V1_0>,
+    _entry              : ash::Entry,
+    instance            : ash::Instance,
     debug_report_loader : ash::extensions::DebugReport,
     debug_callback      : vk::DebugReportCallbackEXT,
     _physical_device    : vk::PhysicalDevice,
-    device              : ash::Device<V1_0>, // Logical Device
+    device              : ash::Device, // Logical Device
     _graphics_queue     : vk::Queue,
 }
 
@@ -56,7 +54,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
@@ -79,9 +77,12 @@ impl VulkanApp {
         }
     }
 
-    fn pick_physical_device(instance: &ash::Instance<V1_0>) -> vk::PhysicalDevice {
-        let physical_devices = instance.enumerate_physical_devices()
-            .expect("Failed to enumerate Physical Devices!");
+    fn pick_physical_device(instance: &ash::Instance) -> vk::PhysicalDevice {
+
+        let physical_devices = unsafe {
+            instance.enumerate_physical_devices()
+                .expect("Failed to enumerate Physical Devices!")
+        };
 
         let result = physical_devices.iter().find(|physical_device| {
             VulkanApp::is_physical_device_suitable(instance, **physical_device)
@@ -93,23 +94,27 @@ impl VulkanApp {
         }
     }
 
-    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> bool {
+    fn is_physical_device_suitable(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> bool {
 
-        let _device_properties = instance.get_physical_device_properties(physical_device);
-        let _device_features = instance.get_physical_device_features(physical_device);
+        let _device_properties = unsafe {
+            instance.get_physical_device_properties(physical_device)
+        };
+        let _device_features = unsafe {
+            instance.get_physical_device_features(physical_device)
+        };
 
         let indices = VulkanApp::find_queue_family(instance, physical_device);
 
         return indices.is_complete();
     }
 
-    fn create_logical_device(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice, validation: &ValidationInfo) -> (ash::Device<V1_0>, vk::Queue) {
+    fn create_logical_device(instance: &ash::Instance, physical_device: vk::PhysicalDevice, validation: &ValidationInfo) -> (ash::Device, vk::Queue) {
 
         let indices = VulkanApp::find_queue_family(instance, physical_device);
 
         let queue_priorities = [1.0_f32];
         let queue_create_info = vk::DeviceQueueCreateInfo {
-            s_type             : vk::StructureType::DeviceQueueCreateInfo,
+            s_type             : vk::StructureType::DEVICE_QUEUE_CREATE_INFO,
             p_next             : ptr::null(),
             flags              : vk::DeviceQueueCreateFlags::empty(),
             queue_family_index : indices.graphics_family as u32,
@@ -124,7 +129,7 @@ impl VulkanApp {
         let enable_layer_names = validation.get_layers_names();
 
         let device_create_info = vk::DeviceCreateInfo {
-            s_type                     : vk::StructureType::DeviceCreateInfo,
+            s_type                     : vk::StructureType::DEVICE_CREATE_INFO,
             p_next                     : ptr::null(),
             flags                      : vk::DeviceCreateFlags::empty(),
             queue_create_info_count    : 1,
@@ -136,7 +141,7 @@ impl VulkanApp {
             p_enabled_features         : &physical_device_features,
         };
 
-        let device: ash::Device<V1_0> = unsafe {
+        let device: ash::Device = unsafe {
             instance.create_device(physical_device, &device_create_info, None)
                 .expect("Failed to create logical Device!")
         };
@@ -148,9 +153,11 @@ impl VulkanApp {
         (device, graphics_queue)
     }
 
-    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices {
+    fn find_queue_family(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices {
 
-        let queue_families = instance.get_physical_device_queue_family_properties(physical_device);
+        let queue_families = unsafe {
+            instance.get_physical_device_queue_family_properties(physical_device)
+        };
 
         let mut queue_family_indices = QueueFamilyIndices {
             graphics_family: -1,
@@ -158,8 +165,8 @@ impl VulkanApp {
 
         let mut index = 0;
         for queue_family in queue_families.iter() {
-            use ash::vk::types::{ QueueFlags, QUEUE_GRAPHICS_BIT };
-            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(QueueFlags::from(QUEUE_GRAPHICS_BIT)) {
+
+            if queue_family.queue_count > 0 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
                 queue_family_indices.graphics_family = index;
             }
 

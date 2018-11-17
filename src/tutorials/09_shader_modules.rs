@@ -12,10 +12,8 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
-
-type EntryV1 = ash::Entry<V1_0>;
 
 use std::path::Path;
 use std::ptr;
@@ -30,15 +28,15 @@ struct VulkanApp {
     _window              : winit::Window,
 
     // vulkan stuff
-    _entry               : EntryV1,
-    instance             : ash::Instance<V1_0>,
+    _entry               : ash::Entry,
+    instance             : ash::Instance,
     surface_loader       : ash::extensions::Surface,
     surface              : vk::SurfaceKHR,
     debug_report_loader  : ash::extensions::DebugReport,
     debug_callback       : vk::DebugReportCallbackEXT,
 
     _physical_device     : vk::PhysicalDevice,
-    device               : ash::Device<V1_0>,
+    device               : ash::Device,
 
     _graphics_queue      : vk::Queue,
     _present_queue       : vk::Queue,
@@ -60,7 +58,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
@@ -101,7 +99,8 @@ impl VulkanApp {
         }
     }
 
-    fn create_graphics_pipeline(device: &ash::Device<V1_0>) {
+    fn create_graphics_pipeline(device: &ash::Device) {
+
         let vert_shader_code = VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
         let frag_shader_code = VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
 
@@ -112,22 +111,22 @@ impl VulkanApp {
 
         let _shader_stages = [
             vk::PipelineShaderStageCreateInfo { // Vertex Shader
-                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next                : ptr::null(),
                 flags                 : vk::PipelineShaderStageCreateFlags::empty(),
                 module                : vert_shader_module,
                 p_name                : main_function_name.as_ptr(),
                 p_specialization_info : ptr::null(),
-                stage                 : vk::SHADER_STAGE_VERTEX_BIT,
+                stage                 : vk::ShaderStageFlags::VERTEX,
             },
             vk::PipelineShaderStageCreateInfo { // Fragment Shader
-                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next                : ptr::null(),
                 flags                 : vk::PipelineShaderStageCreateFlags::empty(),
                 module                : frag_shader_module,
                 p_name                : main_function_name.as_ptr(),
                 p_specialization_info : ptr::null(),
-                stage                 : vk::SHADER_STAGE_FRAGMENT_BIT,
+                stage                 : vk::ShaderStageFlags::FRAGMENT,
             },
         ];
 
@@ -137,10 +136,10 @@ impl VulkanApp {
         }
     }
 
-    fn create_shader_module(device: &ash::Device<V1_0>, code: Vec<u8>) -> vk::ShaderModule {
+    fn create_shader_module(device: &ash::Device, code: Vec<u8>) -> vk::ShaderModule {
 
         let shader_module_create_info = vk::ShaderModuleCreateInfo {
-            s_type    : vk::StructureType::ShaderModuleCreateInfo,
+            s_type    : vk::StructureType::SHADER_MODULE_CREATE_INFO,
             p_next    : ptr::null(),
             flags     : vk::ShaderModuleCreateFlags::empty(),
             code_size : code.len(),

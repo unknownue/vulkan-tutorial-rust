@@ -12,10 +12,7 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
-use ash::vk::uint32_t;
-
-type EntryV1 = ash::Entry<V1_0>;
+use ash::version::InstanceV1_0;
 
 // Constants
 const WINDOW_TITLE: &'static str = "03.Physical Device Selection";
@@ -37,8 +34,8 @@ struct VulkanApp {
     _window             : winit::Window,
 
     // vulkan stuff
-    _entry              : EntryV1,
-    instance            : ash::Instance<V1_0>,
+    _entry              : ash::Entry,
+    instance            : ash::Instance,
     debug_report_loader : ash::extensions::DebugReport,
     debug_callback      : vk::DebugReportCallbackEXT,
     _physical_device    : vk::PhysicalDevice,
@@ -53,7 +50,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let (debug_report_loader, debug_callback) = utility::debug::setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
@@ -71,9 +68,12 @@ impl VulkanApp {
         }
     }
 
-    fn pick_physical_device(instance: &ash::Instance<V1_0>) -> vk::PhysicalDevice {
-        let physical_devices = instance.enumerate_physical_devices()
-            .expect("Failed to enumerate Physical Devices!");
+    fn pick_physical_device(instance: &ash::Instance) -> vk::PhysicalDevice {
+
+        let physical_devices = unsafe {
+            instance.enumerate_physical_devices()
+                .expect("Failed to enumerate Physical Devices!")
+        };
 
         println!("{} devices (GPU) found with vulkan support.", physical_devices.len());
 
@@ -92,19 +92,25 @@ impl VulkanApp {
         }
     }
 
-    fn is_physical_device_suitable(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> bool {
+    fn is_physical_device_suitable(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> bool {
 
-        let device_properties = instance.get_physical_device_properties(physical_device);
-        let device_features = instance.get_physical_device_features(physical_device);
-        let device_queue_families = instance.get_physical_device_queue_family_properties(physical_device);
+        let device_properties = unsafe {
+            instance.get_physical_device_properties(physical_device)
+        };
+        let device_features = unsafe {
+            instance.get_physical_device_features(physical_device)
+        };
+        let device_queue_families = unsafe {
+            instance.get_physical_device_queue_family_properties(physical_device)
+        };
 
-        use vk::PhysicalDeviceType::*;
         let device_type = match device_properties.device_type {
-            | Cpu => "Cpu",
-            | IntegratedGpu => "Integrated GPU",
-            | DiscreteGpu => "Discrete GPU",
-            | VirtualGpu => "Virtual GPU",
-            | Other => "Unknown",
+            | vk::PhysicalDeviceType::CPU => "Cpu",
+            | vk::PhysicalDeviceType::INTEGRATED_GPU => "Integrated GPU",
+            | vk::PhysicalDeviceType::DISCRETE_GPU => "Discrete GPU",
+            | vk::PhysicalDeviceType::VIRTUAL_GPU => "Virtual GPU",
+            | vk::PhysicalDeviceType::OTHER => "Unknown",
+            | _ => panic!(),
         };
 
         let device_name = utility::tools::vk_to_string(&device_properties.device_name);
@@ -119,10 +125,10 @@ impl VulkanApp {
         println!("\tSupport Queue Family: {}", device_queue_families.len());
         println!("\t\tQueue Count | Graphics, Compute, Transfer, Sparse Binding");
         for queue_family in device_queue_families.iter() {
-            let is_graphics_support = if queue_family.queue_flags.subset(vk::types::QUEUE_GRAPHICS_BIT) { "support" } else { "unsupport" };
-            let is_compute_support  = if queue_family.queue_flags.subset(vk::types::QUEUE_COMPUTE_BIT) { "support" } else { "unsupport" };;
-            let is_transfer_support = if queue_family.queue_flags.subset(vk::types::QUEUE_TRANSFER_BIT) { "support" } else { "unsupport" };;
-            let is_sparse_support   = if queue_family.queue_flags.subset(vk::types::QUEUE_SPARSE_BINDING_BIT) { "support" } else { "unsupport" };;
+            let is_graphics_support = if queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) { "support" } else { "unsupport" };
+            let is_compute_support  = if queue_family.queue_flags.contains(vk::QueueFlags::COMPUTE) { "support" } else { "unsupport" };;
+            let is_transfer_support = if queue_family.queue_flags.contains(vk::QueueFlags::TRANSFER) { "support" } else { "unsupport" };;
+            let is_sparse_support   = if queue_family.queue_flags.contains(vk::QueueFlags::SPARSE_BINDING) { "support" } else { "unsupport" };;
 
             println!("\t\t{}\t    | {},  {},  {},  {}", queue_family.queue_count, is_graphics_support, is_compute_support, is_transfer_support, is_sparse_support);
         }
@@ -135,9 +141,11 @@ impl VulkanApp {
         return indices.is_complete();
     }
 
-    fn find_queue_family(instance: &ash::Instance<V1_0>, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices {
+    fn find_queue_family(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices {
 
-        let queue_families = instance.get_physical_device_queue_family_properties(physical_device);
+        let queue_families = unsafe {
+            instance.get_physical_device_queue_family_properties(physical_device)
+        };
 
         let mut queue_family_indices = QueueFamilyIndices {
             graphics_family: -1,
@@ -146,7 +154,7 @@ impl VulkanApp {
         let mut index = 0;
         for queue_family in queue_families.iter() {
 
-            if queue_family.queue_count > 0 && queue_family.queue_flags.subset(vk::QueueFlags::from(vk::QUEUE_GRAPHICS_BIT)) {
+            if queue_family.queue_count > 0 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
                 queue_family_indices.graphics_family = index;
             }
 

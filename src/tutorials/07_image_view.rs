@@ -12,10 +12,8 @@ extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
-
-type EntryV1 = ash::Entry<V1_0>;
 
 use std::ptr;
 
@@ -28,15 +26,15 @@ struct VulkanApp {
     _window              : winit::Window,
 
     // vulkan stuff
-    _entry               : EntryV1,
-    instance             : ash::Instance<V1_0>,
+    _entry               : ash::Entry,
+    instance             : ash::Instance,
     surface_loader       : ash::extensions::Surface,
     surface              : vk::SurfaceKHR,
     debug_report_loader  : ash::extensions::DebugReport,
     debug_callback       : vk::DebugReportCallbackEXT,
 
     _physical_device     : vk::PhysicalDevice,
-    device               : ash::Device<V1_0>,
+    device               : ash::Device,
 
     _graphics_queue      : vk::Queue,
     _present_queue       : vk::Queue,
@@ -58,7 +56,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
@@ -98,26 +96,26 @@ impl VulkanApp {
         }
     }
 
-    fn create_image_views(device: &ash::Device<V1_0>, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
+    fn create_image_views(device: &ash::Device, surface_format: vk::Format, images: &Vec<vk::Image>) ->Vec<vk::ImageView> {
 
         let mut swapchain_imageviews = vec![];
 
         for &image in images.iter() {
 
             let imageview_create_info = vk::ImageViewCreateInfo {
-                s_type     : vk::StructureType::ImageViewCreateInfo,
+                s_type     : vk::StructureType::IMAGE_VIEW_CREATE_INFO,
                 p_next     : ptr::null(),
                 flags      : vk::ImageViewCreateFlags::empty(),
-                view_type  : vk::ImageViewType::Type2d,
+                view_type  : vk::ImageViewType::TYPE_2D,
                 format     : surface_format,
                 components : vk::ComponentMapping {
-                    r: vk::ComponentSwizzle::Identity,
-                    g: vk::ComponentSwizzle::Identity,
-                    b: vk::ComponentSwizzle::Identity,
-                    a: vk::ComponentSwizzle::Identity,
+                    r: vk::ComponentSwizzle::IDENTITY,
+                    g: vk::ComponentSwizzle::IDENTITY,
+                    b: vk::ComponentSwizzle::IDENTITY,
+                    a: vk::ComponentSwizzle::IDENTITY,
                 },
                 subresource_range: vk::ImageSubresourceRange {
-                    aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                    aspect_mask      : vk::ImageAspectFlags::COLOR,
                     base_mip_level   : 0,
                     level_count      : 1,
                     base_array_layer : 0,

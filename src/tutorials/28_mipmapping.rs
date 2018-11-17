@@ -15,13 +15,10 @@ extern crate cgmath;
 extern crate image;
 
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
-use ash::vk::{ uint32_t, int32_t };
 use cgmath::{ Matrix4, Deg, Point3, Vector3 };
-use image::GenericImage;
-
-type EntryV1 = ash::Entry<V1_0>;
+use image::GenericImageView;
 
 use std::path::Path;
 use std::ptr;
@@ -39,8 +36,8 @@ struct VulkanApp28 {
     window                     : winit::Window,
 
     // vulkan stuff
-    _entry                     : EntryV1,
-    instance                   : ash::Instance<V1_0>,
+    _entry                     : ash::Entry,
+    instance                   : ash::Instance,
     surface_loader             : ash::extensions::Surface,
     surface                    : vk::SurfaceKHR,
     debug_report_loader        : ash::extensions::DebugReport,
@@ -48,7 +45,7 @@ struct VulkanApp28 {
 
     physical_device            : vk::PhysicalDevice,
     memory_properties          : vk::PhysicalDeviceMemoryProperties,
-    device                     : ash::Device<V1_0>,
+    device                     : ash::Device,
 
     queue_family               : QueueFamilyIndices,
     graphics_queue             : vk::Queue,
@@ -71,14 +68,14 @@ struct VulkanApp28 {
     depth_image_view           : vk::ImageView,
     depth_image_memory         : vk::DeviceMemory,
 
-    _mip_levels                : vk::uint32_t,
+    _mip_levels                : u32,
     texture_image              : vk::Image,
     texture_image_view         : vk::ImageView,
     texture_sampler            : vk::Sampler,
     texture_image_memory       : vk::DeviceMemory,
 
     _vertices                  : Vec<VertexV3>,
-    indices                    : Vec<vk::types::uint32_t>,
+    indices                    : Vec<u32>,
 
     vertex_buffer              : vk::Buffer,
     vertex_buffer_memory       : vk::DeviceMemory,
@@ -110,12 +107,14 @@ impl VulkanApp28 {
         let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
         let physical_device = share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
-        let physical_device_memory_properties = instance.get_physical_device_memory_properties(physical_device);
+        let physical_device_memory_properties = unsafe {
+            instance.get_physical_device_memory_properties(physical_device)
+        };
         let (device, queue_family) = share::create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
         let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
         let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
@@ -125,10 +124,10 @@ impl VulkanApp28 {
         let ubo_layout = share::v2::create_descriptor_set_layout(&device);
         let (graphics_pipeline, pipeline_layout) = VulkanApp28::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent, ubo_layout);
         let command_pool = share::v1::create_command_pool(&device, &queue_family);
-        let (depth_image, depth_image_view, depth_image_memory) = share::v1::create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, vk::SAMPLE_COUNT_1_BIT);
+        let (depth_image, depth_image_view, depth_image_memory) = share::v1::create_depth_resources(&instance, &device, physical_device, command_pool, graphics_queue, swapchain_stuff.swapchain_extent, &physical_device_memory_properties, vk::SampleCountFlags::TYPE_1);
         let swapchain_framebuffers = VulkanApp28::create_framebuffers(&device, render_pass, &swapchain_imageviews, depth_image_view, swapchain_stuff.swapchain_extent);
         let (vertices, indices) = share::load_model(&Path::new(MODEL_PATH));
-        VulkanApp28::check_mipmap_support(&instance, physical_device, vk::Format::R8g8b8a8Unorm);
+        VulkanApp28::check_mipmap_support(&instance, physical_device, vk::Format::R8G8B8A8_UNORM);
         let (texture_image, texture_image_memory, mip_levels) = VulkanApp28::create_texture_image(&device, command_pool, graphics_queue, &physical_device_memory_properties, &Path::new(TEXTURE_PATH));
         let texture_image_view = share::v1::create_texture_image_view(&device, texture_image, mip_levels);
         let texture_sampler = VulkanApp28::create_texture_sampler(&device, mip_levels);
@@ -219,19 +218,21 @@ impl VulkanApp28 {
         }
     }
 
-    fn create_texture_image(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory, uint32_t) {
+    fn create_texture_image(device: &ash::Device, command_pool: vk::CommandPool, submit_queue: vk::Queue, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, image_path: &Path) -> (vk::Image, vk::DeviceMemory, u32) {
 
         let mut image_object = image::open(image_path).unwrap(); // this function is slow in debug mode.
         image_object = image_object.flipv();
         let (image_width, image_height) = (image_object.width(), image_object.height());
         let image_data = match &image_object {
+            | image::DynamicImage::ImageBgr8(_)
             | image::DynamicImage::ImageLuma8(_)
             | image::DynamicImage::ImageRgb8(_) => image_object.to_rgba().into_raw(),
+            | image::DynamicImage::ImageBgra8(_)
             | image::DynamicImage::ImageLumaA8(_)
             | image::DynamicImage::ImageRgba8(_) => image_object.raw_pixels(),
         };
         let image_size = (::std::mem::size_of::<u8>() as u32 * image_width * image_height * 4) as vk::DeviceSize;
-        let mip_levels = ((::std::cmp::max(image_width, image_height) as f32).log2().floor() as uint32_t) + 1;
+        let mip_levels = ((::std::cmp::max(image_width, image_height) as f32).log2().floor() as u32) + 1;
 
         if image_size <= 0 {
             panic!("Failed to load texture image!")
@@ -240,8 +241,8 @@ impl VulkanApp28 {
         let (staging_buffer, staging_buffer_memory) = share::create_buffer(
             device,
             image_size,
-            vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
-            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            vk::BufferUsageFlags::TRANSFER_SRC,
+            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             device_memory_properties
         );
 
@@ -257,15 +258,15 @@ impl VulkanApp28 {
             device,
             image_width, image_height,
             mip_levels,
-            vk::SAMPLE_COUNT_1_BIT,
-            vk::Format::R8g8b8a8Unorm,
-            vk::ImageTiling::Optimal,
-            vk::IMAGE_USAGE_TRANSFER_SRC_BIT | vk::IMAGE_USAGE_TRANSFER_DST_BIT | vk::IMAGE_USAGE_SAMPLED_BIT,
-            vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            vk::SampleCountFlags::TYPE_1,
+            vk::Format::R8G8B8A8_UNORM,
+            vk::ImageTiling::OPTIMAL,
+            vk::ImageUsageFlags::TRANSFER_SRC | vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
             device_memory_properties
         );
 
-        share::v1::transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8g8b8a8Unorm, vk::ImageLayout::Undefined, vk::ImageLayout::TransferDstOptimal, mip_levels);
+        share::v1::transition_image_layout(device, command_pool, submit_queue, texture_image, vk::Format::R8G8B8A8_UNORM, vk::ImageLayout::UNDEFINED, vk::ImageLayout::TRANSFER_DST_OPTIMAL, mip_levels);
 
         share::copy_buffer_to_image(device, command_pool, submit_queue, staging_buffer, texture_image, image_width, image_height);
 
@@ -279,22 +280,22 @@ impl VulkanApp28 {
         (texture_image, texture_image_memory, mip_levels)
     }
 
-    fn generate_mipmaps(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, tex_width: u32, tex_height: u32, mip_levels: uint32_t) {
+    fn generate_mipmaps(device: &ash::Device, command_pool: vk::CommandPool, submit_queue: vk::Queue, image: vk::Image, tex_width: u32, tex_height: u32, mip_levels: u32) {
 
         let command_buffer = share::begin_single_time_command(device, command_pool);
 
         let mut image_barrier = vk::ImageMemoryBarrier {
-            s_type                 : vk::StructureType::ImageMemoryBarrier,
+            s_type                 : vk::StructureType::IMAGE_MEMORY_BARRIER,
             p_next                 : ptr::null(),
             src_access_mask        : vk::AccessFlags::empty(),
             dst_access_mask        : vk::AccessFlags::empty(),
-            old_layout             : vk::ImageLayout::Undefined,
-            new_layout             : vk::ImageLayout::Undefined,
-            src_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
-            dst_queue_family_index : vk::VK_QUEUE_FAMILY_IGNORED,
+            old_layout             : vk::ImageLayout::UNDEFINED,
+            new_layout             : vk::ImageLayout::UNDEFINED,
+            src_queue_family_index : vk::QUEUE_FAMILY_IGNORED,
+            dst_queue_family_index : vk::QUEUE_FAMILY_IGNORED,
             image,
             subresource_range: vk::ImageSubresourceRange {
-                aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                aspect_mask      : vk::ImageAspectFlags::COLOR,
                 base_mip_level   : 0,
                 level_count      : 1,
                 base_array_layer : 0,
@@ -302,22 +303,22 @@ impl VulkanApp28 {
             }
         };
 
-        let mut mip_width  = tex_width  as int32_t;
-        let mut mip_height = tex_height as int32_t;
+        let mut mip_width  = tex_width  as i32;
+        let mut mip_height = tex_height as i32;
 
         for i in 1..mip_levels {
 
             image_barrier.subresource_range.base_mip_level = i - 1;
-            image_barrier.old_layout      = vk::ImageLayout::TransferDstOptimal;
-            image_barrier.new_layout      = vk::ImageLayout::TransferSrcOptimal;
-            image_barrier.src_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
-            image_barrier.dst_access_mask = vk::ACCESS_TRANSFER_READ_BIT;
+            image_barrier.old_layout      = vk::ImageLayout::TRANSFER_DST_OPTIMAL;
+            image_barrier.new_layout      = vk::ImageLayout::TRANSFER_SRC_OPTIMAL;
+            image_barrier.src_access_mask = vk::AccessFlags::TRANSFER_WRITE;
+            image_barrier.dst_access_mask = vk::AccessFlags::TRANSFER_READ;
 
             unsafe {
                 device.cmd_pipeline_barrier(
                     command_buffer,
-                    vk::PIPELINE_STAGE_TRANSFER_BIT,
-                    vk::PIPELINE_STAGE_TRANSFER_BIT,
+                    vk::PipelineStageFlags::TRANSFER,
+                    vk::PipelineStageFlags::TRANSFER,
                     vk::DependencyFlags::empty(),
                     &[],
                     &[],
@@ -328,7 +329,7 @@ impl VulkanApp28 {
             let blits = [
                 vk::ImageBlit {
                     src_subresource: vk::ImageSubresourceLayers {
-                        aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                        aspect_mask      : vk::ImageAspectFlags::COLOR,
                         mip_level        : i - 1,
                         base_array_layer : 0,
                         layer_count      : 1,
@@ -338,7 +339,7 @@ impl VulkanApp28 {
                         vk::Offset3D { x: mip_width, y: mip_height, z: 1 },
                     ],
                     dst_subresource: vk::ImageSubresourceLayers {
-                        aspect_mask      : vk::IMAGE_ASPECT_COLOR_BIT,
+                        aspect_mask      : vk::ImageAspectFlags::COLOR,
                         mip_level        : i,
                         base_array_layer : 0,
                         layer_count      : 1,
@@ -358,24 +359,24 @@ impl VulkanApp28 {
                 device.cmd_blit_image(
                     command_buffer,
                     image,
-                    vk::ImageLayout::TransferSrcOptimal,
+                    vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
                     image,
-                    vk::ImageLayout::TransferDstOptimal,
+                    vk::ImageLayout::TRANSFER_DST_OPTIMAL,
                     &blits,
-                    vk::Filter::Linear
+                    vk::Filter::LINEAR
                 );
             }
 
-            image_barrier.old_layout      = vk::ImageLayout::TransferSrcOptimal;
-            image_barrier.new_layout      = vk::ImageLayout::ShaderReadOnlyOptimal;
-            image_barrier.src_access_mask = vk::ACCESS_TRANSFER_READ_BIT;
-            image_barrier.dst_access_mask = vk::ACCESS_SHADER_READ_BIT;
+            image_barrier.old_layout      = vk::ImageLayout::TRANSFER_SRC_OPTIMAL;
+            image_barrier.new_layout      = vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+            image_barrier.src_access_mask = vk::AccessFlags::TRANSFER_READ;
+            image_barrier.dst_access_mask = vk::AccessFlags::SHADER_READ;
 
             unsafe {
                 device.cmd_pipeline_barrier(
                     command_buffer,
-                    vk::PIPELINE_STAGE_TRANSFER_BIT,
-                    vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    vk::PipelineStageFlags::TRANSFER,
+                    vk::PipelineStageFlags::FRAGMENT_SHADER,
                     vk::DependencyFlags::empty(),
                     &[],
                     &[],
@@ -389,16 +390,16 @@ impl VulkanApp28 {
 
 
         image_barrier.subresource_range.base_mip_level = mip_levels - 1;
-        image_barrier.old_layout      = vk::ImageLayout::TransferDstOptimal;
-        image_barrier.new_layout      = vk::ImageLayout::ShaderReadOnlyOptimal;
-        image_barrier.src_access_mask = vk::ACCESS_TRANSFER_WRITE_BIT;
-        image_barrier.dst_access_mask = vk::ACCESS_SHADER_READ_BIT;
+        image_barrier.old_layout      = vk::ImageLayout::TRANSFER_DST_OPTIMAL;
+        image_barrier.new_layout      = vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+        image_barrier.src_access_mask = vk::AccessFlags::TRANSFER_WRITE;
+        image_barrier.dst_access_mask = vk::AccessFlags::SHADER_READ;
 
         unsafe {
             device.cmd_pipeline_barrier(
                 command_buffer,
-                vk::PIPELINE_STAGE_TRANSFER_BIT,
-                vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                vk::PipelineStageFlags::TRANSFER,
+                vk::PipelineStageFlags::FRAGMENT_SHADER,
                 vk::DependencyFlags::empty(),
                 &[],
                 &[],
@@ -409,38 +410,40 @@ impl VulkanApp28 {
         share::end_single_time_command(device, command_pool, submit_queue, command_buffer);
     }
 
-    fn check_mipmap_support(instance: &ash::Instance<V1_0>, physcial_device: vk::PhysicalDevice, image_format: vk::Format) {
+    fn check_mipmap_support(instance: &ash::Instance, physcial_device: vk::PhysicalDevice, image_format: vk::Format) {
 
-        let format_properties = instance.get_physical_device_format_properties(physcial_device, image_format);
+        let format_properties = unsafe {
+            instance.get_physical_device_format_properties(physcial_device, image_format)
+        };
 
-        let is_sample_image_filter_linear_support = format_properties.optimal_tiling_features.subset(vk::FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+        let is_sample_image_filter_linear_support = format_properties.optimal_tiling_features.contains(vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR);
 
         if is_sample_image_filter_linear_support == false {
             panic!("Texture Image format does not support linear blitting!")
         }
     }
 
-    fn create_texture_sampler(device: &ash::Device<V1_0>, mip_levels: uint32_t) -> vk::Sampler {
+    fn create_texture_sampler(device: &ash::Device, mip_levels: u32) -> vk::Sampler {
 
         let sampler_create_info = vk::SamplerCreateInfo {
-            s_type                   : vk::StructureType::SamplerCreateInfo,
+            s_type                   : vk::StructureType::SAMPLER_CREATE_INFO,
             p_next                   : ptr::null(),
             flags                    : vk::SamplerCreateFlags::empty(),
-            mag_filter               : vk::Filter::Linear,
-            min_filter               : vk::Filter::Linear,
-            address_mode_u           : vk::SamplerAddressMode::Repeat,
-            address_mode_v           : vk::SamplerAddressMode::Repeat,
-            address_mode_w           : vk::SamplerAddressMode::Repeat,
-            anisotropy_enable        : vk::VK_TRUE,
+            mag_filter               : vk::Filter::LINEAR,
+            min_filter               : vk::Filter::LINEAR,
+            address_mode_u           : vk::SamplerAddressMode::REPEAT,
+            address_mode_v           : vk::SamplerAddressMode::REPEAT,
+            address_mode_w           : vk::SamplerAddressMode::REPEAT,
+            anisotropy_enable        : vk::TRUE,
             max_anisotropy           : 16.0,
-            compare_enable           : vk::VK_FALSE,
-            compare_op               : vk::CompareOp::Always,
-            mipmap_mode              : vk::SamplerMipmapMode::Linear,
+            compare_enable           : vk::FALSE,
+            compare_op               : vk::CompareOp::ALWAYS,
+            mipmap_mode              : vk::SamplerMipmapMode::LINEAR,
             min_lod                  : 0.0,
             max_lod                  : mip_levels as f32,
             mip_lod_bias             : 0.0,
-            border_color             : vk::BorderColor::IntOpaqueBlack,
-            unnormalized_coordinates : vk::VK_FALSE,
+            border_color             : vk::BorderColor::INT_OPAQUE_BLACK,
+            unnormalized_coordinates : vk::FALSE,
         };
 
         unsafe {
@@ -457,40 +460,40 @@ impl VulkanApp28 {
 // Fix content -------------------------------------------------------------------------------
 impl VulkanApp28 {
 
-    fn create_render_pass(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physcial_device: vk::PhysicalDevice, surface_format: vk::Format) -> vk::RenderPass {
+    fn create_render_pass(instance: &ash::Instance, device: &ash::Device, physcial_device: vk::PhysicalDevice, surface_format: vk::Format) -> vk::RenderPass {
 
         let color_attachment = vk::AttachmentDescription {
             flags            : vk::AttachmentDescriptionFlags::empty(),
             format           : surface_format,
-            samples          : vk::SAMPLE_COUNT_1_BIT,
-            load_op          : vk::AttachmentLoadOp::Clear,
-            store_op         : vk::AttachmentStoreOp::Store,
-            stencil_load_op  : vk::AttachmentLoadOp::DontCare,
-            stencil_store_op : vk::AttachmentStoreOp::DontCare,
-            initial_layout   : vk::ImageLayout::Undefined,
-            final_layout     : vk::ImageLayout::PresentSrcKhr,
+            samples          : vk::SampleCountFlags::TYPE_1,
+            load_op          : vk::AttachmentLoadOp::CLEAR,
+            store_op         : vk::AttachmentStoreOp::STORE,
+            stencil_load_op  : vk::AttachmentLoadOp::DONT_CARE,
+            stencil_store_op : vk::AttachmentStoreOp::DONT_CARE,
+            initial_layout   : vk::ImageLayout::UNDEFINED,
+            final_layout     : vk::ImageLayout::PRESENT_SRC_KHR,
         };
 
         let depth_attachment = vk::AttachmentDescription {
             flags            : vk::AttachmentDescriptionFlags::empty(),
             format           : share::find_depth_format(instance, physcial_device),
-            samples          : vk::SAMPLE_COUNT_1_BIT,
-            load_op          : vk::AttachmentLoadOp::Clear,
-            store_op         : vk::AttachmentStoreOp::DontCare,
-            stencil_load_op  : vk::AttachmentLoadOp::DontCare,
-            stencil_store_op : vk::AttachmentStoreOp::DontCare,
-            initial_layout   : vk::ImageLayout::Undefined,
-            final_layout     : vk::ImageLayout::DepthStencilAttachmentOptimal,
+            samples          : vk::SampleCountFlags::TYPE_1,
+            load_op          : vk::AttachmentLoadOp::CLEAR,
+            store_op         : vk::AttachmentStoreOp::DONT_CARE,
+            stencil_load_op  : vk::AttachmentLoadOp::DONT_CARE,
+            stencil_store_op : vk::AttachmentStoreOp::DONT_CARE,
+            initial_layout   : vk::ImageLayout::UNDEFINED,
+            final_layout     : vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         };
 
         let color_attachment_ref = vk::AttachmentReference {
             attachment : 0,
-            layout     : vk::ImageLayout::ColorAttachmentOptimal,
+            layout     : vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
         };
 
         let depth_attachment_ref = vk::AttachmentReference {
             attachment : 1,
-            layout     : vk::ImageLayout::DepthStencilAttachmentOptimal,
+            layout     : vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         };
 
         let subpasses = [
@@ -499,7 +502,7 @@ impl VulkanApp28 {
                 p_color_attachments        : &color_attachment_ref,
                 p_depth_stencil_attachment : &depth_attachment_ref,
                 flags                      : vk::SubpassDescriptionFlags::empty(),
-                pipeline_bind_point        : vk::PipelineBindPoint::Graphics,
+                pipeline_bind_point        : vk::PipelineBindPoint::GRAPHICS,
                 input_attachment_count     : 0,
                 p_input_attachments        : ptr::null(),
                 p_resolve_attachments      : ptr::null(),
@@ -515,18 +518,18 @@ impl VulkanApp28 {
 
         let subpass_dependencies = [
             vk::SubpassDependency {
-                src_subpass      : vk::VK_SUBPASS_EXTERNAL,
+                src_subpass      : vk::SUBPASS_EXTERNAL,
                 dst_subpass      : 0,
-                src_stage_mask   : vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                dst_stage_mask   : vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                src_stage_mask   : vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+                dst_stage_mask   : vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
                 src_access_mask  : vk::AccessFlags::empty(),
-                dst_access_mask  : vk::ACCESS_COLOR_ATTACHMENT_READ_BIT | vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                dst_access_mask  : vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
                 dependency_flags : vk::DependencyFlags::empty(),
             },
         ];
 
         let renderpass_create_info = vk::RenderPassCreateInfo {
-            s_type           : vk::StructureType::RenderPassCreateInfo,
+            s_type           : vk::StructureType::RENDER_PASS_CREATE_INFO,
             flags            : vk::RenderPassCreateFlags::empty(),
             p_next           : ptr::null(),
             attachment_count : render_pass_attachments.len() as u32,
@@ -543,7 +546,7 @@ impl VulkanApp28 {
         }
     }
 
-    fn create_framebuffers(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, image_views: &Vec<vk::ImageView>, depth_image_view: vk::ImageView,swapchain_extent: vk::Extent2D) -> Vec<vk::Framebuffer> {
+    fn create_framebuffers(device: &ash::Device, render_pass: vk::RenderPass, image_views: &Vec<vk::ImageView>, depth_image_view: vk::ImageView,swapchain_extent: vk::Extent2D) -> Vec<vk::Framebuffer> {
 
         let mut framebuffers = vec![];
 
@@ -554,7 +557,7 @@ impl VulkanApp28 {
             ];
 
             let framebuffer_create_info = vk::FramebufferCreateInfo {
-                s_type           : vk::StructureType::FramebufferCreateInfo,
+                s_type           : vk::StructureType::FRAMEBUFFER_CREATE_INFO,
                 p_next           : ptr::null(),
                 flags            : vk::FramebufferCreateFlags::empty(),
                 render_pass,
@@ -576,7 +579,7 @@ impl VulkanApp28 {
         framebuffers
     }
 
-    fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D, ubo_set_layout: vk::DescriptorSetLayout) -> (vk::Pipeline, vk::PipelineLayout) {
+    fn create_graphics_pipeline(device: &ash::Device, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D, ubo_set_layout: vk::DescriptorSetLayout) -> (vk::Pipeline, vk::PipelineLayout) {
 
         let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/26-shader-depth.vert.spv"));
         let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/26-shader-depth.frag.spv"));
@@ -588,22 +591,22 @@ impl VulkanApp28 {
 
         let shader_stages = [
             vk::PipelineShaderStageCreateInfo { // Vertex Shader
-                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next                : ptr::null(),
                 flags                 : vk::PipelineShaderStageCreateFlags::empty(),
                 module                : vert_shader_module,
                 p_name                : main_function_name.as_ptr(),
                 p_specialization_info : ptr::null(),
-                stage                 : vk::SHADER_STAGE_VERTEX_BIT,
+                stage                 : vk::ShaderStageFlags::VERTEX,
             },
             vk::PipelineShaderStageCreateInfo { // Fragment Shader
-                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next                : ptr::null(),
                 flags                 : vk::PipelineShaderStageCreateFlags::empty(),
                 module                : frag_shader_module,
                 p_name                : main_function_name.as_ptr(),
                 p_specialization_info : ptr::null(),
-                stage                 : vk::SHADER_STAGE_FRAGMENT_BIT,
+                stage                 : vk::ShaderStageFlags::FRAGMENT,
             },
         ];
 
@@ -611,7 +614,7 @@ impl VulkanApp28 {
         let attribute_description = VertexV3::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
-            s_type                             : vk::StructureType::PipelineVertexInputStateCreateInfo,
+            s_type                             : vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             p_next                             : ptr::null(),
             flags                              : vk::PipelineVertexInputStateCreateFlags::empty(),
             vertex_attribute_description_count : attribute_description.len() as u32,
@@ -620,11 +623,11 @@ impl VulkanApp28 {
             p_vertex_binding_descriptions      : binding_description.as_ptr(),
         };
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
-            s_type                   : vk::StructureType::PipelineInputAssemblyStateCreateInfo,
+            s_type                   : vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             flags                    : vk::PipelineInputAssemblyStateCreateFlags::empty(),
             p_next                   : ptr::null(),
-            primitive_restart_enable : vk::VK_FALSE,
-            topology                 : vk::PrimitiveTopology::TriangleList,
+            primitive_restart_enable : vk::FALSE,
+            topology                 : vk::PrimitiveTopology::TRIANGLE_LIST,
         };
 
         let viewports = [
@@ -646,7 +649,7 @@ impl VulkanApp28 {
         ];
 
         let viewport_state_create_info = vk::PipelineViewportStateCreateInfo {
-            s_type         : vk::StructureType::PipelineViewportStateCreateInfo,
+            s_type         : vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             p_next         : ptr::null(),
             flags          : vk::PipelineViewportStateCreateFlags::empty(),
             scissor_count  : scissors.len()  as u32,
@@ -656,52 +659,52 @@ impl VulkanApp28 {
         };
 
         let rasterization_statue_create_info = vk::PipelineRasterizationStateCreateInfo {
-            s_type                     : vk::StructureType::PipelineRasterizationStateCreateInfo,
+            s_type                     : vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             p_next                     : ptr::null(),
             flags                      : vk::PipelineRasterizationStateCreateFlags::empty(),
-            depth_clamp_enable         : vk::VK_FALSE,
-            cull_mode                  : vk::CULL_MODE_BACK_BIT,
-            front_face                 : vk::FrontFace::CounterClockwise,
+            depth_clamp_enable         : vk::FALSE,
+            cull_mode                  : vk::CullModeFlags::BACK,
+            front_face                 : vk::FrontFace::COUNTER_CLOCKWISE,
             line_width                 : 1.0,
-            polygon_mode               : vk::PolygonMode::Fill,
-            rasterizer_discard_enable  : vk::VK_FALSE,
+            polygon_mode               : vk::PolygonMode::FILL,
+            rasterizer_discard_enable  : vk::FALSE,
             depth_bias_clamp           : 0.0,
             depth_bias_constant_factor : 0.0,
-            depth_bias_enable          : vk::VK_FALSE,
+            depth_bias_enable          : vk::FALSE,
             depth_bias_slope_factor    : 0.0,
         };
 
         let multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo {
-            s_type                   : vk::StructureType::PipelineMultisampleStateCreateInfo,
+            s_type                   : vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             flags                    : vk::PipelineMultisampleStateCreateFlags::empty(),
             p_next                   : ptr::null(),
-            rasterization_samples    : vk::SAMPLE_COUNT_1_BIT,
-            sample_shading_enable    : vk::VK_FALSE,
+            rasterization_samples    : vk::SampleCountFlags::TYPE_1,
+            sample_shading_enable    : vk::FALSE,
             min_sample_shading       : 0.0,
             p_sample_mask            : ptr::null(),
-            alpha_to_one_enable      : vk::VK_FALSE,
-            alpha_to_coverage_enable : vk::VK_FALSE,
+            alpha_to_one_enable      : vk::FALSE,
+            alpha_to_coverage_enable : vk::FALSE,
         };
 
         let stencil_state = vk::StencilOpState {
-            fail_op       : vk::StencilOp::Keep,
-            pass_op       : vk::StencilOp::Keep,
-            depth_fail_op : vk::StencilOp::Keep,
-            compare_op    : vk::CompareOp::Always,
+            fail_op       : vk::StencilOp::KEEP,
+            pass_op       : vk::StencilOp::KEEP,
+            depth_fail_op : vk::StencilOp::KEEP,
+            compare_op    : vk::CompareOp::ALWAYS,
             compare_mask  : 0,
             write_mask    : 0,
             reference     : 0,
         };
 
         let depth_state_create_info = vk::PipelineDepthStencilStateCreateInfo {
-            s_type                   : vk::StructureType::PipelineDepthStencilStateCreateInfo,
+            s_type                   : vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             p_next                   : ptr::null(),
             flags                    : vk::PipelineDepthStencilStateCreateFlags::empty(),
-            depth_test_enable        : vk::VK_TRUE,
-            depth_write_enable       : vk::VK_TRUE,
-            depth_compare_op         : vk::CompareOp::Less,
-            depth_bounds_test_enable : vk::VK_FALSE,
-            stencil_test_enable      : vk::VK_FALSE,
+            depth_test_enable        : vk::TRUE,
+            depth_write_enable       : vk::TRUE,
+            depth_compare_op         : vk::CompareOp::LESS,
+            depth_bounds_test_enable : vk::FALSE,
+            stencil_test_enable      : vk::FALSE,
             front                    : stencil_state,
             back                     : stencil_state,
             max_depth_bounds         : 1.0,
@@ -710,23 +713,23 @@ impl VulkanApp28 {
 
         let color_blend_attachment_states = [
             vk::PipelineColorBlendAttachmentState {
-                blend_enable           : vk::VK_FALSE,
+                blend_enable           : vk::FALSE,
                 color_write_mask       : vk::ColorComponentFlags::all(),
-                src_color_blend_factor : vk::BlendFactor::One,
-                dst_color_blend_factor : vk::BlendFactor::Zero,
-                color_blend_op         : vk::BlendOp::Add,
-                src_alpha_blend_factor : vk::BlendFactor::One,
-                dst_alpha_blend_factor : vk::BlendFactor::Zero,
-                alpha_blend_op         : vk::BlendOp::Add,
+                src_color_blend_factor : vk::BlendFactor::ONE,
+                dst_color_blend_factor : vk::BlendFactor::ZERO,
+                color_blend_op         : vk::BlendOp::ADD,
+                src_alpha_blend_factor : vk::BlendFactor::ONE,
+                dst_alpha_blend_factor : vk::BlendFactor::ZERO,
+                alpha_blend_op         : vk::BlendOp::ADD,
             },
         ];
 
         let color_blend_state = vk::PipelineColorBlendStateCreateInfo {
-            s_type           : vk::StructureType::PipelineColorBlendStateCreateInfo,
+            s_type           : vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             p_next           : ptr::null(),
             flags            : vk::PipelineColorBlendStateCreateFlags::empty(),
-            logic_op_enable  : vk::VK_FALSE,
-            logic_op         : vk::LogicOp::Copy,
+            logic_op_enable  : vk::FALSE,
+            logic_op         : vk::LogicOp::COPY,
             attachment_count : color_blend_attachment_states.len() as u32,
             p_attachments    : color_blend_attachment_states.as_ptr(),
             blend_constants  : [0.0, 0.0, 0.0, 0.0],
@@ -737,7 +740,7 @@ impl VulkanApp28 {
         ];
 
         let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
-            s_type                    : vk::StructureType::PipelineLayoutCreateInfo,
+            s_type                    : vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
             p_next                    : ptr::null(),
             flags                     : vk::PipelineLayoutCreateFlags::empty(),
             set_layout_count          : set_layouts.len() as u32,
@@ -753,7 +756,7 @@ impl VulkanApp28 {
 
         let graphic_pipeline_create_infos = [
             vk::GraphicsPipelineCreateInfo {
-                s_type                 : vk::StructureType::GraphicsPipelineCreateInfo,
+                s_type                 : vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
                 p_next                 : ptr::null(),
                 flags                  : vk::PipelineCreateFlags::empty(),
                 stage_count            : shader_stages.len() as u32,
@@ -788,14 +791,14 @@ impl VulkanApp28 {
         (graphics_pipelines[0], pipeline_layout)
     }
 
-    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer, pipeline_layout: vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>, index_count: vk::uint32_t) -> Vec<vk::CommandBuffer> {
+    fn create_command_buffers(device: &ash::Device, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer, pipeline_layout: vk::PipelineLayout, descriptor_sets: &Vec<vk::DescriptorSet>, index_count: u32) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type               : vk::StructureType::CommandBufferAllocateInfo,
+            s_type               : vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
             p_next               : ptr::null(),
             command_buffer_count : framebuffers.len() as u32,
             command_pool,
-            level                : vk::CommandBufferLevel::Primary,
+            level                : vk::CommandBufferLevel::PRIMARY,
         };
 
         let command_buffers = unsafe {
@@ -806,10 +809,10 @@ impl VulkanApp28 {
         for (i, &command_buffer) in command_buffers.iter().enumerate() {
 
             let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-                s_type             : vk::StructureType::CommandBufferBeginInfo,
+                s_type             : vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
                 p_next             : ptr::null(),
                 p_inheritance_info : ptr::null(),
-                flags              : vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                flags              : vk::CommandBufferUsageFlags::SIMULTANEOUS_USE,
             };
 
             unsafe {
@@ -824,7 +827,7 @@ impl VulkanApp28 {
                     }
                 },
                 vk::ClearValue { // clear value for depth buffer
-                    depth: vk::ClearDepthStencilValue {
+                    depth_stencil: vk::ClearDepthStencilValue {
                         depth   : 1.0,
                         stencil : 0,
                     }
@@ -832,7 +835,7 @@ impl VulkanApp28 {
             ];
 
             let render_pass_begin_info = vk::RenderPassBeginInfo {
-                s_type            : vk::StructureType::RenderPassBeginInfo,
+                s_type            : vk::StructureType::RENDER_PASS_BEGIN_INFO,
                 p_next            : ptr::null(),
                 render_pass,
                 framebuffer       : framebuffers[i],
@@ -845,8 +848,8 @@ impl VulkanApp28 {
             };
 
             unsafe {
-                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
-                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline);
+                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::INLINE);
+                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::GRAPHICS, graphics_pipeline);
 
                 let vertex_buffers = [
                     vertex_buffer
@@ -859,8 +862,8 @@ impl VulkanApp28 {
                 ];
 
                 device.cmd_bind_vertex_buffers(command_buffer, 0, &vertex_buffers, &offsets);
-                device.cmd_bind_index_buffer(command_buffer, index_buffer, 0, vk::IndexType::Uint32);
-                device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, pipeline_layout, 0, &descriptor_sets_to_bind, &[]);
+                device.cmd_bind_index_buffer(command_buffer, index_buffer, 0, vk::IndexType::UINT32);
+                device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::GRAPHICS, pipeline_layout, 0, &descriptor_sets_to_bind, &[]);
 
                 device.cmd_draw_indexed(command_buffer, index_count, 1, 0, 0, 0);
 
@@ -954,12 +957,12 @@ impl VulkanApp for VulkanApp28 {
                 .expect("Failed to wait for Fence!");
         }
 
-        let image_index = unsafe {
+        let (image_index, _is_sub_optimal) = unsafe {
             let result = self.swapchain_loader.acquire_next_image_khr(self.swapchain, std::u64::MAX, self.image_available_semaphores[self.current_frame], vk::Fence::null());
             match result {
                 | Ok(image_index) => image_index,
                 | Err(vk_result) => match vk_result {
-                    | vk::types::Result::ErrorOutOfDateKhr => {
+                    | vk::Result::ERROR_OUT_OF_DATE_KHR => {
                         self.recreate_swapchain();
                         return
                     },
@@ -974,7 +977,7 @@ impl VulkanApp for VulkanApp28 {
             self.image_available_semaphores[self.current_frame],
         ];
         let wait_stages = [
-            vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
         ];
         let signal_semaphores = [
             self.render_finished_semaphores[self.current_frame],
@@ -982,7 +985,7 @@ impl VulkanApp for VulkanApp28 {
 
         let submit_infos = [
             vk::SubmitInfo {
-                s_type                 : vk::StructureType::SubmitInfo,
+                s_type                 : vk::StructureType::SUBMIT_INFO,
                 p_next                 : ptr::null(),
                 wait_semaphore_count   : wait_semaphores.len() as u32,
                 p_wait_semaphores      : wait_semaphores.as_ptr(),
@@ -1007,7 +1010,7 @@ impl VulkanApp for VulkanApp28 {
         ];
 
         let present_info = vk::PresentInfoKHR {
-            s_type               : vk::StructureType::PresentInfoKhr,
+            s_type               : vk::StructureType::PRESENT_INFO_KHR,
             p_next               : ptr::null(),
             wait_semaphore_count : 1,
             p_wait_semaphores    : signal_semaphores.as_ptr(),
@@ -1024,8 +1027,8 @@ impl VulkanApp for VulkanApp28 {
         let is_resized = match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
-                | vk::Result::ErrorOutOfDateKhr
-                | vk::Result::SuboptimalKhr => {
+                | vk::Result::ERROR_OUT_OF_DATE_KHR
+                | vk::Result::SUBOPTIMAL_KHR => {
                     true
                 }
                 | _ => panic!("Failed to execute queue present.")
@@ -1048,8 +1051,10 @@ impl VulkanApp for VulkanApp28 {
         };
         // ------------------------
 
-        self.device.device_wait_idle()
-            .expect("Failed to wait device idle!");
+        unsafe {
+            self.device.device_wait_idle()
+                .expect("Failed to wait device idle!")
+        };
         self.cleanup_swapchain();
 
         let swapchain_stuff = share::create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
@@ -1065,7 +1070,7 @@ impl VulkanApp for VulkanApp28 {
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        let depth_resources = share::v1::create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties, vk::SAMPLE_COUNT_1_BIT);
+        let depth_resources = share::v1::create_depth_resources(&self.instance, &self.device, self.physical_device, self.command_pool, self.graphics_queue, self.swapchain_extent, &self.memory_properties, vk::SampleCountFlags::TYPE_1);
         self.depth_image        = depth_resources.0;
         self.depth_image_view   = depth_resources.1;
         self.depth_image_memory = depth_resources.2;
@@ -1095,8 +1100,10 @@ impl VulkanApp for VulkanApp28 {
     }
 
     fn wait_device_idle(&self) {
-        self.device.device_wait_idle()
-            .expect("Failed to wait device idle!");
+        unsafe {
+            self.device.device_wait_idle()
+                .expect("Failed to wait device idle!")
+        };
     }
 
     fn resize_framebuffer(&mut self) {

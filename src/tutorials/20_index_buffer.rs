@@ -15,11 +15,8 @@ extern crate memoffset;
 
 use winit::{ Event, EventsLoop, WindowEvent, VirtualKeyCode };
 use ash::vk;
-use ash::version::{ V1_0, InstanceV1_0 };
+use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
-use vk::types::uint32_t;
-
-type EntryV1 = ash::Entry<V1_0>;
 
 use std::path::Path;
 use std::ptr;
@@ -40,7 +37,7 @@ impl Vertex {
             vk::VertexInputBindingDescription {
                 binding    : 0,
                 stride     : std::mem::size_of::<Vertex>() as u32,
-                input_rate : vk::VertexInputRate::Vertex,
+                input_rate : vk::VertexInputRate::VERTEX,
             },
         ]
     }
@@ -50,13 +47,13 @@ impl Vertex {
             vk::VertexInputAttributeDescription {
                 binding  : 0,
                 location : 0,
-                format   : vk::Format::R32g32Sfloat,
+                format   : vk::Format::R32G32_SFLOAT,
                 offset   : offset_of!(Vertex, pos) as u32,
             },
             vk::VertexInputAttributeDescription {
                 binding  : 0,
                 location : 1,
-                format   : vk::Format::R32g32b32a32Sfloat,
+                format   : vk::Format::R32G32B32A32_SFLOAT,
                 offset   : offset_of!(Vertex, color) as u32,
             }
         ]
@@ -69,7 +66,7 @@ const VERTICES_DATA: [Vertex; 4] = [
     Vertex { pos: [ 0.5,  0.5], color: [0.0, 0.0, 1.0, 1.0], },
     Vertex { pos: [-0.5,  0.5], color: [1.0, 1.0, 1.0, 1.0], },
 ];
-const INDICES_DATA: [vk::types::uint32_t; 6] = [
+const INDICES_DATA: [u32; 6] = [
     0, 1, 2, 2, 3, 0
 ];
 
@@ -79,15 +76,15 @@ struct VulkanApp {
     window                     : winit::Window,
 
     // vulkan stuff
-    _entry                     : EntryV1,
-    instance                   : ash::Instance<V1_0>,
+    _entry                     : ash::Entry,
+    instance                   : ash::Instance,
     surface_loader             : ash::extensions::Surface,
     surface                    : vk::SurfaceKHR,
     debug_report_loader        : ash::extensions::DebugReport,
     debug_callback             : vk::DebugReportCallbackEXT,
 
     physical_device            : vk::PhysicalDevice,
-    device                     : ash::Device<V1_0>,
+    device                     : ash::Device,
 
     queue_family               : QueueFamilyIndices,
     graphics_queue             : vk::Queue,
@@ -128,7 +125,7 @@ impl VulkanApp {
         let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
-        let entry = EntryV1::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
         let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
         let (debug_report_loader, debug_callback) = setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
@@ -196,17 +193,19 @@ impl VulkanApp {
         }
     }
 
-    fn create_vertex_buffer(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue)
+    fn create_vertex_buffer(instance: &ash::Instance, device: &ash::Device, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue)
         -> (vk::Buffer, vk::DeviceMemory) {
 
         let buffer_size = std::mem::size_of_val(&VERTICES_DATA) as vk::DeviceSize;;
-        let device_memory_properties = instance.get_physical_device_memory_properties(physical_device);
+        let device_memory_properties = unsafe {
+            instance.get_physical_device_memory_properties(physical_device)
+        };
 
         let (staging_buffer, staging_buffer_memory) = share::create_buffer(
             device,
             buffer_size,
-            vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
-            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            vk::BufferUsageFlags::TRANSFER_SRC,
+            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             &device_memory_properties,
         );
 
@@ -221,8 +220,8 @@ impl VulkanApp {
         let (vertex_buffer, vertex_buffer_memory) = share::create_buffer(
             device,
             buffer_size,
-            vk::BUFFER_USAGE_TRANSFER_DST_BIT | vk::BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
             &device_memory_properties,
         );
 
@@ -236,24 +235,26 @@ impl VulkanApp {
         (vertex_buffer, vertex_buffer_memory)
     }
 
-    fn create_index_buffer(instance: &ash::Instance<V1_0>, device: &ash::Device<V1_0>, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue)
+    fn create_index_buffer(instance: &ash::Instance, device: &ash::Device, physical_device: vk::PhysicalDevice, command_pool: vk::CommandPool, submit_queue: vk::Queue)
         -> (vk::Buffer, vk::DeviceMemory) {
 
         let buffer_size = std::mem::size_of_val(&INDICES_DATA) as vk::DeviceSize;
-        let device_memory_properties = instance.get_physical_device_memory_properties(physical_device);
+        let device_memory_properties = unsafe {
+            instance.get_physical_device_memory_properties(physical_device)
+        };
 
         let (staging_buffer, staging_buffer_memory) = share::create_buffer(
             device,
             buffer_size,
-            vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
-            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            vk::BufferUsageFlags::TRANSFER_SRC,
+            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
             &device_memory_properties,
         );
 
         unsafe {
             let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
                 .expect("Failed to Map Memory");
-            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<uint32_t>() as u64, buffer_size);
+            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<u32>() as u64, buffer_size);
             vert_align.copy_from_slice(&INDICES_DATA);
             device.unmap_memory(staging_buffer_memory);
         }
@@ -261,8 +262,8 @@ impl VulkanApp {
         let (index_buffer, index_buffer_memory) = share::create_buffer(
             device,
             buffer_size,
-            vk::BUFFER_USAGE_TRANSFER_DST_BIT | vk::BUFFER_USAGE_INDEX_BUFFER_BIT,
-            vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
             &device_memory_properties,
         );
 
@@ -276,14 +277,14 @@ impl VulkanApp {
         (index_buffer, index_buffer_memory)
     }
 
-    fn create_command_buffers(device: &ash::Device<V1_0>, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer) -> Vec<vk::CommandBuffer> {
+    fn create_command_buffers(device: &ash::Device, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer, index_buffer: vk::Buffer) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type                : vk::StructureType::CommandBufferAllocateInfo,
+            s_type                : vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
             p_next                : ptr::null(),
             command_buffer_count : framebuffers.len() as u32,
             command_pool,
-            level                : vk::CommandBufferLevel::Primary,
+            level                : vk::CommandBufferLevel::PRIMARY,
         };
 
         let command_buffers = unsafe {
@@ -294,10 +295,10 @@ impl VulkanApp {
         for (i, &command_buffer) in command_buffers.iter().enumerate() {
 
             let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-                s_type             : vk::StructureType::CommandBufferBeginInfo,
+                s_type             : vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
                 p_next             : ptr::null(),
                 p_inheritance_info : ptr::null(),
-                flags              : vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                flags              : vk::CommandBufferUsageFlags::SIMULTANEOUS_USE,
             };
 
             unsafe {
@@ -314,7 +315,7 @@ impl VulkanApp {
             ];
 
             let render_pass_begin_info = vk::RenderPassBeginInfo {
-                s_type            : vk::StructureType::RenderPassBeginInfo,
+                s_type            : vk::StructureType::RENDER_PASS_BEGIN_INFO,
                 p_next            : ptr::null(),
                 render_pass,
                 framebuffer       : framebuffers[i],
@@ -327,8 +328,8 @@ impl VulkanApp {
             };
 
             unsafe {
-                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::Inline);
-                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, graphics_pipeline);
+                device.cmd_begin_render_pass(command_buffer, &render_pass_begin_info, vk::SubpassContents::INLINE);
+                device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::GRAPHICS, graphics_pipeline);
 
                 let vertex_buffers = [
                     vertex_buffer
@@ -338,7 +339,7 @@ impl VulkanApp {
                 ];
 
                 device.cmd_bind_vertex_buffers(command_buffer, 0, &vertex_buffers, &offsets);
-                device.cmd_bind_index_buffer(command_buffer, index_buffer, 0, vk::IndexType::Uint32);
+                device.cmd_bind_index_buffer(command_buffer, index_buffer, 0, vk::IndexType::UINT32);
 
                 device.cmd_draw_indexed(command_buffer, INDICES_DATA.len() as u32, 1, 0, 0, 0);
 
@@ -359,7 +360,7 @@ impl VulkanApp {
 // Fix content -------------------------------------------------------------------------------
 impl VulkanApp {
 
-    fn create_graphics_pipeline(device: &ash::Device<V1_0>, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
+    fn create_graphics_pipeline(device: &ash::Device, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
 
         let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/17-shader-vertexbuffer.vert.spv"));
         let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/17-shader-vertexbuffer.frag.spv"));
@@ -371,22 +372,22 @@ impl VulkanApp {
 
         let shader_stages = [
             vk::PipelineShaderStageCreateInfo { // Vertex Shader
-                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next                : ptr::null(),
                 flags                 : vk::PipelineShaderStageCreateFlags::empty(),
                 module                : vert_shader_module,
                 p_name                : main_function_name.as_ptr(),
                 p_specialization_info : ptr::null(),
-                stage                 : vk::SHADER_STAGE_VERTEX_BIT,
+                stage                 : vk::ShaderStageFlags::VERTEX,
             },
             vk::PipelineShaderStageCreateInfo { // Fragment Shader
-                s_type                : vk::StructureType::PipelineShaderStageCreateInfo,
+                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next                : ptr::null(),
                 flags                 : vk::PipelineShaderStageCreateFlags::empty(),
                 module                : frag_shader_module,
                 p_name                : main_function_name.as_ptr(),
                 p_specialization_info : ptr::null(),
-                stage                 : vk::SHADER_STAGE_FRAGMENT_BIT,
+                stage                 : vk::ShaderStageFlags::FRAGMENT,
             },
         ];
 
@@ -394,7 +395,7 @@ impl VulkanApp {
         let attribute_description = Vertex::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
-            s_type                             : vk::StructureType::PipelineVertexInputStateCreateInfo,
+            s_type                             : vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             p_next                             : ptr::null(),
             flags                              : vk::PipelineVertexInputStateCreateFlags::empty(),
             vertex_attribute_description_count : attribute_description.len() as u32,
@@ -403,11 +404,11 @@ impl VulkanApp {
             p_vertex_binding_descriptions      : binding_description.as_ptr(),
         };
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
-            s_type                   : vk::StructureType::PipelineInputAssemblyStateCreateInfo,
+            s_type                   : vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             flags                    : vk::PipelineInputAssemblyStateCreateFlags::empty(),
             p_next                   : ptr::null(),
-            primitive_restart_enable : vk::VK_FALSE,
-            topology                 : vk::PrimitiveTopology::TriangleList,
+            primitive_restart_enable : vk::FALSE,
+            topology                 : vk::PrimitiveTopology::TRIANGLE_LIST,
         };
 
         let viewports = [
@@ -429,7 +430,7 @@ impl VulkanApp {
         ];
 
         let viewport_state_create_info = vk::PipelineViewportStateCreateInfo {
-            s_type         : vk::StructureType::PipelineViewportStateCreateInfo,
+            s_type         : vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             p_next         : ptr::null(),
             flags          : vk::PipelineViewportStateCreateFlags::empty(),
             scissor_count  : scissors.len()  as u32,
@@ -439,52 +440,52 @@ impl VulkanApp {
         };
 
         let rasterization_statue_create_info = vk::PipelineRasterizationStateCreateInfo {
-            s_type                     : vk::StructureType::PipelineRasterizationStateCreateInfo,
+            s_type                     : vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             p_next                     : ptr::null(),
             flags                      : vk::PipelineRasterizationStateCreateFlags::empty(),
-            depth_clamp_enable         : vk::VK_FALSE,
-            cull_mode                  : vk::CULL_MODE_BACK_BIT,
-            front_face                 : vk::FrontFace::Clockwise,
+            depth_clamp_enable         : vk::FALSE,
+            cull_mode                  : vk::CullModeFlags::BACK,
+            front_face                 : vk::FrontFace::CLOCKWISE,
             line_width                 : 1.0,
-            polygon_mode               : vk::PolygonMode::Fill,
-            rasterizer_discard_enable  : vk::VK_FALSE,
+            polygon_mode               : vk::PolygonMode::FILL,
+            rasterizer_discard_enable  : vk::FALSE,
             depth_bias_clamp           : 0.0,
             depth_bias_constant_factor : 0.0,
-            depth_bias_enable          : vk::VK_FALSE,
+            depth_bias_enable          : vk::FALSE,
             depth_bias_slope_factor    : 0.0,
         };
 
         let multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo {
-            s_type                   : vk::StructureType::PipelineMultisampleStateCreateInfo,
+            s_type                   : vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             flags                    : vk::PipelineMultisampleStateCreateFlags::empty(),
             p_next                   : ptr::null(),
-            rasterization_samples    : vk::SAMPLE_COUNT_1_BIT,
-            sample_shading_enable    : vk::VK_FALSE,
+            rasterization_samples    : vk::SampleCountFlags::TYPE_1,
+            sample_shading_enable    : vk::FALSE,
             min_sample_shading       : 0.0,
             p_sample_mask            : ptr::null(),
-            alpha_to_one_enable      : vk::VK_FALSE,
-            alpha_to_coverage_enable : vk::VK_FALSE,
+            alpha_to_one_enable      : vk::FALSE,
+            alpha_to_coverage_enable : vk::FALSE,
         };
 
         let stencil_state = vk::StencilOpState {
-            fail_op       : vk::StencilOp::Keep,
-            pass_op       : vk::StencilOp::Keep,
-            depth_fail_op : vk::StencilOp::Keep,
-            compare_op    : vk::CompareOp::Always,
+            fail_op       : vk::StencilOp::KEEP,
+            pass_op       : vk::StencilOp::KEEP,
+            depth_fail_op : vk::StencilOp::KEEP,
+            compare_op    : vk::CompareOp::ALWAYS,
             compare_mask  : 0,
             write_mask    : 0,
             reference     : 0,
         };
 
         let depth_state_create_info = vk::PipelineDepthStencilStateCreateInfo {
-            s_type                   : vk::StructureType::PipelineDepthStencilStateCreateInfo,
+            s_type                   : vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             p_next                   : ptr::null(),
             flags                    : vk::PipelineDepthStencilStateCreateFlags::empty(),
-            depth_test_enable        : vk::VK_FALSE,
-            depth_write_enable       : vk::VK_FALSE,
-            depth_compare_op         : vk::CompareOp::LessOrEqual,
-            depth_bounds_test_enable : vk::VK_FALSE,
-            stencil_test_enable      : vk::VK_FALSE,
+            depth_test_enable        : vk::FALSE,
+            depth_write_enable       : vk::FALSE,
+            depth_compare_op         : vk::CompareOp::LESS_OR_EQUAL,
+            depth_bounds_test_enable : vk::FALSE,
+            stencil_test_enable      : vk::FALSE,
             front                    : stencil_state,
             back                     : stencil_state,
             max_depth_bounds         : 1.0,
@@ -493,30 +494,30 @@ impl VulkanApp {
 
         let color_blend_attachment_states = [
             vk::PipelineColorBlendAttachmentState {
-                blend_enable           : vk::VK_FALSE,
+                blend_enable           : vk::FALSE,
                 color_write_mask       : vk::ColorComponentFlags::all(),
-                src_color_blend_factor : vk::BlendFactor::One,
-                dst_color_blend_factor : vk::BlendFactor::Zero,
-                color_blend_op         : vk::BlendOp::Add,
-                src_alpha_blend_factor : vk::BlendFactor::One,
-                dst_alpha_blend_factor : vk::BlendFactor::Zero,
-                alpha_blend_op         : vk::BlendOp::Add,
+                src_color_blend_factor : vk::BlendFactor::ONE,
+                dst_color_blend_factor : vk::BlendFactor::ZERO,
+                color_blend_op         : vk::BlendOp::ADD,
+                src_alpha_blend_factor : vk::BlendFactor::ONE,
+                dst_alpha_blend_factor : vk::BlendFactor::ZERO,
+                alpha_blend_op         : vk::BlendOp::ADD,
             },
         ];
 
         let color_blend_state = vk::PipelineColorBlendStateCreateInfo {
-            s_type           : vk::StructureType::PipelineColorBlendStateCreateInfo,
+            s_type           : vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             p_next           : ptr::null(),
             flags            : vk::PipelineColorBlendStateCreateFlags::empty(),
-            logic_op_enable  : vk::VK_FALSE,
-            logic_op         : vk::LogicOp::Copy,
+            logic_op_enable  : vk::FALSE,
+            logic_op         : vk::LogicOp::COPY,
             attachment_count : color_blend_attachment_states.len() as u32,
             p_attachments    : color_blend_attachment_states.as_ptr(),
             blend_constants  : [0.0, 0.0, 0.0, 0.0],
         };
 
         let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
-            s_type                    : vk::StructureType::PipelineLayoutCreateInfo,
+            s_type                    : vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
             p_next                    : ptr::null(),
             flags                     : vk::PipelineLayoutCreateFlags::empty(),
             set_layout_count          : 0,
@@ -532,7 +533,7 @@ impl VulkanApp {
 
         let graphic_pipeline_create_infos = [
             vk::GraphicsPipelineCreateInfo {
-                s_type                 : vk::StructureType::GraphicsPipelineCreateInfo,
+                s_type                 : vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
                 p_next                 : ptr::null(),
                 flags                  : vk::PipelineCreateFlags::empty(),
                 stage_count            : shader_stages.len() as u32,
@@ -578,12 +579,12 @@ impl VulkanApp {
                 .expect("Failed to wait for Fence!");
         }
 
-        let image_index = unsafe {
+        let (image_index, _is_sub_optimal) = unsafe {
             let result = self.swapchain_loader.acquire_next_image_khr(self.swapchain, std::u64::MAX, self.image_available_semaphores[self.current_frame], vk::Fence::null());
             match result {
                 | Ok(image_index) => image_index,
                 | Err(vk_result) => match vk_result {
-                    | vk::types::Result::ErrorOutOfDateKhr => {
+                    | vk::Result::ERROR_OUT_OF_DATE_KHR => {
                         self.recreate_swapchain();
                         return
                     },
@@ -596,7 +597,7 @@ impl VulkanApp {
             self.image_available_semaphores[self.current_frame],
         ];
         let wait_stages = [
-            vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
         ];
         let signal_semaphores = [
             self.render_finished_semaphores[self.current_frame],
@@ -604,7 +605,7 @@ impl VulkanApp {
 
         let submit_infos = [
             vk::SubmitInfo {
-                s_type                 : vk::StructureType::SubmitInfo,
+                s_type                 : vk::StructureType::SUBMIT_INFO,
                 p_next                 : ptr::null(),
                 wait_semaphore_count   : wait_semaphores.len() as u32,
                 p_wait_semaphores      : wait_semaphores.as_ptr(),
@@ -629,7 +630,7 @@ impl VulkanApp {
         ];
 
         let present_info = vk::PresentInfoKHR {
-            s_type               : vk::StructureType::PresentInfoKhr,
+            s_type               : vk::StructureType::PRESENT_INFO_KHR,
             p_next               : ptr::null(),
             wait_semaphore_count : 1,
             p_wait_semaphores    : signal_semaphores.as_ptr(),
@@ -646,8 +647,8 @@ impl VulkanApp {
         let is_resized = match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
-                | vk::Result::ErrorOutOfDateKhr
-                | vk::Result::SuboptimalKhr => {
+                | vk::Result::ERROR_OUT_OF_DATE_KHR
+                | vk::Result::SUBOPTIMAL_KHR => {
                     true
                 }
                 | _ => panic!("Failed to execute queue present.")
@@ -670,8 +671,10 @@ impl VulkanApp {
         };
         // ------------------------
 
-        self.device.device_wait_idle()
-            .expect("Failed to wait device idle!");
+        unsafe {
+            self.device.device_wait_idle()
+                .expect("Failed to wait device idle!")
+        };
         self.cleanup_swapchain();
 
         let swapchain_stuff = share::create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
@@ -801,8 +804,10 @@ impl ProgramProc {
             }
         }
 
-        vulkan_app.device.device_wait_idle()
-            .expect("Failed to wait device idle!");
+        unsafe {
+            vulkan_app.device.device_wait_idle()
+                .expect("Failed to wait device idle!")
+        };
     }
 }
 

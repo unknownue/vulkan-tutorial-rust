@@ -1,24 +1,24 @@
 
 use ash;
 use ash::vk;
-use ash::version::V1_0;
 use ash::version::EntryV1_0;
 
 use std::ffi::{ CStr, CString };
 use std::ptr;
+use std::os::raw::{ c_void, c_char };
 
 pub unsafe extern "system" fn vulkan_debug_callback(
     _: vk::DebugReportFlagsEXT,
     _: vk::DebugReportObjectTypeEXT,
-    _: vk::uint64_t,
-    _: vk::size_t,
-    _: vk::int32_t,
-    _: *const vk::c_char,
-    p_message: *const vk::c_char,
-    _: *mut vk::c_void,
+    _: u64,
+    _: usize,
+    _: i32,
+    _: *const c_char,
+    p_message: *const c_char,
+    _: *mut c_void,
 ) -> u32 {
     println!("[Debug] -> {:?}", CStr::from_ptr(p_message));
-    vk::VK_FALSE
+    vk::FALSE
 }
 
 
@@ -39,7 +39,7 @@ impl ValidationInfo {
     }
 }
 
-pub fn check_validation_layer_support(entry: &ash::Entry<V1_0>, required_validation_layers: &Vec<&str>) -> bool {
+pub fn check_validation_layer_support(entry: &ash::Entry, required_validation_layers: &Vec<&str>) -> bool {
     // if support validation layer, then return true
 
     let layer_properties = entry.enumerate_instance_layer_properties()
@@ -71,25 +71,24 @@ pub fn check_validation_layer_support(entry: &ash::Entry<V1_0>, required_validat
 }
 
 
-pub fn setup_debug_callback(is_enable_debug: bool, entry: &ash::Entry<V1_0>, instance: &ash::Instance<V1_0>)
+pub fn setup_debug_callback(is_enable_debug: bool, entry: &ash::Entry, instance: &ash::Instance)
     -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
 
-    let debug_report_loader = ash::extensions::DebugReport::new(entry, instance)
-        .expect("Unable to load Debug Report!");
+    let debug_report_loader = ash::extensions::DebugReport::new(entry, instance);
 
     if is_enable_debug == false {
-        (debug_report_loader, ash::vk::types::DebugReportCallbackEXT::null())
+        (debug_report_loader, ash::vk::DebugReportCallbackEXT::null())
     } else {
 
         let debug_create_info = vk::DebugReportCallbackCreateInfoEXT {
-            s_type       : vk::StructureType::DebugReportCallbackCreateInfoExt,
-            p_next       : ptr::null(),
-            flags        :  vk::DEBUG_REPORT_ERROR_BIT_EXT
-                       // | vk::DEBUG_REPORT_INFORMATION_BIT_EXT
-                       // | vk::DEBUG_REPORT_DEBUG_BIT_EXT
-                          | vk::DEBUG_REPORT_WARNING_BIT_EXT
-                          | vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-            pfn_callback : vulkan_debug_callback,
+            s_type : vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
+            p_next : ptr::null(),
+            flags  : vk::DebugReportFlagsEXT::ERROR
+                 // | vk::DebugReportFlagsEXT::INFORMATION
+                 // | vk::DebugReportFlagsEXT::DEBUG
+                    | vk::DebugReportFlagsEXT::WARNING
+                    | vk::DebugReportFlagsEXT::PERFORMANCE_WARNING,
+            pfn_callback : Some(vulkan_debug_callback),
             p_user_data  : ptr::null_mut(),
         };
 
