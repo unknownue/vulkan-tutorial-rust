@@ -1,7 +1,8 @@
 
-use ash;
 use ash::vk;
 use cgmath::Matrix4;
+
+use memoffset::offset_of;
 
 pub struct DeviceExtension {
     pub names: [&'static str; 1],

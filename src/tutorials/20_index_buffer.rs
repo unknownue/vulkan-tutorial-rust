@@ -1,5 +1,4 @@
 
-extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::debug::*,
@@ -8,15 +7,11 @@ use vulkan_tutorial_rust::{
     utility::constants::*,
 };
 
-extern crate winit;
-extern crate ash;
-#[macro_use]
-extern crate memoffset;
-
 use winit::{ Event, EventsLoop, WindowEvent, VirtualKeyCode };
 use ash::vk;
 use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
+use memoffset::offset_of;
 
 use std::path::Path;
 use std::ptr;

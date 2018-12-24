@@ -1,18 +1,14 @@
 
-extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::share,
     utility::constants::*,
 };
 
-extern crate winit;
-#[macro_use]
-extern crate ash;
-
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;
 use ash::version::InstanceV1_0;
+use ash::{ vk_version_major, vk_version_minor, vk_version_patch };
 
 // Constants
 const WINDOW_TITLE: &'static str = "03.Physical Device Selection";

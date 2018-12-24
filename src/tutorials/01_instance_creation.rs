@@ -1,12 +1,6 @@
 
-extern crate vulkan_tutorial_rust;
-use vulkan_tutorial_rust::{
-    utility,
-    utility::constants::*,
-};
-
-extern crate winit;
-extern crate ash;
+use vulkan_tutorial_rust::utility;
+use vulkan_tutorial_rust::utility::constants::*;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;

@@ -4,25 +4,20 @@
 pub mod v1;
 pub mod v2;
 
-use ash;
 use ash::vk;
 use ash::version::DeviceV1_0;
 use ash::version::InstanceV1_0;
 use ash::version::EntryV1_0;
 
-use winit;
-use tobj;
-
 use std::ptr;
 use std::ffi::CString;
 use std::path::Path;
 
-use ::utility::{
-    debug,
-    structures::*,
-    constants::*,
-    platforms
-};
+use crate::utility::debug;
+use crate::utility::structures::*;
+use crate::utility::constants::*;
+use crate::utility::platforms;
+
 
 pub fn create_instance(entry: &ash::Entry, window_title: &str, is_enable_debug: bool, required_validation_layers: &Vec<&str>) -> ash::Instance {
 

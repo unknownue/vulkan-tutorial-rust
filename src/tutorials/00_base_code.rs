@@ -1,6 +1,4 @@
 
-extern crate winit;
-
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 
 // Constants

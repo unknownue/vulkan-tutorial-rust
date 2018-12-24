@@ -1,5 +1,4 @@
 
-use ash;
 use ash::vk;
 use ash::version::EntryV1_0;
 

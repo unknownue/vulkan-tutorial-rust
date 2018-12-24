@@ -1,5 +1,4 @@
 
-use winit;
 use ash::vk;
 use ash::version::{ EntryV1_0, InstanceV1_0 };
 

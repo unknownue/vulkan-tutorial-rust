@@ -1,5 +1,4 @@
 
-extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::share,
@@ -7,10 +6,6 @@ use vulkan_tutorial_rust::{
     utility::structures::*,
     utility::constants::*,
 };
-
-extern crate winit;
-extern crate ash;
-extern crate num;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;

@@ -1,5 +1,4 @@
 
-use winit;
 use winit::{ Event, EventsLoop, WindowEvent, VirtualKeyCode };
 
 const IS_PAINT_FPS_COUNTER: bool = true;
@@ -40,7 +39,7 @@ impl ProgramProc {
         }
     }
 
-    pub fn main_loop<T: VulkanApp>(&mut self, vulkan_app: &mut T) {
+    pub fn main_loop(&mut self, vulkan_app: &mut impl VulkanApp) {
 
         let mut is_first_toggle_resize = true;
         let mut tick_counter = super::fps_limiter::FPSLimiter::new();

@@ -1,5 +1,4 @@
 
-use ash;
 use ash::vk;
 use image;
 use image::GenericImageView;
@@ -9,7 +8,7 @@ use std::ffi::CString;
 use std::path::Path;
 use std::cmp::max;
 
-use utility::tools;
+use crate::utility::tools;
 
 use super::*;
 

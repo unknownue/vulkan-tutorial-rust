@@ -1,5 +1,4 @@
 
-extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::share,
@@ -9,17 +8,11 @@ use vulkan_tutorial_rust::{
     utility::window::{ VulkanApp, ProgramProc },
 };
 
-extern crate winit;
-extern crate ash;
-extern crate cgmath;
-#[macro_use]
-extern crate memoffset;
-extern crate tobj;
-
 use ash::vk;
 use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
 use cgmath::{ Matrix4, Deg, Point3, Vector3 };
+use memoffset::offset_of;
 
 use std::path::Path;
 use std::ptr;

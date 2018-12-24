@@ -1,13 +1,9 @@
 
-extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility,
     utility::debug::ValidationInfo,
     utility::constants::*,
 };
-
-extern crate winit;
-extern crate ash;
 
 use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
 use ash::vk;

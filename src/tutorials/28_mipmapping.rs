@@ -1,5 +1,4 @@
 
-extern crate vulkan_tutorial_rust;
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::share,
@@ -8,11 +7,6 @@ use vulkan_tutorial_rust::{
     utility::constants::*,
     utility::window::{ VulkanApp, ProgramProc },
 };
-
-extern crate winit;
-extern crate ash;
-extern crate cgmath;
-extern crate image;
 
 use ash::vk;
 use ash::version::InstanceV1_0;
