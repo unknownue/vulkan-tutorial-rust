@@ -1,130 +1,175 @@
-
 use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
-    utility::share,
-    utility::debug::*,
-    utility::structures::*,
     utility::constants::*,
+    utility::debug::*,
+    utility::share,
+    utility::structures::*,
 };
 
-use winit::{ Event, EventsLoop, WindowEvent, ControlFlow, VirtualKeyCode };
-use ash::vk;
-use ash::version::InstanceV1_0;
 use ash::version::DeviceV1_0;
+use ash::version::InstanceV1_0;
+use ash::vk;
 use memoffset::offset_of;
+use winit::{ControlFlow, Event, EventsLoop, VirtualKeyCode, WindowEvent};
 
+use std::ffi::CString;
 use std::path::Path;
 use std::ptr;
-use std::ffi::CString;
 
 // Constants
 const WINDOW_TITLE: &'static str = "17.Vertex Input";
 
 struct Vertex {
-    pos:   [f32; 2],
+    pos: [f32; 2],
     color: [f32; 4],
 }
 impl Vertex {
-
     fn get_binding_descriptions() -> [vk::VertexInputBindingDescription; 1] {
-        [
-            vk::VertexInputBindingDescription {
-                binding    : 0,
-                stride     : std::mem::size_of::<Self>() as u32,
-                input_rate : vk::VertexInputRate::VERTEX,
-            },
-        ]
+        [vk::VertexInputBindingDescription {
+            binding: 0,
+            stride: std::mem::size_of::<Self>() as u32,
+            input_rate: vk::VertexInputRate::VERTEX,
+        }]
     }
 
     fn get_attribute_descriptions() -> [vk::VertexInputAttributeDescription; 2] {
         [
             vk::VertexInputAttributeDescription {
-                location : 0,
-                binding  : 0,
-                format   : vk::Format::R32G32_SFLOAT,
-                offset   : offset_of!(Self, pos) as u32,
+                location: 0,
+                binding: 0,
+                format: vk::Format::R32G32_SFLOAT,
+                offset: offset_of!(Self, pos) as u32,
             },
             vk::VertexInputAttributeDescription {
-                binding  : 0,
-                location : 1,
-                format   : vk::Format::R32G32B32A32_SFLOAT,
-                offset   : offset_of!(Self, color) as u32,
-            }
+                binding: 0,
+                location: 1,
+                format: vk::Format::R32G32B32A32_SFLOAT,
+                offset: offset_of!(Self, color) as u32,
+            },
         ]
     }
 }
 
 const _VERTICES_DATA: [Vertex; 3] = [
-    Vertex { pos: [ 0.0, -0.5], color: [1.0, 0.0, 0.0, 0.0], },
-    Vertex { pos: [ 0.5,  0.5], color: [0.0, 1.0, 0.0, 0.0], },
-    Vertex { pos: [-0.5, -0.5], color: [0.0, 0.0, 1.0, 0.0], },
+    Vertex {
+        pos: [0.0, -0.5],
+        color: [1.0, 0.0, 0.0, 0.0],
+    },
+    Vertex {
+        pos: [0.5, 0.5],
+        color: [0.0, 1.0, 0.0, 0.0],
+    },
+    Vertex {
+        pos: [-0.5, -0.5],
+        color: [0.0, 0.0, 1.0, 0.0],
+    },
 ];
 
-
 struct VulkanApp {
-
-    window                     : winit::Window,
+    window: winit::Window,
 
     // vulkan stuff
-    _entry                     : ash::Entry,
-    instance                   : ash::Instance,
-    surface_loader             : ash::extensions::Surface,
-    surface                    : vk::SurfaceKHR,
-    debug_report_loader        : ash::extensions::DebugReport,
-    debug_callback             : vk::DebugReportCallbackEXT,
+    _entry: ash::Entry,
+    instance: ash::Instance,
+    surface_loader: ash::extensions::Surface,
+    surface: vk::SurfaceKHR,
+    debug_report_loader: ash::extensions::DebugReport,
+    debug_callback: vk::DebugReportCallbackEXT,
 
-    physical_device            : vk::PhysicalDevice,
-    device                     : ash::Device,
+    physical_device: vk::PhysicalDevice,
+    device: ash::Device,
 
-    queue_family               : QueueFamilyIndices,
-    graphics_queue             : vk::Queue,
-    present_queue              : vk::Queue,
+    queue_family: QueueFamilyIndices,
+    graphics_queue: vk::Queue,
+    present_queue: vk::Queue,
 
-    swapchain_loader           : ash::extensions::Swapchain,
-    swapchain                  : vk::SwapchainKHR,
-    swapchain_images           : Vec<vk::Image>,
-    swapchain_format           : vk::Format,
-    swapchain_extent           : vk::Extent2D,
-    swapchain_imageviews       : Vec<vk::ImageView>,
-    swapchain_framebuffers     : Vec<vk::Framebuffer>,
+    swapchain_loader: ash::extensions::Swapchain,
+    swapchain: vk::SwapchainKHR,
+    swapchain_images: Vec<vk::Image>,
+    swapchain_format: vk::Format,
+    swapchain_extent: vk::Extent2D,
+    swapchain_imageviews: Vec<vk::ImageView>,
+    swapchain_framebuffers: Vec<vk::Framebuffer>,
 
-    render_pass                : vk::RenderPass,
-    pipeline_layout            : vk::PipelineLayout,
-    graphics_pipeline          : vk::Pipeline,
+    render_pass: vk::RenderPass,
+    pipeline_layout: vk::PipelineLayout,
+    graphics_pipeline: vk::Pipeline,
 
-    command_pool               : vk::CommandPool,
-    command_buffers            : Vec<vk::CommandBuffer>,
+    command_pool: vk::CommandPool,
+    command_buffers: Vec<vk::CommandBuffer>,
 
-    image_available_semaphores : Vec<vk::Semaphore>,
-    render_finished_semaphores : Vec<vk::Semaphore>,
-    in_flight_fences           : Vec<vk::Fence>,
-    current_frame              : usize,
+    image_available_semaphores: Vec<vk::Semaphore>,
+    render_finished_semaphores: Vec<vk::Semaphore>,
+    in_flight_fences: Vec<vk::Fence>,
+    current_frame: usize,
 
-    is_framebuffer_resized     : bool,
+    is_framebuffer_resized: bool,
 }
 
 impl VulkanApp {
-
     pub fn new(event_loop: &winit::EventsLoop) -> VulkanApp {
-
-        let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+        let window =
+            utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
-        let instance = share::create_instance(&entry, WINDOW_TITLE, VALIDATION.is_enable, &VALIDATION.required_validation_layers.to_vec());
-        let surface_stuff = share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
-        let (debug_report_loader, debug_callback) = setup_debug_callback( VALIDATION.is_enable, &entry, &instance);
-        let physical_device = share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
-        let (device, queue_family) = share::create_logical_device(&instance, physical_device, &VALIDATION, &DEVICE_EXTENSIONS, &surface_stuff);
-        let graphics_queue = unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
-        let present_queue  = unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
-        let swapchain_stuff = share::create_swapchain(&instance, &device, physical_device, &window, &surface_stuff, &queue_family);
-        let swapchain_imageviews = share::v1::create_image_views(&device, swapchain_stuff.swapchain_format, &swapchain_stuff.swapchain_images);
+        let instance = share::create_instance(
+            &entry,
+            WINDOW_TITLE,
+            VALIDATION.is_enable,
+            &VALIDATION.required_validation_layers.to_vec(),
+        );
+        let surface_stuff =
+            share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
+        let (debug_report_loader, debug_callback) =
+            setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
+        let physical_device =
+            share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
+        let (device, queue_family) = share::create_logical_device(
+            &instance,
+            physical_device,
+            &VALIDATION,
+            &DEVICE_EXTENSIONS,
+            &surface_stuff,
+        );
+        let graphics_queue =
+            unsafe { device.get_device_queue(queue_family.graphics_family as u32, 0) };
+        let present_queue =
+            unsafe { device.get_device_queue(queue_family.present_family as u32, 0) };
+        let swapchain_stuff = share::create_swapchain(
+            &instance,
+            &device,
+            physical_device,
+            &window,
+            &surface_stuff,
+            &queue_family,
+        );
+        let swapchain_imageviews = share::v1::create_image_views(
+            &device,
+            swapchain_stuff.swapchain_format,
+            &swapchain_stuff.swapchain_images,
+        );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&device, render_pass, swapchain_stuff.swapchain_extent);
-        let swapchain_framebuffers = share::v1::create_framebuffers(&device, render_pass, &swapchain_imageviews, swapchain_stuff.swapchain_extent);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(
+            &device,
+            render_pass,
+            swapchain_stuff.swapchain_extent,
+        );
+        let swapchain_framebuffers = share::v1::create_framebuffers(
+            &device,
+            render_pass,
+            &swapchain_imageviews,
+            swapchain_stuff.swapchain_extent,
+        );
         let command_pool = share::v1::create_command_pool(&device, &queue_family);
-        let command_buffers = share::v1::create_command_buffers(&device, command_pool, graphics_pipeline, &swapchain_framebuffers, render_pass, swapchain_stuff.swapchain_extent);
+        let command_buffers = share::v1::create_command_buffers(
+            &device,
+            command_pool,
+            graphics_pipeline,
+            &swapchain_framebuffers,
+            render_pass,
+            swapchain_stuff.swapchain_extent,
+        );
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -148,7 +193,7 @@ impl VulkanApp {
             present_queue,
 
             swapchain_loader: swapchain_stuff.swapchain_loader,
-            swapchain:        swapchain_stuff.swapchain,
+            swapchain: swapchain_stuff.swapchain,
             swapchain_format: swapchain_stuff.swapchain_format,
             swapchain_images: swapchain_stuff.swapchain_images,
             swapchain_extent: swapchain_stuff.swapchain_extent,
@@ -164,17 +209,24 @@ impl VulkanApp {
 
             image_available_semaphores: sync_ojbects.image_available_semaphores,
             render_finished_semaphores: sync_ojbects.render_finished_semaphores,
-            in_flight_fences          : sync_ojbects.inflight_fences,
+            in_flight_fences: sync_ojbects.inflight_fences,
             current_frame: 0,
 
             is_framebuffer_resized: false,
         }
     }
 
-    fn create_graphics_pipeline(device: &ash::Device, render_pass: vk::RenderPass, swapchain_extent: vk::Extent2D) -> (vk::Pipeline, vk::PipelineLayout) {
-
-        let vert_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/17-shader-vertexbuffer.vert.spv"));
-        let frag_shader_code = utility::tools::read_shader_code(Path::new("shaders/spv/17-shader-vertexbuffer.frag.spv"));
+    fn create_graphics_pipeline(
+        device: &ash::Device,
+        render_pass: vk::RenderPass,
+        swapchain_extent: vk::Extent2D,
+    ) -> (vk::Pipeline, vk::PipelineLayout) {
+        let vert_shader_code = utility::tools::read_shader_code(Path::new(
+            "shaders/spv/17-shader-vertexbuffer.vert.spv",
+        ));
+        let frag_shader_code = utility::tools::read_shader_code(Path::new(
+            "shaders/spv/17-shader-vertexbuffer.frag.spv",
+        ));
 
         let vert_shader_module = share::create_shader_module(device, vert_shader_code);
         let frag_shader_module = share::create_shader_module(device, frag_shader_code);
@@ -182,193 +234,192 @@ impl VulkanApp {
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
         let shader_stages = [
-            vk::PipelineShaderStageCreateInfo { // Vertex Shader
-                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
-                p_next                : ptr::null(),
-                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
-                module                : vert_shader_module,
-                p_name                : main_function_name.as_ptr(),
-                p_specialization_info : ptr::null(),
-                stage                 : vk::ShaderStageFlags::VERTEX,
+            vk::PipelineShaderStageCreateInfo {
+                // Vertex Shader
+                s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
+                p_next: ptr::null(),
+                flags: vk::PipelineShaderStageCreateFlags::empty(),
+                module: vert_shader_module,
+                p_name: main_function_name.as_ptr(),
+                p_specialization_info: ptr::null(),
+                stage: vk::ShaderStageFlags::VERTEX,
             },
-            vk::PipelineShaderStageCreateInfo { // Fragment Shader
-                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
-                p_next                : ptr::null(),
-                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
-                module                : frag_shader_module,
-                p_name                : main_function_name.as_ptr(),
-                p_specialization_info : ptr::null(),
-                stage                 : vk::ShaderStageFlags::FRAGMENT,
+            vk::PipelineShaderStageCreateInfo {
+                // Fragment Shader
+                s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
+                p_next: ptr::null(),
+                flags: vk::PipelineShaderStageCreateFlags::empty(),
+                module: frag_shader_module,
+                p_name: main_function_name.as_ptr(),
+                p_specialization_info: ptr::null(),
+                stage: vk::ShaderStageFlags::FRAGMENT,
             },
         ];
 
-        let binding_description   = Vertex::get_binding_descriptions();
+        let binding_description = Vertex::get_binding_descriptions();
         let attribute_description = Vertex::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
-            s_type                             : vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            p_next                             : ptr::null(),
-            flags                              : vk::PipelineVertexInputStateCreateFlags::empty(),
-            vertex_attribute_description_count : attribute_description.len() as u32,
-            p_vertex_attribute_descriptions    : attribute_description.as_ptr(),
-            vertex_binding_description_count   : binding_description.len() as u32,
-            p_vertex_binding_descriptions      : binding_description.as_ptr(),
+            s_type: vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineVertexInputStateCreateFlags::empty(),
+            vertex_attribute_description_count: attribute_description.len() as u32,
+            p_vertex_attribute_descriptions: attribute_description.as_ptr(),
+            vertex_binding_description_count: binding_description.len() as u32,
+            p_vertex_binding_descriptions: binding_description.as_ptr(),
         };
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
-            s_type                   : vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            flags                    : vk::PipelineInputAssemblyStateCreateFlags::empty(),
-            p_next                   : ptr::null(),
-            primitive_restart_enable : vk::FALSE,
-            topology                 : vk::PrimitiveTopology::TRIANGLE_LIST,
+            s_type: vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            flags: vk::PipelineInputAssemblyStateCreateFlags::empty(),
+            p_next: ptr::null(),
+            primitive_restart_enable: vk::FALSE,
+            topology: vk::PrimitiveTopology::TRIANGLE_LIST,
         };
 
-        let viewports = [
-            vk::Viewport {
-                x         : 0.0,
-                y         : 0.0,
-                width     : swapchain_extent.width as f32,
-                height    : swapchain_extent.height as f32,
-                min_depth : 0.0,
-                max_depth : 1.0,
-            },
-        ];
+        let viewports = [vk::Viewport {
+            x: 0.0,
+            y: 0.0,
+            width: swapchain_extent.width as f32,
+            height: swapchain_extent.height as f32,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        }];
 
-        let scissors = [
-            vk::Rect2D {
-                offset: vk::Offset2D { x: 0, y: 0 },
-                extent: swapchain_extent,
-            },
-        ];
+        let scissors = [vk::Rect2D {
+            offset: vk::Offset2D { x: 0, y: 0 },
+            extent: swapchain_extent,
+        }];
 
         let viewport_state_create_info = vk::PipelineViewportStateCreateInfo {
-            s_type         : vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-            p_next         : ptr::null(),
-            flags          : vk::PipelineViewportStateCreateFlags::empty(),
-            scissor_count  : scissors.len()  as u32,
-            p_scissors     : scissors.as_ptr(),
-            viewport_count : viewports.len() as u32,
-            p_viewports    : viewports.as_ptr(),
+            s_type: vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineViewportStateCreateFlags::empty(),
+            scissor_count: scissors.len() as u32,
+            p_scissors: scissors.as_ptr(),
+            viewport_count: viewports.len() as u32,
+            p_viewports: viewports.as_ptr(),
         };
 
         let rasterization_statue_create_info = vk::PipelineRasterizationStateCreateInfo {
-            s_type                     : vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-            p_next                     : ptr::null(),
-            flags                      : vk::PipelineRasterizationStateCreateFlags::empty(),
-            depth_clamp_enable         : vk::FALSE,
-            cull_mode                  : vk::CullModeFlags::BACK,
-            front_face                 : vk::FrontFace::CLOCKWISE,
-            line_width                 : 1.0,
-            polygon_mode               : vk::PolygonMode::FILL,
-            rasterizer_discard_enable  : vk::FALSE,
-            depth_bias_clamp           : 0.0,
-            depth_bias_constant_factor : 0.0,
-            depth_bias_enable          : vk::FALSE,
-            depth_bias_slope_factor    : 0.0,
+            s_type: vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineRasterizationStateCreateFlags::empty(),
+            depth_clamp_enable: vk::FALSE,
+            cull_mode: vk::CullModeFlags::BACK,
+            front_face: vk::FrontFace::CLOCKWISE,
+            line_width: 1.0,
+            polygon_mode: vk::PolygonMode::FILL,
+            rasterizer_discard_enable: vk::FALSE,
+            depth_bias_clamp: 0.0,
+            depth_bias_constant_factor: 0.0,
+            depth_bias_enable: vk::FALSE,
+            depth_bias_slope_factor: 0.0,
         };
 
         let multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo {
-            s_type                   : vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            flags                    : vk::PipelineMultisampleStateCreateFlags::empty(),
-            p_next                   : ptr::null(),
-            rasterization_samples    : vk::SampleCountFlags::TYPE_1,
-            sample_shading_enable    : vk::FALSE,
-            min_sample_shading       : 0.0,
-            p_sample_mask            : ptr::null(),
-            alpha_to_one_enable      : vk::FALSE,
-            alpha_to_coverage_enable : vk::FALSE,
+            s_type: vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+            flags: vk::PipelineMultisampleStateCreateFlags::empty(),
+            p_next: ptr::null(),
+            rasterization_samples: vk::SampleCountFlags::TYPE_1,
+            sample_shading_enable: vk::FALSE,
+            min_sample_shading: 0.0,
+            p_sample_mask: ptr::null(),
+            alpha_to_one_enable: vk::FALSE,
+            alpha_to_coverage_enable: vk::FALSE,
         };
 
         let stencil_state = vk::StencilOpState {
-            fail_op       : vk::StencilOp::KEEP,
-            pass_op       : vk::StencilOp::KEEP,
-            depth_fail_op : vk::StencilOp::KEEP,
-            compare_op    : vk::CompareOp::ALWAYS,
-            compare_mask  : 0,
-            write_mask    : 0,
-            reference     : 0,
+            fail_op: vk::StencilOp::KEEP,
+            pass_op: vk::StencilOp::KEEP,
+            depth_fail_op: vk::StencilOp::KEEP,
+            compare_op: vk::CompareOp::ALWAYS,
+            compare_mask: 0,
+            write_mask: 0,
+            reference: 0,
         };
 
         let depth_state_create_info = vk::PipelineDepthStencilStateCreateInfo {
-            s_type                   : vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            p_next                   : ptr::null(),
-            flags                    : vk::PipelineDepthStencilStateCreateFlags::empty(),
-            depth_test_enable        : vk::FALSE,
-            depth_write_enable       : vk::FALSE,
-            depth_compare_op         : vk::CompareOp::LESS_OR_EQUAL,
-            depth_bounds_test_enable : vk::FALSE,
-            stencil_test_enable      : vk::FALSE,
-            front                    : stencil_state,
-            back                     : stencil_state,
-            max_depth_bounds         : 1.0,
-            min_depth_bounds         : 0.0,
+            s_type: vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineDepthStencilStateCreateFlags::empty(),
+            depth_test_enable: vk::FALSE,
+            depth_write_enable: vk::FALSE,
+            depth_compare_op: vk::CompareOp::LESS_OR_EQUAL,
+            depth_bounds_test_enable: vk::FALSE,
+            stencil_test_enable: vk::FALSE,
+            front: stencil_state,
+            back: stencil_state,
+            max_depth_bounds: 1.0,
+            min_depth_bounds: 0.0,
         };
 
-        let color_blend_attachment_states = [
-            vk::PipelineColorBlendAttachmentState {
-                blend_enable           : vk::FALSE,
-                color_write_mask       : vk::ColorComponentFlags::all(),
-                src_color_blend_factor : vk::BlendFactor::ONE,
-                dst_color_blend_factor : vk::BlendFactor::ZERO,
-                color_blend_op         : vk::BlendOp::ADD,
-                src_alpha_blend_factor : vk::BlendFactor::ONE,
-                dst_alpha_blend_factor : vk::BlendFactor::ZERO,
-                alpha_blend_op         : vk::BlendOp::ADD,
-            },
-        ];
+        let color_blend_attachment_states = [vk::PipelineColorBlendAttachmentState {
+            blend_enable: vk::FALSE,
+            color_write_mask: vk::ColorComponentFlags::all(),
+            src_color_blend_factor: vk::BlendFactor::ONE,
+            dst_color_blend_factor: vk::BlendFactor::ZERO,
+            color_blend_op: vk::BlendOp::ADD,
+            src_alpha_blend_factor: vk::BlendFactor::ONE,
+            dst_alpha_blend_factor: vk::BlendFactor::ZERO,
+            alpha_blend_op: vk::BlendOp::ADD,
+        }];
 
         let color_blend_state = vk::PipelineColorBlendStateCreateInfo {
-            s_type           : vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-            p_next           : ptr::null(),
-            flags            : vk::PipelineColorBlendStateCreateFlags::empty(),
-            logic_op_enable  : vk::FALSE,
-            logic_op         : vk::LogicOp::COPY,
-            attachment_count : color_blend_attachment_states.len() as u32,
-            p_attachments    : color_blend_attachment_states.as_ptr(),
-            blend_constants  : [0.0, 0.0, 0.0, 0.0],
+            s_type: vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineColorBlendStateCreateFlags::empty(),
+            logic_op_enable: vk::FALSE,
+            logic_op: vk::LogicOp::COPY,
+            attachment_count: color_blend_attachment_states.len() as u32,
+            p_attachments: color_blend_attachment_states.as_ptr(),
+            blend_constants: [0.0, 0.0, 0.0, 0.0],
         };
 
         let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
-            s_type                    : vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
-            p_next                    : ptr::null(),
-            flags                     : vk::PipelineLayoutCreateFlags::empty(),
-            set_layout_count          : 0,
-            p_set_layouts             : ptr::null(),
-            push_constant_range_count : 0,
-            p_push_constant_ranges    : ptr::null(),
+            s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineLayoutCreateFlags::empty(),
+            set_layout_count: 0,
+            p_set_layouts: ptr::null(),
+            push_constant_range_count: 0,
+            p_push_constant_ranges: ptr::null(),
         };
 
         let pipeline_layout = unsafe {
-            device.create_pipeline_layout(&pipeline_layout_create_info, None)
+            device
+                .create_pipeline_layout(&pipeline_layout_create_info, None)
                 .expect("Failed to create pipeline layout!")
         };
 
-
-        let graphic_pipeline_create_infos = [
-            vk::GraphicsPipelineCreateInfo {
-                s_type                 : vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
-                p_next                 : ptr::null(),
-                flags                  : vk::PipelineCreateFlags::empty(),
-                stage_count            : shader_stages.len() as u32,
-                p_stages               : shader_stages.as_ptr(),
-                p_vertex_input_state   : &vertex_input_state_create_info,
-                p_input_assembly_state : &vertex_input_assembly_state_info,
-                p_tessellation_state   : ptr::null(),
-                p_viewport_state       : &viewport_state_create_info,
-                p_rasterization_state  : &rasterization_statue_create_info,
-                p_multisample_state    : &multisample_state_create_info,
-                p_depth_stencil_state  : &depth_state_create_info,
-                p_color_blend_state    : &color_blend_state,
-                p_dynamic_state        : ptr::null(),
-                layout                 : pipeline_layout,
-                render_pass,
-                subpass                : 0,
-                base_pipeline_handle   : vk::Pipeline::null(),
-                base_pipeline_index    : -1,
-            },
-        ];
+        let graphic_pipeline_create_infos = [vk::GraphicsPipelineCreateInfo {
+            s_type: vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags: vk::PipelineCreateFlags::empty(),
+            stage_count: shader_stages.len() as u32,
+            p_stages: shader_stages.as_ptr(),
+            p_vertex_input_state: &vertex_input_state_create_info,
+            p_input_assembly_state: &vertex_input_assembly_state_info,
+            p_tessellation_state: ptr::null(),
+            p_viewport_state: &viewport_state_create_info,
+            p_rasterization_state: &rasterization_statue_create_info,
+            p_multisample_state: &multisample_state_create_info,
+            p_depth_stencil_state: &depth_state_create_info,
+            p_color_blend_state: &color_blend_state,
+            p_dynamic_state: ptr::null(),
+            layout: pipeline_layout,
+            render_pass,
+            subpass: 0,
+            base_pipeline_handle: vk::Pipeline::null(),
+            base_pipeline_index: -1,
+        }];
 
         let graphics_pipelines = unsafe {
-            device.create_graphics_pipelines(vk::PipelineCache::null(), &graphic_pipeline_create_infos, None)
+            device
+                .create_graphics_pipelines(
+                    vk::PipelineCache::null(),
+                    &graphic_pipeline_create_infos,
+                    None,
+                )
                 .expect("Failed to create Graphics Pipeline!.")
         };
 
@@ -381,94 +432,89 @@ impl VulkanApp {
     }
 }
 
-
 // Fix content -------------------------------------------------------------------------------
 impl VulkanApp {
-
     fn draw_frame(&mut self) {
-
-        let wait_fences = [
-            self.in_flight_fences[self.current_frame]
-        ];
+        let wait_fences = [self.in_flight_fences[self.current_frame]];
 
         unsafe {
-            self.device.wait_for_fences(&wait_fences, true, std::u64::MAX)
+            self.device
+                .wait_for_fences(&wait_fences, true, std::u64::MAX)
                 .expect("Failed to wait for Fence!");
         }
 
         let (image_index, _is_sub_optimal) = unsafe {
-            let result = self.swapchain_loader.acquire_next_image_khr(self.swapchain, std::u64::MAX, self.image_available_semaphores[self.current_frame], vk::Fence::null());
+            let result = self.swapchain_loader.acquire_next_image_khr(
+                self.swapchain,
+                std::u64::MAX,
+                self.image_available_semaphores[self.current_frame],
+                vk::Fence::null(),
+            );
             match result {
-                | Ok(image_index) => image_index,
-                | Err(vk_result) => match vk_result {
-                    | vk::Result::ERROR_OUT_OF_DATE_KHR => {
+                Ok(image_index) => image_index,
+                Err(vk_result) => match vk_result {
+                    vk::Result::ERROR_OUT_OF_DATE_KHR => {
                         self.recreate_swapchain();
-                        return
-                    },
-                    | _ => panic!("Failed to acquire Swap Chain Image!")
-                }
+                        return;
+                    }
+                    _ => panic!("Failed to acquire Swap Chain Image!"),
+                },
             }
         };
 
-        let wait_semaphores = [
-            self.image_available_semaphores[self.current_frame],
-        ];
-        let wait_stages = [
-            vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-        ];
-        let signal_semaphores = [
-            self.render_finished_semaphores[self.current_frame],
-        ];
+        let wait_semaphores = [self.image_available_semaphores[self.current_frame]];
+        let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
+        let signal_semaphores = [self.render_finished_semaphores[self.current_frame]];
 
-        let submit_infos = [
-            vk::SubmitInfo {
-                s_type                 : vk::StructureType::SUBMIT_INFO,
-                p_next                 : ptr::null(),
-                wait_semaphore_count   : wait_semaphores.len() as u32,
-                p_wait_semaphores      : wait_semaphores.as_ptr(),
-                p_wait_dst_stage_mask  : wait_stages.as_ptr(),
-                command_buffer_count   : 1,
-                p_command_buffers      : &self.command_buffers[image_index as usize],
-                signal_semaphore_count : signal_semaphores.len() as u32,
-                p_signal_semaphores    : signal_semaphores.as_ptr(),
-            }
-        ];
+        let submit_infos = [vk::SubmitInfo {
+            s_type: vk::StructureType::SUBMIT_INFO,
+            p_next: ptr::null(),
+            wait_semaphore_count: wait_semaphores.len() as u32,
+            p_wait_semaphores: wait_semaphores.as_ptr(),
+            p_wait_dst_stage_mask: wait_stages.as_ptr(),
+            command_buffer_count: 1,
+            p_command_buffers: &self.command_buffers[image_index as usize],
+            signal_semaphore_count: signal_semaphores.len() as u32,
+            p_signal_semaphores: signal_semaphores.as_ptr(),
+        }];
 
         unsafe {
-            self.device.reset_fences(&wait_fences)
+            self.device
+                .reset_fences(&wait_fences)
                 .expect("Failed to reset Fence!");
 
-            self.device.queue_submit(self.graphics_queue, &submit_infos, self.in_flight_fences[self.current_frame])
+            self.device
+                .queue_submit(
+                    self.graphics_queue,
+                    &submit_infos,
+                    self.in_flight_fences[self.current_frame],
+                )
                 .expect("Failed to execute queue submit.");
         }
 
-        let swapchains = [
-            self.swapchain
-        ];
+        let swapchains = [self.swapchain];
 
         let present_info = vk::PresentInfoKHR {
-            s_type               : vk::StructureType::PRESENT_INFO_KHR,
-            p_next               : ptr::null(),
-            wait_semaphore_count : 1,
-            p_wait_semaphores    : signal_semaphores.as_ptr(),
-            swapchain_count      : 1,
-            p_swapchains         : swapchains.as_ptr(),
-            p_image_indices      : &image_index,
-            p_results            : ptr::null_mut(),
+            s_type: vk::StructureType::PRESENT_INFO_KHR,
+            p_next: ptr::null(),
+            wait_semaphore_count: 1,
+            p_wait_semaphores: signal_semaphores.as_ptr(),
+            swapchain_count: 1,
+            p_swapchains: swapchains.as_ptr(),
+            p_image_indices: &image_index,
+            p_results: ptr::null_mut(),
         };
 
         let result = unsafe {
-            self.swapchain_loader.queue_present_khr(self.present_queue, &present_info)
+            self.swapchain_loader
+                .queue_present_khr(self.present_queue, &present_info)
         };
         let is_resized = match result {
             Ok(_) => self.is_framebuffer_resized,
             Err(vk_result) => match vk_result {
-                | vk::Result::ERROR_OUT_OF_DATE_KHR
-                | vk::Result::SUBOPTIMAL_KHR => {
-                    true
-                }
-                | _ => panic!("Failed to execute queue present.")
-            }
+                vk::Result::ERROR_OUT_OF_DATE_KHR | vk::Result::SUBOPTIMAL_KHR => true,
+                _ => panic!("Failed to execute queue present."),
+            },
         };
         if is_resized {
             self.is_framebuffer_resized = false;
@@ -479,62 +525,94 @@ impl VulkanApp {
     }
 
     fn recreate_swapchain(&mut self) {
-
         // parameters -------------
         let surface_suff = SurfaceStuff {
-            surface_loader: self.surface_loader.clone(), surface: self.surface,
-            screen_width: WINDOW_WIDTH, screen_height: WINDOW_HEIGHT,
+            surface_loader: self.surface_loader.clone(),
+            surface: self.surface,
+            screen_width: WINDOW_WIDTH,
+            screen_height: WINDOW_HEIGHT,
         };
         // ------------------------
 
         unsafe {
-            self.device.device_wait_idle()
+            self.device
+                .device_wait_idle()
                 .expect("Failed to wait device idle!")
         };
         self.cleanup_swapchain();
 
-        let swapchain_stuff = share::create_swapchain(&self.instance, &self.device, self.physical_device, &self.window, &surface_suff, &self.queue_family);
+        let swapchain_stuff = share::create_swapchain(
+            &self.instance,
+            &self.device,
+            self.physical_device,
+            &self.window,
+            &surface_suff,
+            &self.queue_family,
+        );
         self.swapchain_loader = swapchain_stuff.swapchain_loader;
-        self.swapchain        = swapchain_stuff.swapchain;
+        self.swapchain = swapchain_stuff.swapchain;
         self.swapchain_images = swapchain_stuff.swapchain_images;
         self.swapchain_format = swapchain_stuff.swapchain_format;
         self.swapchain_extent = swapchain_stuff.swapchain_extent;
 
-        self.swapchain_imageviews = share::v1::create_image_views(&self.device, self.swapchain_format, &self.swapchain_images);
+        self.swapchain_imageviews = share::v1::create_image_views(
+            &self.device,
+            self.swapchain_format,
+            &self.swapchain_images,
+        );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(&self.device, self.render_pass, swapchain_stuff.swapchain_extent);
+        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(
+            &self.device,
+            self.render_pass,
+            swapchain_stuff.swapchain_extent,
+        );
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        self.swapchain_framebuffers = share::v1::create_framebuffers(&self.device, self.render_pass, &self.swapchain_imageviews, self.swapchain_extent);
-        self.command_buffers = share::v1::create_command_buffers(&self.device, self.command_pool, self.graphics_pipeline, &self.swapchain_framebuffers, self.render_pass, self.swapchain_extent);
+        self.swapchain_framebuffers = share::v1::create_framebuffers(
+            &self.device,
+            self.render_pass,
+            &self.swapchain_imageviews,
+            self.swapchain_extent,
+        );
+        self.command_buffers = share::v1::create_command_buffers(
+            &self.device,
+            self.command_pool,
+            self.graphics_pipeline,
+            &self.swapchain_framebuffers,
+            self.render_pass,
+            self.swapchain_extent,
+        );
     }
 
     fn cleanup_swapchain(&self) {
         unsafe {
-            self.device.free_command_buffers(self.command_pool, &self.command_buffers);
+            self.device
+                .free_command_buffers(self.command_pool, &self.command_buffers);
             for &framebuffer in self.swapchain_framebuffers.iter() {
                 self.device.destroy_framebuffer(framebuffer, None);
             }
             self.device.destroy_pipeline(self.graphics_pipeline, None);
-            self.device.destroy_pipeline_layout(self.pipeline_layout, None);
+            self.device
+                .destroy_pipeline_layout(self.pipeline_layout, None);
             self.device.destroy_render_pass(self.render_pass, None);
             for &image_view in self.swapchain_imageviews.iter() {
                 self.device.destroy_image_view(image_view, None);
             }
-            self.swapchain_loader.destroy_swapchain_khr(self.swapchain, None);
+            self.swapchain_loader
+                .destroy_swapchain_khr(self.swapchain, None);
         }
     }
 }
 
 impl Drop for VulkanApp {
-
     fn drop(&mut self) {
-
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
-                self.device.destroy_semaphore(self.image_available_semaphores[i], None);
-                self.device.destroy_semaphore(self.render_finished_semaphores[i], None);
+                self.device
+                    .destroy_semaphore(self.image_available_semaphores[i], None);
+                self.device
+                    .destroy_semaphore(self.render_finished_semaphores[i], None);
                 self.device.destroy_fence(self.in_flight_fences[i], None);
             }
 
@@ -546,7 +624,8 @@ impl Drop for VulkanApp {
             self.surface_loader.destroy_surface_khr(self.surface, None);
 
             if VALIDATION.is_enable {
-                self.debug_report_loader.destroy_debug_report_callback_ext(self.debug_callback, None);
+                self.debug_report_loader
+                    .destroy_debug_report_callback_ext(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }
@@ -554,46 +633,40 @@ impl Drop for VulkanApp {
 }
 
 struct ProgramProc {
-
     events_loop: EventsLoop,
 }
 
 impl ProgramProc {
-
     fn new() -> ProgramProc {
-
         // init window stuff
         let events_loop = EventsLoop::new();
 
-        ProgramProc {
-            events_loop,
-        }
+        ProgramProc { events_loop }
     }
 
     fn main_loop(&mut self, vulkan_app: &mut VulkanApp) {
-
         let mut is_first_toggle_resize = true;
 
         self.events_loop.run_forever(|event| {
-
             match event {
-                | Event::WindowEvent { event, .. } => match event {
-                    | WindowEvent::KeyboardInput { input, .. } => { // keyboard events
+                Event::WindowEvent { event, .. } => match event {
+                    WindowEvent::KeyboardInput { input, .. } => {
+                        // keyboard events
                         if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
-                            return ControlFlow::Break
+                            return ControlFlow::Break;
                         }
                     }
-                    | WindowEvent::Resized(_) => {
+                    WindowEvent::Resized(_) => {
                         if is_first_toggle_resize == false {
                             vulkan_app.is_framebuffer_resized = true;
                         } else {
                             is_first_toggle_resize = false;
                         }
-                    },
-                    | WindowEvent::CloseRequested => return ControlFlow::Break,
-                    | _ => (),
+                    }
+                    WindowEvent::CloseRequested => return ControlFlow::Break,
+                    _ => (),
                 },
-                | _ => (),
+                _ => (),
             }
 
             vulkan_app.draw_frame();
@@ -601,14 +674,15 @@ impl ProgramProc {
         });
 
         unsafe {
-            vulkan_app.device.device_wait_idle()
+            vulkan_app
+                .device
+                .device_wait_idle()
                 .expect("Failed to wait device idle!")
         };
     }
 }
 
 fn main() {
-
     let mut program_proc = ProgramProc::new();
     let mut vulkan_app = VulkanApp::new(&program_proc.events_loop);
 

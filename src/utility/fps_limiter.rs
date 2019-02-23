@@ -1,7 +1,6 @@
-
-use std::time::Instant;
 use std::thread;
 use std::time::Duration;
+use std::time::Instant;
 
 const SAMPLE_COUNT: usize = 5;
 const SAMPLE_COUNT_FLOAT: f32 = SAMPLE_COUNT as f32;
@@ -15,7 +14,6 @@ pub struct FPSLimiter {
 }
 
 impl FPSLimiter {
-
     pub fn new() -> FPSLimiter {
         const DEFAULT_PREFER_FPS: f32 = 60.0;
 
@@ -44,7 +42,6 @@ impl FPSLimiter {
 
     // TODO: this function seems not work.
     pub fn keep_fps(&self) {
-
         if self.frame_time_prefer > self.delta_frame {
             let delay = Duration::from_micros((self.frame_time_prefer - self.delta_frame) as u64);
 

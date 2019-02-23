@@ -1,21 +1,20 @@
-
+use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
-use ash::version::{ EntryV1_0, InstanceV1_0 };
 
-use ash::extensions::{ Surface, DebugReport };
 #[cfg(target_os = "macos")]
 use ash::extensions::MacOSSurface;
-#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::XlibSurface;
 #[cfg(target_os = "windows")]
 use ash::extensions::Win32Surface;
+#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
+use ash::extensions::XlibSurface;
+use ash::extensions::{DebugReport, Surface};
 
 #[cfg(target_os = "macos")]
-use metal::CoreAnimationLayer;
+use cocoa::appkit::{NSView, NSWindow};
 #[cfg(target_os = "macos")]
 use cocoa::base::id as cocoa_id;
 #[cfg(target_os = "macos")]
-use cocoa::appkit::{ NSView, NSWindow };
+use metal::CoreAnimationLayer;
 #[cfg(target_os = "macos")]
 use objc::runtime::YES;
 
@@ -57,21 +56,19 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     instance: &I,
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
-
-    use winit::os::unix::WindowExt;
     use std::ptr;
+    use winit::os::unix::WindowExt;
 
     let x11_display = window.get_xlib_display().unwrap();
     let x11_window = window.get_xlib_window().unwrap();
     let x11_create_info = vk::XlibSurfaceCreateInfoKHR {
-        s_type : vk::StructureType::XLIB_SURFACE_CREATE_INFO_KHR,
-        p_next : ptr::null(),
-        flags  : Default::default(),
-        window : x11_window as vk::Window,
-        dpy    : x11_display as *mut vk::Display,
+        s_type: vk::StructureType::XLIB_SURFACE_CREATE_INFO_KHR,
+        p_next: ptr::null(),
+        flags: Default::default(),
+        window: x11_window as vk::Window,
+        dpy: x11_display as *mut vk::Display,
     };
-    let xlib_surface_loader =
-        XlibSurface::new(entry, instance);
+    let xlib_surface_loader = XlibSurface::new(entry, instance);
     xlib_surface_loader.create_xlib_surface_khr(&x11_create_info, None)
 }
 
@@ -81,10 +78,9 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     instance: &I,
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
-
-    use winit::os::macos::WindowExt;
     use std::mem;
     use std::ptr;
+    use winit::os::macos::WindowExt;
 
     let wnd: cocoa_id = mem::transmute(window.get_nswindow());
 
@@ -101,14 +97,13 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     view.setWantsLayer(YES);
 
     let create_info = vk::MacOSSurfaceCreateInfoMVK {
-        s_type : vk::StructureType::MACOS_SURFACE_CREATE_INFO_M,
-        p_next : ptr::null(),
-        flags  : Default::default(),
-        p_view : window.get_nsview() as *const c_void
+        s_type: vk::StructureType::MACOS_SURFACE_CREATE_INFO_M,
+        p_next: ptr::null(),
+        flags: Default::default(),
+        p_view: window.get_nsview() as *const c_void,
     };
 
-    let macos_surface_loader =
-        MacOSSurface::new(entry, instance);
+    let macos_surface_loader = MacOSSurface::new(entry, instance);
     macos_surface_loader.create_mac_os_surface_mvk(&create_info, None)
 }
 
@@ -118,23 +113,21 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     instance: &I,
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
-
+    use std::ptr;
     use winapi::shared::windef::HWND;
     use winapi::um::libloaderapi::GetModuleHandleW;
     use winit::os::windows::WindowExt;
-    use std::ptr;
 
     let hwnd = window.get_hwnd() as HWND;
     let hinstance = GetModuleHandleW(ptr::null()) as *const c_void;
     let win32_create_info = vk::Win32SurfaceCreateInfoKHR {
-        s_type    : vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
-        p_next    : ptr::null(),
-        flags     : Default::default(),
+        s_type: vk::StructureType::WIN32_SURFACE_CREATE_INFO_KHR,
+        p_next: ptr::null(),
+        flags: Default::default(),
         hinstance,
-        hwnd      : hwnd as *const c_void,
+        hwnd: hwnd as *const c_void,
     };
-    let win32_surface_loader =
-        Win32Surface::new(entry, instance);
+    let win32_surface_loader = Win32Surface::new(entry, instance);
     win32_surface_loader.create_win32_surface_khr(&win32_create_info, None)
 }
 // ------------------------------------------------------------------------
