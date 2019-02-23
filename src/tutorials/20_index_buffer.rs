@@ -206,9 +206,10 @@ impl VulkanApp {
 
         unsafe {
             let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
-                .expect("Failed to Map Memory");
-            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, buffer_size);
-            vert_align.copy_from_slice(&VERTICES_DATA);
+                .expect("Failed to Map Memory") as *mut Vertex;
+
+            data_ptr.copy_from(VERTICES_DATA.as_ptr(), VERTICES_DATA.len());
+
             device.unmap_memory(staging_buffer_memory);
         }
 
@@ -248,9 +249,10 @@ impl VulkanApp {
 
         unsafe {
             let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
-                .expect("Failed to Map Memory");
-            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<u32>() as u64, buffer_size);
-            vert_align.copy_from_slice(&INDICES_DATA);
+                .expect("Failed to Map Memory") as *mut u32;
+
+            data_ptr.copy_from(INDICES_DATA.as_ptr(), INDICES_DATA.len());
+
             device.unmap_memory(staging_buffer_memory);
         }
 

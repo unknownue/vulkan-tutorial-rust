@@ -14,6 +14,9 @@ use ash::version::DeviceV1_0;
 
 use std::ptr;
 use std::collections::HashSet;
+use std::ffi::CString;
+use std::os::raw::c_char;
+
 
 // Constants
 const WINDOW_TITLE: &'static str = "06.Swap Chain Creation";
@@ -206,7 +209,12 @@ impl VulkanApp {
             ..Default::default() // default just enable no feature.
         };
 
-        let enable_layer_names = validation.get_layers_names();
+        let requred_validation_layer_raw_names: Vec<CString> = validation.required_validation_layers.iter()
+            .map(|layer_name| CString::new(*layer_name).unwrap())
+            .collect();
+        let enable_layer_names: Vec<*const c_char> = requred_validation_layer_raw_names.iter()
+            .map(|layer_name| layer_name.as_ptr())
+            .collect();
 
         let enable_extension_names = [
             ash::extensions::Swapchain::name().as_ptr() // currently just enable the Swapchain extension.

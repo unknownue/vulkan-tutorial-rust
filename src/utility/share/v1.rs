@@ -232,16 +232,6 @@ pub fn create_graphics_pipeline(device: &ash::Device, render_pass: vk::RenderPas
         blend_constants  : [0.0, 0.0, 0.0, 0.0],
     };
 
-    //        leaving the dynamic statue unconfigurated right now
-//            let dynamic_state = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
-//            let dynamic_state_info = vk::PipelineDynamicStateCreateInfo {
-//                s_type: vk::StructureType::PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-//                p_next: ptr::null(),
-//                flags: vk::PipelineDynamicStateCreateFlags::empty(),
-//                dynamic_state_count: dynamic_state.len() as u32,
-//                p_dynamic_states: dynamic_state.as_ptr(),
-//            };
-
     let pipeline_layout_create_info = vk::PipelineLayoutCreateInfo {
         s_type                    : vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
         p_next                    : ptr::null(),
@@ -444,7 +434,7 @@ pub fn create_sync_objects(device: &ash::Device, max_frame_in_flight: usize) -> 
     sync_objects
 }
 
-pub fn create_vertex_buffer<T: Copy>(device: &ash::Device, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: vk::CommandPool, submit_queue: vk::Queue, data: &[T]) -> (vk::Buffer, vk::DeviceMemory) {
+pub fn create_vertex_buffer<T>(device: &ash::Device, device_memory_properties: &vk::PhysicalDeviceMemoryProperties, command_pool: vk::CommandPool, submit_queue: vk::Queue, data: &[T]) -> (vk::Buffer, vk::DeviceMemory) {
 
     let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
 
@@ -458,9 +448,10 @@ pub fn create_vertex_buffer<T: Copy>(device: &ash::Device, device_memory_propert
 
     unsafe {
         let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
-            .expect("Failed to Map Memory");
-        let mut vert_align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<T>() as u64, buffer_size);
-        vert_align.copy_from_slice(data);
+            .expect("Failed to Map Memory") as *mut T;
+
+        data_ptr.copy_from(data.as_ptr(), data.len());
+
         device.unmap_memory(staging_buffer_memory);
     }
 
@@ -496,9 +487,10 @@ pub fn create_index_buffer(device: &ash::Device, device_memory_properties: &vk::
 
     unsafe {
         let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
-            .expect("Failed to Map Memory");
-        let mut vert_align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<u32>() as u64, buffer_size);
-        vert_align.copy_from_slice(data);
+            .expect("Failed to Map Memory") as *mut u32;
+
+        data_ptr.copy_from(data.as_ptr(), data.len());
+
         device.unmap_memory(staging_buffer_memory);
     }
 
@@ -647,25 +639,25 @@ pub fn create_uniform_buffers(device: &ash::Device, device_memory_properties: &v
 pub fn create_image(device: &ash::Device, width: u32, height: u32, mip_levels: u32, num_samples: vk::SampleCountFlags, format: vk::Format, tiling: vk::ImageTiling, usage: vk::ImageUsageFlags, required_memory_properties: vk::MemoryPropertyFlags, device_memory_properties: &vk::PhysicalDeviceMemoryProperties) -> (vk::Image, vk::DeviceMemory) {
 
     let image_create_info = vk::ImageCreateInfo {
-        s_type                   : vk::StructureType::IMAGE_CREATE_INFO,
-        p_next                   : ptr::null(),
-        flags                    : vk::ImageCreateFlags::empty(),
-        image_type               : vk::ImageType::TYPE_2D,
+        s_type       : vk::StructureType::IMAGE_CREATE_INFO,
+        p_next       : ptr::null(),
+        flags        : vk::ImageCreateFlags::empty(),
+        image_type   : vk::ImageType::TYPE_2D,
         format,
+        mip_levels,
+        array_layers : 1,
+        samples      : num_samples,
+        tiling,
+        usage,
+        sharing_mode : vk::SharingMode::EXCLUSIVE,
+        queue_family_index_count : 0,
+        p_queue_family_indices   : ptr::null(),
+        initial_layout           : vk::ImageLayout::UNDEFINED,
         extent: vk::Extent3D {
             width,
             height,
             depth: 1,
         },
-        mip_levels,
-        array_layers             : 1,
-        samples                  : num_samples,
-        tiling,
-        usage,
-        sharing_mode             : vk::SharingMode::EXCLUSIVE,
-        queue_family_index_count : 0,
-        p_queue_family_indices   : ptr::null(),
-        initial_layout           : vk::ImageLayout::UNDEFINED,
     };
 
     let texture_image = unsafe {
@@ -826,23 +818,23 @@ pub fn create_texture_image_view(device: &ash::Device, texture_image: vk::Image,
 pub fn create_texture_sampler(device: &ash::Device) -> vk::Sampler {
 
     let sampler_create_info = vk::SamplerCreateInfo {
-        s_type                   : vk::StructureType::SAMPLER_CREATE_INFO,
-        p_next                   : ptr::null(),
-        flags                    : vk::SamplerCreateFlags::empty(),
-        mag_filter               : vk::Filter::LINEAR,
-        min_filter               : vk::Filter::LINEAR,
-        address_mode_u           : vk::SamplerAddressMode::REPEAT,
-        address_mode_v           : vk::SamplerAddressMode::REPEAT,
-        address_mode_w           : vk::SamplerAddressMode::REPEAT,
-        anisotropy_enable        : vk::TRUE,
-        max_anisotropy           : 16.0,
-        compare_enable           : vk::FALSE,
-        compare_op               : vk::CompareOp::ALWAYS,
-        mipmap_mode              : vk::SamplerMipmapMode::LINEAR,
-        min_lod                  : 0.0,
-        max_lod                  : 0.0,
-        mip_lod_bias             : 0.0,
-        border_color             : vk::BorderColor::INT_OPAQUE_BLACK,
+        s_type         : vk::StructureType::SAMPLER_CREATE_INFO,
+        p_next         : ptr::null(),
+        flags          : vk::SamplerCreateFlags::empty(),
+        mag_filter     : vk::Filter::LINEAR,
+        min_filter     : vk::Filter::LINEAR,
+        address_mode_u : vk::SamplerAddressMode::REPEAT,
+        address_mode_v : vk::SamplerAddressMode::REPEAT,
+        address_mode_w : vk::SamplerAddressMode::REPEAT,
+        max_anisotropy : 16.0,
+        compare_enable : vk::FALSE,
+        compare_op     : vk::CompareOp::ALWAYS,
+        mipmap_mode    : vk::SamplerMipmapMode::LINEAR,
+        min_lod        : 0.0,
+        max_lod        : 0.0,
+        mip_lod_bias   : 0.0,
+        border_color   : vk::BorderColor::INT_OPAQUE_BLACK,
+        anisotropy_enable : vk::TRUE,
         unnormalized_coordinates : vk::FALSE,
     };
 
@@ -881,9 +873,10 @@ pub fn create_texture_image(device: &ash::Device, command_pool: vk::CommandPool,
 
     unsafe {
         let data_ptr = device.map_memory(staging_buffer_memory, 0, image_size, vk::MemoryMapFlags::empty())
-            .expect("Failed to Map Memory");
-        let mut align = ash::util::Align::new(data_ptr, ::std::mem::align_of::<u8>() as u64, image_size);
-        align.copy_from_slice(&image_data);
+            .expect("Failed to Map Memory") as *mut u8;
+
+        data_ptr.copy_from(image_data.as_ptr(), image_data.len());
+
         device.unmap_memory(staging_buffer_memory);
     }
 

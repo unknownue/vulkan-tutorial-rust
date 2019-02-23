@@ -2,7 +2,7 @@
 use ash::vk;
 use ash::version::EntryV1_0;
 
-use std::ffi::{ CStr, CString };
+use std::ffi::CStr;
 use std::ptr;
 use std::os::raw::{ c_void, c_char };
 
@@ -24,18 +24,6 @@ pub unsafe extern "system" fn vulkan_debug_callback(
 pub struct ValidationInfo {
     pub is_enable: bool,
     pub required_validation_layers: [&'static str; 1],
-}
-
-impl ValidationInfo {
-
-    pub fn get_layers_names(&self) -> Vec<*const i8> {
-        let requred_validation_layer_raw_names: Vec<CString> = self.required_validation_layers.iter()
-            .map(|layer_name| CString::new(*layer_name).unwrap())
-            .collect();
-        requred_validation_layer_raw_names.iter()
-            .map(|layer_name| layer_name.as_ptr())
-            .collect()
-    }
 }
 
 pub fn check_validation_layer_support(entry: &ash::Entry, required_validation_layers: &Vec<&str>) -> bool {

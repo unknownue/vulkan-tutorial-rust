@@ -197,15 +197,15 @@ impl VulkanApp {
 
         unsafe {
             let data_ptr = device.map_memory(staging_buffer_memory, 0, buffer_size, vk::MemoryMapFlags::empty())
-                .expect("Failed to Map Memory");
-            let mut vert_align = ash::util::Align::new(data_ptr, std::mem::align_of::<Vertex>() as u64, buffer_size);
-            vert_align.copy_from_slice(&VERTICES_DATA);
+                .expect("Failed to Map Memory") as *mut Vertex;
+
+            data_ptr.copy_from(VERTICES_DATA.as_ptr(), VERTICES_DATA.len());
+
             device.unmap_memory(staging_buffer_memory);
         }
 
         let (vertex_buffer, vertex_buffer_memory) = VulkanApp::create_buffer(
-            device,
-            buffer_size,
+            device, buffer_size,
             vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
             &device_memory_properties,
@@ -225,12 +225,12 @@ impl VulkanApp {
         -> (vk::Buffer, vk::DeviceMemory) {
 
         let buffer_create_info = vk::BufferCreateInfo {
-            s_type                   : vk::StructureType::BUFFER_CREATE_INFO,
-            p_next                   : ptr::null(),
-            flags                    : vk::BufferCreateFlags::empty(),
+            s_type: vk::StructureType::BUFFER_CREATE_INFO,
+            p_next: ptr::null(),
+            flags : vk::BufferCreateFlags::empty(),
             size,
             usage,
-            sharing_mode             : vk::SharingMode::EXCLUSIVE,
+            sharing_mode: vk::SharingMode::EXCLUSIVE,
             queue_family_index_count : 0,
             p_queue_family_indices   : ptr::null(),
         };
@@ -246,8 +246,8 @@ impl VulkanApp {
         let memory_type = VulkanApp::find_memory_type(mem_requirements.memory_type_bits, required_memory_properties, device_memory_properties);
 
         let allocate_info = vk::MemoryAllocateInfo {
-            s_type            : vk::StructureType::MEMORY_ALLOCATE_INFO,
-            p_next            : ptr::null(),
+            s_type: vk::StructureType::MEMORY_ALLOCATE_INFO,
+            p_next: ptr::null(),
             allocation_size   : mem_requirements.size,
             memory_type_index : memory_type,
         };
@@ -268,8 +268,8 @@ impl VulkanApp {
     fn copy_buffer(device: &ash::Device, submit_queue: vk::Queue, command_pool: vk::CommandPool, src_buffer: vk::Buffer, dst_buffer: vk::Buffer, size: vk::DeviceSize) {
 
         let allocate_info = vk::CommandBufferAllocateInfo {
-            s_type               : vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
-            p_next               : ptr::null(),
+            s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
+            p_next: ptr::null(),
             command_buffer_count : 1,
             command_pool,
             level                : vk::CommandBufferLevel::PRIMARY,
@@ -282,10 +282,10 @@ impl VulkanApp {
         let command_buffer = command_buffers[0];
 
         let begin_info = vk::CommandBufferBeginInfo {
-            s_type             : vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
-            p_next             : ptr::null(),
+            s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
+            p_next: ptr::null(),
+            flags : vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
             p_inheritance_info : ptr::null(),
-            flags              : vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
         };
 
         unsafe {
@@ -308,8 +308,8 @@ impl VulkanApp {
 
         let submit_info  = [
             vk::SubmitInfo {
-                s_type                 : vk::StructureType::SUBMIT_INFO,
-                p_next                 : ptr::null(),
+                s_type: vk::StructureType::SUBMIT_INFO,
+                p_next: ptr::null(),
                 wait_semaphore_count   : 0,
                 p_wait_semaphores      : ptr::null(),
                 p_wait_dst_stage_mask  : ptr::null(),
@@ -351,8 +351,8 @@ impl VulkanApp {
     fn create_command_buffers(device: &ash::Device, command_pool: vk::CommandPool, graphics_pipeline: vk::Pipeline, framebuffers: &Vec<vk::Framebuffer>, render_pass: vk::RenderPass, surface_extent: vk::Extent2D, vertex_buffer: vk::Buffer) -> Vec<vk::CommandBuffer> {
 
         let command_buffer_allocate_info = vk::CommandBufferAllocateInfo {
-            s_type               : vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
-            p_next               : ptr::null(),
+            s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
+            p_next: ptr::null(),
             command_buffer_count : framebuffers.len() as u32,
             command_pool,
             level                : vk::CommandBufferLevel::PRIMARY,
@@ -366,10 +366,10 @@ impl VulkanApp {
         for (i, &command_buffer) in command_buffers.iter().enumerate() {
 
             let command_buffer_begin_info  = vk::CommandBufferBeginInfo {
-                s_type             : vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
-                p_next             : ptr::null(),
+                s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
+                p_next: ptr::null(),
+                flags: vk::CommandBufferUsageFlags::SIMULTANEOUS_USE,
                 p_inheritance_info : ptr::null(),
-                flags              : vk::CommandBufferUsageFlags::SIMULTANEOUS_USE,
             };
 
             unsafe {
@@ -435,22 +435,22 @@ impl VulkanApp {
 
         let shader_stages = [
             vk::PipelineShaderStageCreateInfo { // Vertex Shader
-                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
-                p_next                : ptr::null(),
-                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
-                module                : vert_shader_module,
-                p_name                : main_function_name.as_ptr(),
+                s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
+                p_next: ptr::null(),
+                flags : vk::PipelineShaderStageCreateFlags::empty(),
+                module: vert_shader_module,
+                p_name: main_function_name.as_ptr(),
+                stage : vk::ShaderStageFlags::VERTEX,
                 p_specialization_info : ptr::null(),
-                stage                 : vk::ShaderStageFlags::VERTEX,
             },
             vk::PipelineShaderStageCreateInfo { // Fragment Shader
-                s_type                : vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
-                p_next                : ptr::null(),
-                flags                 : vk::PipelineShaderStageCreateFlags::empty(),
-                module                : frag_shader_module,
-                p_name                : main_function_name.as_ptr(),
+                s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
+                p_next: ptr::null(),
+                flags : vk::PipelineShaderStageCreateFlags::empty(),
+                module: frag_shader_module,
+                p_name: main_function_name.as_ptr(),
+                stage : vk::ShaderStageFlags::FRAGMENT,
                 p_specialization_info : ptr::null(),
-                stage                 : vk::ShaderStageFlags::FRAGMENT,
             },
         ];
 
@@ -458,20 +458,20 @@ impl VulkanApp {
         let attribute_description = Vertex::get_attribute_descriptions();
 
         let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo {
-            s_type                             : vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            p_next                             : ptr::null(),
-            flags                              : vk::PipelineVertexInputStateCreateFlags::empty(),
+            s_type: vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            p_next: ptr::null(),
+            flags : vk::PipelineVertexInputStateCreateFlags::empty(),
             vertex_attribute_description_count : attribute_description.len() as u32,
             p_vertex_attribute_descriptions    : attribute_description.as_ptr(),
             vertex_binding_description_count   : binding_description.len() as u32,
             p_vertex_binding_descriptions      : binding_description.as_ptr(),
         };
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
-            s_type                   : vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            flags                    : vk::PipelineInputAssemblyStateCreateFlags::empty(),
-            p_next                   : ptr::null(),
+            s_type  : vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            flags   : vk::PipelineInputAssemblyStateCreateFlags::empty(),
+            p_next  : ptr::null(),
+            topology: vk::PrimitiveTopology::TRIANGLE_LIST,
             primitive_restart_enable : vk::FALSE,
-            topology                 : vk::PrimitiveTopology::TRIANGLE_LIST,
         };
 
         let viewports = [

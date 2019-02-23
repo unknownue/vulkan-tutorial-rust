@@ -467,9 +467,10 @@ impl VulkanApp25 {
 
         unsafe {
             let data_ptr = self.device.map_memory(self.uniform_buffers_memory[current_image], 0, buffer_size, vk::MemoryMapFlags::empty())
-                .expect("Failed to Map Memory");
-            let mut align = ash::util::Align::new(data_ptr, std::mem::align_of::<UniformBufferObject>() as u64, buffer_size);
-            align.copy_from_slice(&ubos);
+                .expect("Failed to Map Memory") as *mut UniformBufferObject;
+
+            data_ptr.copy_from(ubos.as_ptr(), ubos.len());
+
             self.device.unmap_memory(self.uniform_buffers_memory[current_image]);
         }
     }
