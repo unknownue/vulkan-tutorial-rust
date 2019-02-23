@@ -4,24 +4,20 @@ A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) base
 
 [![Build Status](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The codes have been tested on <img src="./assets/windows.png" alt="Windows" height="22px" valign="bottom"> Windows and <img src="./assets/apple.png" alt="macOS" height="22px" valign="bottom"> macOS.
+The codes have been tested on Windows and macOS.
 
 The API of ash crate is more similar to C++ when compared with using [Vulkano](https://crates.io/crates/vulkano).
 
-If you prefer using vulkano, [vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs) may be a better choose.
+If you prefer using vulkano, see also [vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs).
 
 ## Main Dependencies
 
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
-- [ash](https://github.com/MaikKlein/ash)
-
-## Configuration
-
-The environment configuration is same as [ash](https://github.com/MaikKlein/ash#example).
-
-It's recommended to compile the examples of ash first before compiling this repository.
+- [ash](https://github.com/MaikKlein/ash) - A lightweight Vulkan bindings for Rust.
 
 ## Status
+
+The environment configuration is same as ash. See [here](https://github.com/MaikKlein/ash#example) for more detail.
 
 Vulkan is quit hard. All examples on official website have been finished. :beers:
 
