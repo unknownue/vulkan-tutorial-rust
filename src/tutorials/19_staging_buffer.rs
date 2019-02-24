@@ -19,6 +19,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "19.Staging Buffer";
 
+#[repr(C)]
 #[derive(Clone, Debug, Copy)]
 struct Vertex {
     pos: [f32; 2],

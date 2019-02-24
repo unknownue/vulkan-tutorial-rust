@@ -19,6 +19,8 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "17.Vertex Input";
 
+#[repr(C)]
+#[derive(Debug, Clone)]
 struct Vertex {
     pos: [f32; 2],
     color: [f32; 4],

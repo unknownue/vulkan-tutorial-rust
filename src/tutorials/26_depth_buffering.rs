@@ -21,6 +21,7 @@ use std::ptr;
 const WINDOW_TITLE: &'static str = "26.Depth Buffering";
 const TEXTURE_PATH: &'static str = "assets/texture.jpg";
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct VertexV3 {
     pub pos: [f32; 4],

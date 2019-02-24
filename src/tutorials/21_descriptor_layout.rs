@@ -19,6 +19,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "21.Descriptor Layout";
 
+#[repr(C)]
 #[derive(Clone, Debug, Copy)]
 struct UniformBufferObject {
     model: Matrix4<f32>,

@@ -21,6 +21,7 @@ use std::ptr;
 const WINDOW_TITLE: &'static str = "25.Texture Mapping";
 const TEXTURE_PATH: &'static str = "assets/texture.jpg";
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct VertexV2 {
     pub pos: [f32; 2],

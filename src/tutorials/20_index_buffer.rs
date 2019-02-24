@@ -19,6 +19,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "20.Index Buffer";
 
+#[repr(C)]
 #[derive(Clone, Debug, Copy)]
 struct Vertex {
     pos: [f32; 2],

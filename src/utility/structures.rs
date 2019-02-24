@@ -53,6 +53,7 @@ pub struct SyncObjects {
     pub inflight_fences: Vec<vk::Fence>,
 }
 
+#[repr(C)]
 #[derive(Clone, Debug, Copy)]
 pub struct UniformBufferObject {
     pub model: Matrix4<f32>,
@@ -60,6 +61,7 @@ pub struct UniformBufferObject {
     pub proj: Matrix4<f32>,
 }
 
+#[repr(C)]
 #[derive(Clone, Debug, Copy)]
 pub struct VertexV1 {
     pub pos: [f32; 2],
@@ -92,6 +94,7 @@ impl VertexV1 {
     }
 }
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct VertexV3 {
     pub pos: [f32; 4],

@@ -22,6 +22,7 @@ const WINDOW_TITLE: &'static str = "27.Model Loading";
 const MODEL_PATH: &'static str = "assets/chalet.obj";
 const TEXTURE_PATH: &'static str = "assets/chalet.jpg";
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct VertexV3 {
     pub pos: [f32; 4],
