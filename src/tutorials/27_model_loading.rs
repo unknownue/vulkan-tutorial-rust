@@ -68,9 +68,9 @@ struct VulkanApp27 {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
+    debug_report_loader: ash::extensions::ext::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
 
     physical_device: vk::PhysicalDevice,
@@ -81,7 +81,7 @@ struct VulkanApp27 {
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
+    swapchain_loader: ash::extensions::khr::Swapchain,
     swapchain: vk::SwapchainKHR,
     swapchain_images: Vec<vk::Image>,
     swapchain_format: vk::Format,
@@ -858,7 +858,7 @@ impl VulkanApp27 {
                     )
                     .expect("Failed to Map Memory") as *mut UniformBufferObject;
 
-            data_ptr.copy_from(ubos.as_ptr(), ubos.len());
+            data_ptr.copy_from_nonoverlapping(ubos.as_ptr(), ubos.len());
 
             self.device
                 .unmap_memory(self.uniform_buffers_memory[current_image]);
@@ -907,11 +907,11 @@ impl Drop for VulkanApp27 {
             self.device.destroy_command_pool(self.command_pool, None);
 
             self.device.destroy_device(None);
-            self.surface_loader.destroy_surface_khr(self.surface, None);
+            self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {
                 self.debug_report_loader
-                    .destroy_debug_report_callback_ext(self.debug_callback, None);
+                    .destroy_debug_report_callback(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }
@@ -929,7 +929,7 @@ impl VulkanApp for VulkanApp27 {
         }
 
         let (image_index, _is_sub_optimal) = unsafe {
-            let result = self.swapchain_loader.acquire_next_image_khr(
+            let result = self.swapchain_loader.acquire_next_image(
                 self.swapchain,
                 std::u64::MAX,
                 self.image_available_semaphores[self.current_frame],
@@ -994,7 +994,7 @@ impl VulkanApp for VulkanApp27 {
 
         let result = unsafe {
             self.swapchain_loader
-                .queue_present_khr(self.present_queue, &present_info)
+                .queue_present(self.present_queue, &present_info)
         };
 
         let is_resized = match result {
@@ -1118,7 +1118,7 @@ impl VulkanApp for VulkanApp27 {
                 self.device.destroy_image_view(image_view, None);
             }
             self.swapchain_loader
-                .destroy_swapchain_khr(self.swapchain, None);
+                .destroy_swapchain(self.swapchain, None);
         }
     }
 

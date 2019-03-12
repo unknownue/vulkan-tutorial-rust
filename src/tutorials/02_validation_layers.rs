@@ -37,7 +37,7 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    debug_report_loader: ash::extensions::DebugReport,
+    debug_report_loader: ash::extensions::ext::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
 }
 
@@ -171,8 +171,8 @@ impl VulkanApp {
     fn setup_debug_callback(
         entry: &ash::Entry,
         instance: &ash::Instance,
-    ) -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
-        let debug_report_loader = ash::extensions::DebugReport::new(entry, instance);
+    ) -> (ash::extensions::ext::DebugReport, vk::DebugReportCallbackEXT) {
+        let debug_report_loader = ash::extensions::ext::DebugReport::new(entry, instance);
 
         if VALIDATION.is_enable == false {
             (debug_report_loader, ash::vk::DebugReportCallbackEXT::null())
@@ -191,7 +191,7 @@ impl VulkanApp {
 
             let debug_call_back = unsafe {
                 debug_report_loader
-                    .create_debug_report_callback_ext(&debug_create_info, None)
+                    .create_debug_report_callback(&debug_create_info, None)
                     .expect("Failed to set up Debug Callback!")
             };
 
@@ -225,7 +225,7 @@ impl Drop for VulkanApp {
         unsafe {
             if VALIDATION.is_enable {
                 self.debug_report_loader
-                    .destroy_debug_report_callback_ext(self.debug_callback, None);
+                    .destroy_debug_report_callback(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }

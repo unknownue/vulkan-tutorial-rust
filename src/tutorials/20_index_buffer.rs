@@ -78,9 +78,9 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
+    debug_report_loader: ash::extensions::ext::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
 
     physical_device: vk::PhysicalDevice,
@@ -90,7 +90,7 @@ struct VulkanApp {
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
+    swapchain_loader: ash::extensions::khr::Swapchain,
     swapchain: vk::SwapchainKHR,
     swapchain_images: Vec<vk::Image>,
     swapchain_format: vk::Format,
@@ -278,7 +278,7 @@ impl VulkanApp {
                 )
                 .expect("Failed to Map Memory") as *mut Vertex;
 
-            data_ptr.copy_from(VERTICES_DATA.as_ptr(), VERTICES_DATA.len());
+            data_ptr.copy_from_nonoverlapping(VERTICES_DATA.as_ptr(), VERTICES_DATA.len());
 
             device.unmap_memory(staging_buffer_memory);
         }
@@ -337,7 +337,7 @@ impl VulkanApp {
                 )
                 .expect("Failed to Map Memory") as *mut u32;
 
-            data_ptr.copy_from(INDICES_DATA.as_ptr(), INDICES_DATA.len());
+            data_ptr.copy_from_nonoverlapping(INDICES_DATA.as_ptr(), INDICES_DATA.len());
 
             device.unmap_memory(staging_buffer_memory);
         }
@@ -688,7 +688,7 @@ impl VulkanApp {
         }
 
         let (image_index, _is_sub_optimal) = unsafe {
-            let result = self.swapchain_loader.acquire_next_image_khr(
+            let result = self.swapchain_loader.acquire_next_image(
                 self.swapchain,
                 std::u64::MAX,
                 self.image_available_semaphores[self.current_frame],
@@ -751,7 +751,7 @@ impl VulkanApp {
 
         let result = unsafe {
             self.swapchain_loader
-                .queue_present_khr(self.present_queue, &present_info)
+                .queue_present(self.present_queue, &present_info)
         };
 
         let is_resized = match result {
@@ -847,7 +847,7 @@ impl VulkanApp {
                 self.device.destroy_image_view(image_view, None);
             }
             self.swapchain_loader
-                .destroy_swapchain_khr(self.swapchain, None);
+                .destroy_swapchain(self.swapchain, None);
         }
     }
 }
@@ -874,11 +874,11 @@ impl Drop for VulkanApp {
             self.device.destroy_command_pool(self.command_pool, None);
 
             self.device.destroy_device(None);
-            self.surface_loader.destroy_surface_khr(self.surface, None);
+            self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {
                 self.debug_report_loader
-                    .destroy_debug_report_callback_ext(self.debug_callback, None);
+                    .destroy_debug_report_callback(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }

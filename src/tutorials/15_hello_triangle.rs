@@ -26,9 +26,9 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
+    debug_report_loader: ash::extensions::ext::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
 
     _physical_device: vk::PhysicalDevice,
@@ -37,7 +37,7 @@ struct VulkanApp {
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
+    swapchain_loader: ash::extensions::khr::Swapchain,
     swapchain: vk::SwapchainKHR,
     _swapchain_images: Vec<vk::Image>,
     _swapchain_format: vk::Format,
@@ -171,7 +171,7 @@ impl VulkanApp {
                 .expect("Failed to reset Fence!");
 
             self.swapchain_loader
-                .acquire_next_image_khr(
+                .acquire_next_image(
                     self.swapchain,
                     std::u64::MAX,
                     self.image_available_semaphores[self.current_frame],
@@ -221,7 +221,7 @@ impl VulkanApp {
 
         unsafe {
             self.swapchain_loader
-                .queue_present_khr(self.present_queue, &present_info)
+                .queue_present(self.present_queue, &present_info)
                 .expect("Failed to execute queue present.");
         }
 
@@ -363,13 +363,13 @@ impl Drop for VulkanApp {
             }
 
             self.swapchain_loader
-                .destroy_swapchain_khr(self.swapchain, None);
+                .destroy_swapchain(self.swapchain, None);
             self.device.destroy_device(None);
-            self.surface_loader.destroy_surface_khr(self.surface, None);
+            self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {
                 self.debug_report_loader
-                    .destroy_debug_report_callback_ext(self.debug_callback, None);
+                    .destroy_debug_report_callback(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }

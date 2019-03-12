@@ -9,14 +9,14 @@ pub struct DeviceExtension {
 }
 
 pub struct SurfaceStuff {
-    pub surface_loader: ash::extensions::Surface,
+    pub surface_loader: ash::extensions::khr::Surface,
     pub surface: vk::SurfaceKHR,
 
     pub screen_width: u32,
     pub screen_height: u32,
 }
 pub struct SwapChainStuff {
-    pub swapchain_loader: ash::extensions::Swapchain,
+    pub swapchain_loader: ash::extensions::khr::Swapchain,
     pub swapchain: vk::SwapchainKHR,
     pub swapchain_images: Vec<vk::Image>,
     pub swapchain_format: vk::Format,

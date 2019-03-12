@@ -36,7 +36,7 @@ impl QueueFamilyIndices {
 }
 
 struct SurfaceStuff {
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
 }
 
@@ -48,9 +48,9 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
+    debug_report_loader: ash::extensions::ext::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
     _physical_device: vk::PhysicalDevice,
     device: ash::Device,
@@ -117,7 +117,7 @@ impl VulkanApp {
             utility::platforms::create_surface(entry, instance, window)
                 .expect("Failed to create surface.")
         };
-        let surface_loader = ash::extensions::Surface::new(entry, instance);
+        let surface_loader = ash::extensions::khr::Surface::new(entry, instance);
 
         SurfaceStuff {
             surface_loader,
@@ -251,7 +251,7 @@ impl VulkanApp {
             let is_present_support = unsafe {
                 surface_stuff
                     .surface_loader
-                    .get_physical_device_surface_support_khr(
+                    .get_physical_device_surface_support(
                         physical_device,
                         index as u32,
                         surface_stuff.surface,
@@ -276,11 +276,11 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
         unsafe {
             self.device.destroy_device(None);
-            self.surface_loader.destroy_surface_khr(self.surface, None);
+            self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {
                 self.debug_report_loader
-                    .destroy_debug_report_callback_ext(self.debug_callback, None);
+                    .destroy_debug_report_callback(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }

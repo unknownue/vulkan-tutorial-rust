@@ -92,7 +92,7 @@ pub fn create_surface(
     let surface = unsafe {
         platforms::create_surface(entry, instance, window).expect("Failed to create surface.")
     };
-    let surface_loader = ash::extensions::Surface::new(entry, instance);
+    let surface_loader = ash::extensions::khr::Surface::new(entry, instance);
 
     SurfaceStuff {
         surface_loader,
@@ -258,7 +258,7 @@ pub fn find_queue_family(
         let is_present_support = unsafe {
             surface_stuff
                 .surface_loader
-                .get_physical_device_surface_support_khr(
+                .get_physical_device_surface_support(
                     physical_device,
                     index as u32,
                     surface_stuff.surface,
@@ -317,15 +317,15 @@ pub fn query_swapchain_support(
     unsafe {
         let capabilities = surface_stuff
             .surface_loader
-            .get_physical_device_surface_capabilities_khr(physical_device, surface_stuff.surface)
+            .get_physical_device_surface_capabilities(physical_device, surface_stuff.surface)
             .expect("Failed to query for surface capabilities.");
         let formats = surface_stuff
             .surface_loader
-            .get_physical_device_surface_formats_khr(physical_device, surface_stuff.surface)
+            .get_physical_device_surface_formats(physical_device, surface_stuff.surface)
             .expect("Failed to query for surface formats.");
         let present_modes = surface_stuff
             .surface_loader
-            .get_physical_device_surface_present_modes_khr(physical_device, surface_stuff.surface)
+            .get_physical_device_surface_present_modes(physical_device, surface_stuff.surface)
             .expect("Failed to query for surface present mode.");
 
         SwapChainSupportDetail {
@@ -391,16 +391,16 @@ pub fn create_swapchain(
         image_array_layers: 1,
     };
 
-    let swapchain_loader = ash::extensions::Swapchain::new(instance, device);
+    let swapchain_loader = ash::extensions::khr::Swapchain::new(instance, device);
     let swapchain = unsafe {
         swapchain_loader
-            .create_swapchain_khr(&swapchain_create_info, None)
+            .create_swapchain(&swapchain_create_info, None)
             .expect("Failed to create Swapchain!")
     };
 
     let swapchain_images = unsafe {
         swapchain_loader
-            .get_swapchain_images_khr(swapchain)
+            .get_swapchain_images(swapchain)
             .expect("Failed to get Swapchain Images.")
     };
 

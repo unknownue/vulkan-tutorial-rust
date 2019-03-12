@@ -486,7 +486,7 @@ pub fn create_vertex_buffer<T>(
             )
             .expect("Failed to Map Memory") as *mut T;
 
-        data_ptr.copy_from(data.as_ptr(), data.len());
+        data_ptr.copy_from_nonoverlapping(data.as_ptr(), data.len());
 
         device.unmap_memory(staging_buffer_memory);
     }
@@ -543,7 +543,7 @@ pub fn create_index_buffer(
             )
             .expect("Failed to Map Memory") as *mut u32;
 
-        data_ptr.copy_from(data.as_ptr(), data.len());
+        data_ptr.copy_from_nonoverlapping(data.as_ptr(), data.len());
 
         device.unmap_memory(staging_buffer_memory);
     }
@@ -1006,7 +1006,7 @@ pub fn create_texture_image(
             )
             .expect("Failed to Map Memory") as *mut u8;
 
-        data_ptr.copy_from(image_data.as_ptr(), image_data.len());
+        data_ptr.copy_from_nonoverlapping(image_data.as_ptr(), image_data.len());
 
         device.unmap_memory(staging_buffer_memory);
     }

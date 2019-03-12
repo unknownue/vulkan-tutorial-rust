@@ -41,11 +41,11 @@ impl QueueFamilyIndices {
 }
 
 struct SurfaceStuff {
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
 }
 struct SwapChainStuff {
-    swapchain_loader: ash::extensions::Swapchain,
+    swapchain_loader: ash::extensions::khr::Swapchain,
     swapchain: vk::SwapchainKHR,
     swapchain_images: Vec<vk::Image>,
     swapchain_format: vk::Format,
@@ -66,9 +66,9 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    surface_loader: ash::extensions::Surface,
+    surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::DebugReport,
+    debug_report_loader: ash::extensions::ext::DebugReport,
     debug_callback: vk::DebugReportCallbackEXT,
 
     _physical_device: vk::PhysicalDevice,
@@ -77,7 +77,7 @@ struct VulkanApp {
     _graphics_queue: vk::Queue,
     _present_queue: vk::Queue,
 
-    swapchain_loader: ash::extensions::Swapchain,
+    swapchain_loader: ash::extensions::khr::Swapchain,
     swapchain: vk::SwapchainKHR,
     _swapchain_images: Vec<vk::Image>,
     _swapchain_format: vk::Format,
@@ -158,7 +158,7 @@ impl VulkanApp {
             utility::platforms::create_surface(entry, instance, window)
                 .expect("Failed to create surface.")
         };
-        let surface_loader = ash::extensions::Surface::new(entry, instance);
+        let surface_loader = ash::extensions::khr::Surface::new(entry, instance);
 
         SurfaceStuff {
             surface_loader,
@@ -254,7 +254,7 @@ impl VulkanApp {
             .collect();
 
         let enable_extension_names = [
-            ash::extensions::Swapchain::name().as_ptr(), // currently just enable the Swapchain extension.
+            ash::extensions::khr::Swapchain::name().as_ptr(), // currently just enable the Swapchain extension.
         ];
 
         let device_create_info = vk::DeviceCreateInfo {
@@ -308,7 +308,7 @@ impl VulkanApp {
             let is_present_support = unsafe {
                 surface_stuff
                     .surface_loader
-                    .get_physical_device_surface_support_khr(
+                    .get_physical_device_surface_support(
                         physical_device,
                         index as u32,
                         surface_stuff.surface,
@@ -370,18 +370,18 @@ impl VulkanApp {
         unsafe {
             let capabilities = surface_stuff
                 .surface_loader
-                .get_physical_device_surface_capabilities_khr(
+                .get_physical_device_surface_capabilities(
                     physical_device,
                     surface_stuff.surface,
                 )
                 .expect("Failed to query for surface capabilities.");
             let formats = surface_stuff
                 .surface_loader
-                .get_physical_device_surface_formats_khr(physical_device, surface_stuff.surface)
+                .get_physical_device_surface_formats(physical_device, surface_stuff.surface)
                 .expect("Failed to query for surface formats.");
             let present_modes = surface_stuff
                 .surface_loader
-                .get_physical_device_surface_present_modes_khr(
+                .get_physical_device_surface_present_modes(
                     physical_device,
                     surface_stuff.surface,
                 )
@@ -450,16 +450,16 @@ impl VulkanApp {
             image_array_layers: 1,
         };
 
-        let swapchain_loader = ash::extensions::Swapchain::new(instance, device);
+        let swapchain_loader = ash::extensions::khr::Swapchain::new(instance, device);
         let swapchain = unsafe {
             swapchain_loader
-                .create_swapchain_khr(&swapchain_create_info, None)
+                .create_swapchain(&swapchain_create_info, None)
                 .expect("Failed to create Swapchain!")
         };
 
         let swapchain_images = unsafe {
             swapchain_loader
-                .get_swapchain_images_khr(swapchain)
+                .get_swapchain_images(swapchain)
                 .expect("Failed to get Swapchain Images.")
         };
 
@@ -539,13 +539,13 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
         unsafe {
             self.swapchain_loader
-                .destroy_swapchain_khr(self.swapchain, None);
+                .destroy_swapchain(self.swapchain, None);
             self.device.destroy_device(None);
-            self.surface_loader.destroy_surface_khr(self.surface, None);
+            self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {
                 self.debug_report_loader
-                    .destroy_debug_report_callback_ext(self.debug_callback, None);
+                    .destroy_debug_report_callback(self.debug_callback, None);
             }
             self.instance.destroy_instance(None);
         }

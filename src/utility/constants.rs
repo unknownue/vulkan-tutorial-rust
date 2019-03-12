@@ -1,3 +1,4 @@
+
 use crate::utility::debug::ValidationInfo;
 use crate::utility::structures::DeviceExtension;
 use ash::vk_make_version;
@@ -24,7 +25,7 @@ impl DeviceExtension {
     pub fn get_extensions_raw_names(&self) -> [*const c_char; 1] {
         [
             // currently just enable the Swapchain extension.
-            ash::extensions::Swapchain::name().as_ptr(),
+            ash::extensions::khr::Swapchain::name().as_ptr(),
         ]
     }
 }

@@ -6,7 +6,7 @@ authors = ["usami-renko <usami-ssc@protonmail.com>"]
 
 [dependencies]
 winit     = "0.18.0"
-ash       = "0.26.0"
+ash       = "0.28.0"
 num       = "0.2"
 cgmath    = "0.16.1"
 image     = "0.20"

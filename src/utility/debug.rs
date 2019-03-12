@@ -62,8 +62,8 @@ pub fn setup_debug_callback(
     is_enable_debug: bool,
     entry: &ash::Entry,
     instance: &ash::Instance,
-) -> (ash::extensions::DebugReport, vk::DebugReportCallbackEXT) {
-    let debug_report_loader = ash::extensions::DebugReport::new(entry, instance);
+) -> (ash::extensions::ext::DebugReport, vk::DebugReportCallbackEXT) {
+    let debug_report_loader = ash::extensions::ext::DebugReport::new(entry, instance);
 
     if is_enable_debug == false {
         (debug_report_loader, ash::vk::DebugReportCallbackEXT::null())
@@ -82,7 +82,7 @@ pub fn setup_debug_callback(
 
         let debug_call_back = unsafe {
             debug_report_loader
-                .create_debug_report_callback_ext(&debug_create_info, None)
+                .create_debug_report_callback(&debug_create_info, None)
                 .expect("Failed to set up Debug Callback!")
         };
 
