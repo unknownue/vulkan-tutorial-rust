@@ -1,15 +1,15 @@
 use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
 
-#[cfg(target_os = "macos")]
-use ash::extensions::mvk::MacOSSurface;
 #[cfg(target_os = "windows")]
 use ash::extensions::khr::Win32Surface;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 use ash::extensions::khr::XlibSurface;
+#[cfg(target_os = "macos")]
+use ash::extensions::mvk::MacOSSurface;
 
-use ash::extensions::khr::Surface;
 use ash::extensions::ext::DebugReport;
+use ash::extensions::khr::Surface;
 
 #[cfg(target_os = "macos")]
 use cocoa::appkit::{NSView, NSWindow};
@@ -19,7 +19,6 @@ use cocoa::base::id as cocoa_id;
 use metal::CoreAnimationLayer;
 #[cfg(target_os = "macos")]
 use objc::runtime::YES;
-
 
 // required extension ------------------------------------------------------
 #[cfg(target_os = "macos")]
@@ -80,8 +79,8 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
     use std::mem;
-    use std::ptr;
     use std::os::raw::c_void;
+    use std::ptr;
     use winit::os::macos::WindowExt;
 
     let wnd: cocoa_id = mem::transmute(window.get_nswindow());
@@ -115,8 +114,8 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     instance: &I,
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
-    use std::ptr;
     use std::os::raw::c_void;
+    use std::ptr;
     use winapi::shared::windef::HWND;
     use winapi::um::libloaderapi::GetModuleHandleW;
     use winit::os::windows::WindowExt;

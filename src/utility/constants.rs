@@ -1,4 +1,3 @@
-
 use crate::utility::debug::ValidationInfo;
 use crate::utility::structures::DeviceExtension;
 use ash::vk_make_version;

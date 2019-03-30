@@ -62,7 +62,10 @@ pub fn setup_debug_callback(
     is_enable_debug: bool,
     entry: &ash::Entry,
     instance: &ash::Instance,
-) -> (ash::extensions::ext::DebugReport, vk::DebugReportCallbackEXT) {
+) -> (
+    ash::extensions::ext::DebugReport,
+    vk::DebugReportCallbackEXT,
+) {
     let debug_report_loader = ash::extensions::ext::DebugReport::new(entry, instance);
 
     if is_enable_debug == false {

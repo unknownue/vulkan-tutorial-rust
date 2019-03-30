@@ -171,7 +171,10 @@ impl VulkanApp {
     fn setup_debug_callback(
         entry: &ash::Entry,
         instance: &ash::Instance,
-    ) -> (ash::extensions::ext::DebugReport, vk::DebugReportCallbackEXT) {
+    ) -> (
+        ash::extensions::ext::DebugReport,
+        vk::DebugReportCallbackEXT,
+    ) {
         let debug_report_loader = ash::extensions::ext::DebugReport::new(entry, instance);
 
         if VALIDATION.is_enable == false {

@@ -370,10 +370,7 @@ impl VulkanApp {
         unsafe {
             let capabilities = surface_stuff
                 .surface_loader
-                .get_physical_device_surface_capabilities(
-                    physical_device,
-                    surface_stuff.surface,
-                )
+                .get_physical_device_surface_capabilities(physical_device, surface_stuff.surface)
                 .expect("Failed to query for surface capabilities.");
             let formats = surface_stuff
                 .surface_loader
@@ -381,10 +378,7 @@ impl VulkanApp {
                 .expect("Failed to query for surface formats.");
             let present_modes = surface_stuff
                 .surface_loader
-                .get_physical_device_surface_present_modes(
-                    physical_device,
-                    surface_stuff.surface,
-                )
+                .get_physical_device_surface_present_modes(physical_device, surface_stuff.surface)
                 .expect("Failed to query for surface present mode.");
 
             SwapChainSupportDetail {

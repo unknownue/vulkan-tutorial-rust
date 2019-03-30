@@ -13,7 +13,6 @@ use ash::vk;
 use cgmath::{Deg, Matrix4, Point3, Vector3};
 
 use std::ffi::CString;
-use std::path::Path;
 use std::ptr;
 
 // Constants
@@ -312,13 +311,14 @@ impl VulkanApp21 {
         swapchain_extent: vk::Extent2D,
         ubo_set_layout: vk::DescriptorSetLayout,
     ) -> (vk::Pipeline, vk::PipelineLayout) {
-        let vert_shader_code =
-            utility::tools::read_shader_code(Path::new("shaders/spv/21-shader-ubo.vert.spv"));
-        let frag_shader_code =
-            utility::tools::read_shader_code(Path::new("shaders/spv/21-shader-ubo.frag.spv"));
-
-        let vert_shader_module = share::create_shader_module(device, vert_shader_code);
-        let frag_shader_module = share::create_shader_module(device, frag_shader_code);
+        let vert_shader_module = share::create_shader_module(
+            device,
+            include_bytes!("../../shaders/spv/21-shader-ubo.vert.spv").to_vec(),
+        );
+        let frag_shader_module = share::create_shader_module(
+            device,
+            include_bytes!("../../shaders/spv/21-shader-ubo.frag.spv").to_vec(),
+        );
 
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 

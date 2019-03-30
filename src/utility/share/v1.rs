@@ -7,8 +7,6 @@ use std::ffi::CString;
 use std::path::Path;
 use std::ptr;
 
-use crate::utility::tools;
-
 use super::*;
 
 pub fn create_render_pass(device: &ash::Device, surface_format: vk::Format) -> vk::RenderPass {
@@ -79,13 +77,14 @@ pub fn create_graphics_pipeline(
     render_pass: vk::RenderPass,
     swapchain_extent: vk::Extent2D,
 ) -> (vk::Pipeline, vk::PipelineLayout) {
-    let vert_shader_code =
-        tools::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
-    let frag_shader_code =
-        tools::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
-
-    let vert_shader_module = create_shader_module(device, vert_shader_code);
-    let frag_shader_module = create_shader_module(device, frag_shader_code);
+    let vert_shader_module = create_shader_module(
+        device,
+        include_bytes!("../../../shaders/spv/09-shader-base.vert.spv").to_vec(),
+    );
+    let frag_shader_module = create_shader_module(
+        device,
+        include_bytes!("../../../shaders/spv/09-shader-base.frag.spv").to_vec(),
+    );
 
     let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
