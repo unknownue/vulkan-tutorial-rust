@@ -20,7 +20,6 @@ use metal::CoreAnimationLayer;
 #[cfg(target_os = "macos")]
 use objc::runtime::YES;
 
-use std::os::raw::c_void;
 
 // required extension ------------------------------------------------------
 #[cfg(target_os = "macos")]
@@ -71,7 +70,7 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
         dpy: x11_display as *mut vk::Display,
     };
     let xlib_surface_loader = XlibSurface::new(entry, instance);
-    xlib_surface_loader.create_xlib_surface_khr(&x11_create_info, None)
+    xlib_surface_loader.create_xlib_surface(&x11_create_info, None)
 }
 
 #[cfg(target_os = "macos")]
@@ -82,6 +81,7 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
 ) -> Result<vk::SurfaceKHR, vk::Result> {
     use std::mem;
     use std::ptr;
+    use std::os::raw::c_void;
     use winit::os::macos::WindowExt;
 
     let wnd: cocoa_id = mem::transmute(window.get_nswindow());
@@ -116,6 +116,7 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
     window: &winit::Window,
 ) -> Result<vk::SurfaceKHR, vk::Result> {
     use std::ptr;
+    use std::os::raw::c_void;
     use winapi::shared::windef::HWND;
     use winapi::um::libloaderapi::GetModuleHandleW;
     use winit::os::windows::WindowExt;
@@ -130,6 +131,6 @@ pub unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(
         hwnd: hwnd as *const c_void,
     };
     let win32_surface_loader = Win32Surface::new(entry, instance);
-    win32_surface_loader.create_win32_surface_khr(&win32_create_info, None)
+    win32_surface_loader.create_win32_surface(&win32_create_info, None)
 }
 // ------------------------------------------------------------------------
