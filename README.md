@@ -19,7 +19,7 @@ If you prefer using vulkano, see also [vulkan-tutorial-rs](https://github.com/bw
 
 The environment configuration is same as ash. See [here](https://github.com/MaikKlein/ash#example) for more detail.
 
-Vulkan is quit hard. All examples on official website have been finished. :beers:
+Vulkan is quite hard. All examples on official website have been finished. :beers:
 
 This repository will maintain when the website updates.
 
