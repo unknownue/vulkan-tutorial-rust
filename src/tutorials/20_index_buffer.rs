@@ -22,7 +22,7 @@ const WINDOW_TITLE: &'static str = "20.Index Buffer";
 #[derive(Clone, Debug, Copy)]
 struct Vertex {
     pos: [f32; 2],
-    color: [f32; 4],
+    color: [f32; 3],
 }
 impl Vertex {
     fn get_binding_description() -> [vk::VertexInputBindingDescription; 1] {
@@ -44,7 +44,7 @@ impl Vertex {
             vk::VertexInputAttributeDescription {
                 binding: 0,
                 location: 1,
-                format: vk::Format::R32G32B32A32_SFLOAT,
+                format: vk::Format::R32G32B32_SFLOAT,
                 offset: offset_of!(Vertex, color) as u32,
             },
         ]
@@ -54,19 +54,19 @@ impl Vertex {
 const VERTICES_DATA: [Vertex; 4] = [
     Vertex {
         pos: [-0.5, -0.5],
-        color: [1.0, 0.0, 0.0, 1.0],
+        color: [1.0, 0.0, 0.0],
     },
     Vertex {
         pos: [0.5, -0.5],
-        color: [0.0, 1.0, 0.0, 1.0],
+        color: [0.0, 1.0, 0.0],
     },
     Vertex {
         pos: [0.5, 0.5],
-        color: [0.0, 0.0, 1.0, 1.0],
+        color: [0.0, 0.0, 1.0],
     },
     Vertex {
         pos: [-0.5, 0.5],
-        color: [1.0, 1.0, 1.0, 1.0],
+        color: [1.0, 1.0, 1.0],
     },
 ];
 const INDICES_DATA: [u32; 6] = [0, 1, 2, 2, 3, 0];

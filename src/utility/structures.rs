@@ -65,7 +65,7 @@ pub struct UniformBufferObject {
 #[derive(Clone, Debug, Copy)]
 pub struct VertexV1 {
     pub pos: [f32; 2],
-    pub color: [f32; 4],
+    pub color: [f32; 3],
 }
 impl VertexV1 {
     pub fn get_binding_description() -> [vk::VertexInputBindingDescription; 1] {
@@ -87,7 +87,7 @@ impl VertexV1 {
             vk::VertexInputAttributeDescription {
                 binding: 0,
                 location: 1,
-                format: vk::Format::R32G32B32A32_SFLOAT,
+                format: vk::Format::R32G32B32_SFLOAT,
                 offset: offset_of!(VertexV1, color) as u32,
             },
         ]
@@ -137,19 +137,19 @@ impl VertexV3 {
 pub const RECT_VERTICES_DATA: [VertexV1; 4] = [
     VertexV1 {
         pos: [-0.5, -0.5],
-        color: [1.0, 0.0, 0.0, 1.0],
+        color: [1.0, 0.0, 0.0],
     },
     VertexV1 {
         pos: [0.5, -0.5],
-        color: [0.0, 1.0, 0.0, 1.0],
+        color: [0.0, 1.0, 0.0],
     },
     VertexV1 {
         pos: [0.5, 0.5],
-        color: [0.0, 0.0, 1.0, 1.0],
+        color: [0.0, 0.0, 1.0],
     },
     VertexV1 {
         pos: [-0.5, 0.5],
-        color: [1.0, 1.0, 1.0, 1.0],
+        color: [1.0, 1.0, 1.0],
     },
 ];
 pub const RECT_INDICES_DATA: [u32; 6] = [0, 1, 2, 2, 3, 0];

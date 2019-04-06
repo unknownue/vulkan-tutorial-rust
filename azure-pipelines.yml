@@ -2,13 +2,14 @@ trigger:
   - master
 
 jobs:
-  - job: min
-    displayName: Minimum Rust
-    steps:
-      - template: ci/azure-install-rust.yml
-        parameters:
-          toolchain: 1.33.0
-      - script: cargo build
+
+#  - job: min
+#    displayName: Minimum Rust
+#    steps:
+#      - template: ci/azure-install-rust.yml
+#        parameters:
+#          toolchain: 1.33.0
+#      - script: cargo build
 
   - job: Linux
     pool:

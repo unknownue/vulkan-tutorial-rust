@@ -25,7 +25,7 @@ const TEXTURE_PATH: &'static str = "assets/texture.jpg";
 #[derive(Debug, Clone, Copy)]
 pub struct VertexV2 {
     pub pos: [f32; 2],
-    pub color: [f32; 4],
+    pub color: [f32; 3],
     pub tex_coord: [f32; 2],
 }
 impl VertexV2 {
@@ -48,7 +48,7 @@ impl VertexV2 {
             vk::VertexInputAttributeDescription {
                 binding: 0,
                 location: 1,
-                format: vk::Format::R32G32B32A32_SFLOAT,
+                format: vk::Format::R32G32B32_SFLOAT,
                 offset: offset_of!(VertexV2, color) as u32,
             },
             vk::VertexInputAttributeDescription {
@@ -63,22 +63,22 @@ impl VertexV2 {
 pub const RECT_TEX_COORD_VERTICES_DATA: [VertexV2; 4] = [
     VertexV2 {
         pos: [-0.75, -0.75],
-        color: [1.0, 0.0, 0.0, 1.0],
+        color: [1.0, 0.0, 0.0],
         tex_coord: [1.0, 0.0],
     },
     VertexV2 {
         pos: [0.75, -0.75],
-        color: [0.0, 1.0, 0.0, 1.0],
+        color: [0.0, 1.0, 0.0],
         tex_coord: [0.0, 0.0],
     },
     VertexV2 {
         pos: [0.75, 0.75],
-        color: [0.0, 0.0, 1.0, 1.0],
+        color: [0.0, 0.0, 1.0],
         tex_coord: [0.0, 1.0],
     },
     VertexV2 {
         pos: [-0.75, 0.75],
-        color: [1.0, 1.0, 1.0, 1.0],
+        color: [1.0, 1.0, 1.0],
         tex_coord: [1.0, 1.0],
     },
 ];

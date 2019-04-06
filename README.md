@@ -2,7 +2,7 @@
 
 A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
 
-[![Build Status](https://travis-ci.org/Houjuu-Nue/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Houjuu-Nue/vulkan-tutorial-rust) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build Status](https://dev.azure.com/usami-ssc/usami-ssc/_apis/build/status/Houjuu-Nue.vulkan-tutorial-rust?branchName=master)](https://dev.azure.com/usami-ssc/usami-ssc/_build/latest?definitionId=1&branchName=master)[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 The codes have been tested on Windows and macOS.
 
