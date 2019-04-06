@@ -2,7 +2,7 @@
 
 A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
 
-[![Build Status](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Usami-Renko/vulkan-tutorial-rust) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build Status](https://travis-ci.org/Houjuu-Nue/vulkan-tutorial-rust.svg?branch=master)](https://travis-ci.org/Houjuu-Nue/vulkan-tutorial-rust) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 The codes have been tested on Windows and macOS.
 
@@ -79,11 +79,6 @@ All textures and models using in the tutorials are not included in this reposito
 [CC0 licensed images](https://pixabay.com/en/statue-sculpture-fig-historically-1275469/)
 [chalet obj](https://vulkan-tutorial.com/resources/chalet.obj.zip)
 [chalet texture](https://vulkan-tutorial.com/resources/chalet.jpg)
-
-## Notices
-
-- Use `VK_FORMAT_R32G32B32A32_SFLOAT` instead of `VK_FORMAT_R32G32B32_SFLOAT`, since `VK_FORMAT_R32G32B32_SFLOAT` is not available on macOS.
-- It's recommended to use `vk::PresentModeKHR::Fifo` as present mode instead of `vk::PresentModeKHR::Immediate`, if you want to keep 60.0 fps.
 
 ## Screen Shot
 
