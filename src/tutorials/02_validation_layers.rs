@@ -4,7 +4,7 @@ use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 use ash::vk;
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_void;
 use std::ptr;
 use winit::{ControlFlow, Event, EventsLoop, VirtualKeyCode, WindowEvent};
 
@@ -15,17 +15,30 @@ const VALIDATION: ValidationInfo = ValidationInfo {
     required_validation_layers: ["VK_LAYER_LUNARG_standard_validation"],
 };
 
-unsafe extern "system" fn vulkan_debug_callback(
-    _: vk::DebugReportFlagsEXT,
-    _: vk::DebugReportObjectTypeEXT,
-    _: u64,
-    _: usize,
-    _: i32,
-    _: *const c_char,
-    p_message: *const c_char,
-    _: *mut c_void,
-) -> u32 {
-    println!("{:?}", CStr::from_ptr(p_message));
+/// the callback function used in Debug Utils.
+unsafe extern "system" fn vulkan_debug_utils_callback(
+    message_severity : vk::DebugUtilsMessageSeverityFlagsEXT,
+    message_type     : vk::DebugUtilsMessageTypeFlagsEXT,
+    p_callback_data  : *const vk::DebugUtilsMessengerCallbackDataEXT,
+    _p_user_data     : *mut c_void
+) -> vk::Bool32 {
+
+    let severity = match message_severity {
+        | vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => "[Verbose]",
+        | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => "[Warning]",
+        | vk::DebugUtilsMessageSeverityFlagsEXT::ERROR   => "[Error]",
+        | vk::DebugUtilsMessageSeverityFlagsEXT::INFO    => "[Info]",
+        | _ => "[Unknown]",
+    };
+    let types = match message_type {
+        | vk::DebugUtilsMessageTypeFlagsEXT::GENERAL     => "[General]",
+        | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE => "[Performance]",
+        | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION  => "[Validation]",
+        | _ => "[Unknown]",
+    };
+    let message = CStr::from_ptr((*p_callback_data).p_message);
+    println!("[Debug]{}{}{:?}", severity, types, message);
+
     vk::FALSE
 }
 
@@ -37,8 +50,8 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    debug_report_loader: ash::extensions::ext::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    debug_utils_loader: ash::extensions::ext::DebugUtils,
+    debug_merssager: vk::DebugUtilsMessengerEXT,
 }
 
 impl VulkanApp {
@@ -50,8 +63,8 @@ impl VulkanApp {
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
         let instance = VulkanApp::create_instance(&entry);
-        let (debug_report_loader, debug_callback) =
-            VulkanApp::setup_debug_callback(&entry, &instance);
+        let (debug_utils_loader, debug_merssager) =
+            VulkanApp::setup_debug_utils(&entry, &instance);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -60,8 +73,8 @@ impl VulkanApp {
 
             _entry: entry,
             instance,
-            debug_report_loader,
-            debug_callback,
+            debug_utils_loader,
+            debug_merssager,
         }
     }
 
@@ -90,7 +103,7 @@ impl VulkanApp {
             api_version: API_VERSION,
         };
 
-        // VK_EXT debug report has been requested here.
+        // VK_EXT debug utils has been requested here.
         let extension_names = utility::platforms::required_extension_names();
 
         let requred_validation_layer_raw_names: Vec<CString> = VALIDATION
@@ -168,37 +181,42 @@ impl VulkanApp {
         true
     }
 
-    fn setup_debug_callback(
+    fn setup_debug_utils(
         entry: &ash::Entry,
         instance: &ash::Instance,
     ) -> (
-        ash::extensions::ext::DebugReport,
-        vk::DebugReportCallbackEXT,
+        ash::extensions::ext::DebugUtils,
+        vk::DebugUtilsMessengerEXT,
     ) {
-        let debug_report_loader = ash::extensions::ext::DebugReport::new(entry, instance);
+        let debug_utils_loader = ash::extensions::ext::DebugUtils::new(entry, instance);
 
         if VALIDATION.is_enable == false {
-            (debug_report_loader, ash::vk::DebugReportCallbackEXT::null())
+            (debug_utils_loader, ash::vk::DebugUtilsMessengerEXT::null())
         } else {
-            let debug_create_info = vk::DebugReportCallbackCreateInfoEXT {
-                s_type: vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
+
+            let messenger_ci = vk::DebugUtilsMessengerCreateInfoEXT {
+                s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
                 p_next: ptr::null(),
-                flags: vk::DebugReportFlagsEXT::ERROR
-                    | vk::DebugReportFlagsEXT::INFORMATION
-                    // | vk::DebugReportFlagsEXT::DEBUG
-                    | vk::DebugReportFlagsEXT::WARNING
-                    | vk::DebugReportFlagsEXT::PERFORMANCE_WARNING,
-                pfn_callback: Some(vulkan_debug_callback),
+                flags : vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
+                message_severity :
+                    vk::DebugUtilsMessageSeverityFlagsEXT::WARNING |
+                    // vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
+                    // vk::DebugUtilsMessageSeverityFlagsEXT::INFO |
+                    vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
+                message_type:
+                    vk::DebugUtilsMessageTypeFlagsEXT::GENERAL |
+                    vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE |
+                    vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
+                pfn_user_callback: Some(vulkan_debug_utils_callback),
                 p_user_data: ptr::null_mut(),
             };
 
-            let debug_call_back = unsafe {
-                debug_report_loader
-                    .create_debug_report_callback(&debug_create_info, None)
-                    .expect("Failed to set up Debug Callback!")
+            let utils_messenger = unsafe {
+                debug_utils_loader.create_debug_utils_messenger(&messenger_ci, None)
+                    .expect("Debug Utils Callback")
             };
 
-            (debug_report_loader, debug_call_back)
+            (debug_utils_loader, utils_messenger)
         }
     }
 
@@ -227,8 +245,8 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
         unsafe {
             if VALIDATION.is_enable {
-                self.debug_report_loader
-                    .destroy_debug_report_callback(self.debug_callback, None);
+                self.debug_utils_loader
+                    .destroy_debug_utils_messenger(self.debug_merssager, None);
             }
             self.instance.destroy_instance(None);
         }

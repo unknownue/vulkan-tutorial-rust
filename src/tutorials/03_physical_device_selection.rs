@@ -30,8 +30,8 @@ struct VulkanApp {
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
-    debug_report_loader: ash::extensions::ext::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    debug_utils_loader: ash::extensions::ext::DebugUtils,
+    debug_merssager: vk::DebugUtilsMessengerEXT,
     _physical_device: vk::PhysicalDevice,
 }
 
@@ -50,8 +50,9 @@ impl VulkanApp {
             VALIDATION.is_enable,
             &VALIDATION.required_validation_layers.to_vec(),
         );
-        let (debug_report_loader, debug_callback) =
-            utility::debug::setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
+
+        let (debug_utils_loader, debug_merssager) =
+            utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
 
         // cleanup(); the 'drop' function will take care of it.
@@ -61,8 +62,8 @@ impl VulkanApp {
 
             _entry: entry,
             instance,
-            debug_report_loader,
-            debug_callback,
+            debug_utils_loader,
+            debug_merssager,
             _physical_device: physical_device,
         }
     }
@@ -215,8 +216,8 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
         unsafe {
             if VALIDATION.is_enable {
-                self.debug_report_loader
-                    .destroy_debug_report_callback(self.debug_callback, None);
+                self.debug_utils_loader
+                    .destroy_debug_utils_messenger(self.debug_merssager, None);
             }
             self.instance.destroy_instance(None);
         }

@@ -27,8 +27,8 @@ struct VulkanApp {
     instance: ash::Instance,
     surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
-    debug_report_loader: ash::extensions::ext::DebugReport,
-    debug_callback: vk::DebugReportCallbackEXT,
+    debug_utils_loader: ash::extensions::ext::DebugUtils,
+    debug_merssager: vk::DebugUtilsMessengerEXT,
 
     _physical_device: vk::PhysicalDevice,
     device: ash::Device,
@@ -65,8 +65,8 @@ impl VulkanApp {
         );
         let surface_stuff =
             share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
-        let (debug_report_loader, debug_callback) =
-            setup_debug_callback(VALIDATION.is_enable, &entry, &instance);
+        let (debug_utils_loader, debug_merssager) =
+            setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
         let physical_device =
             share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
         let (device, family_indices) = share::create_logical_device(
@@ -111,8 +111,8 @@ impl VulkanApp {
             instance,
             surface: surface_stuff.surface,
             surface_loader: surface_stuff.surface_loader,
-            debug_report_loader,
-            debug_callback,
+            debug_utils_loader,
+            debug_merssager,
 
             _physical_device: physical_device,
             device,
@@ -371,8 +371,8 @@ impl Drop for VulkanApp {
             self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {
-                self.debug_report_loader
-                    .destroy_debug_report_callback(self.debug_callback, None);
+                self.debug_utils_loader
+                    .destroy_debug_utils_messenger(self.debug_merssager, None);
             }
             self.instance.destroy_instance(None);
         }
