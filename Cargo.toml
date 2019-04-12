@@ -1,3 +1,4 @@
+
 [package]
 name = "vulkan-tutorial-rust"
 version = "0.29.0"
@@ -13,6 +14,12 @@ image     = "0.20"
 memoffset = "0.2"
 tobj      = "0.1.6"
 
+imgui       = { version = "0.0.23", optional = true }
+imgui-winit = { package = "imgui-winit-support", version = "0.0.23",  optional = true }
+
+[dependencies.bitflags]
+version = ">= 1.0.4"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 metal = "0.13.0"
 cocoa = "0.18.4"
@@ -21,8 +28,11 @@ objc  = "0.2.5"
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3.5", features = ["windef", "libloaderapi"] }
 
+[features]
+imgui-experiment = ["imgui", "imgui-winit"]
 
-# shortcuts
+
+# tutorial examples shortcut ---------------------------------
 [[bin]]
 name = "00"
 path = "src/tutorials/00_base_code.rs"
@@ -113,3 +123,12 @@ path = "src/tutorials/28_mipmapping.rs"
 [[bin]]
 name = "29"
 path = "src/tutorials/29_multisampling.rs"
+# ----------------------------------------------------------
+
+
+# imgui example --------------------------------------------
+[[bin]]
+name = "imgui-test"
+path = "src/imgui/imgui.rs"
+required-features = ["imgui-experiment"]
+# ----------------------------------------------------------

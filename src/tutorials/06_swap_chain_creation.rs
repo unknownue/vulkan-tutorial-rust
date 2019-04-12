@@ -209,7 +209,9 @@ impl VulkanApp {
         let is_swapchain_supported =
             !swapchain_support.formats.is_empty() && !swapchain_support.present_modes.is_empty();
 
-        return is_queue_family_supported && is_device_extension_supported && is_swapchain_supported;
+        return is_queue_family_supported
+            && is_device_extension_supported
+            && is_swapchain_supported;
     }
 
     fn create_logical_device(

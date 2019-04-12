@@ -1,27 +1,16 @@
 # vulkan-tutorial-rust
 
-A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
-
 [![Build Status](https://dev.azure.com/usami-ssc/usami-ssc/_apis/build/status/Houjuu-Nue.vulkan-tutorial-rust?branchName=master)](https://dev.azure.com/usami-ssc/usami-ssc/_build/latest?definitionId=1&branchName=master) [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The codes have been tested on Windows and macOS.
+A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
 
-The API of ash crate is more similar to C++ when compared with using [Vulkano](https://crates.io/crates/vulkano).
-
-If you prefer using vulkano, see also [vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs).
-
-## Main Dependencies
-
-- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
-- [ash](https://github.com/MaikKlein/ash) - A lightweight Vulkan bindings for Rust.
+If you prefer using [Vulkano](https://crates.io/crates/vulkano), see also [vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs).
 
 ## Status
 
 The environment configuration is same as ash. See [here](https://github.com/MaikKlein/ash#example) for more detail.
 
 Vulkan is quite hard. All examples on official website have been finished. :beers:
-
-This repository will maintain when the website updates.
 
 ## Usage
 
@@ -80,6 +69,6 @@ All textures and models using in the tutorials are not included in this reposito
 [chalet obj](https://vulkan-tutorial.com/resources/chalet.obj.zip)
 [chalet texture](https://vulkan-tutorial.com/resources/chalet.jpg)
 
-## Screen Shot
+## Snapshot
 
 ![All snapshots](snapshot/snapshot_all.png)
