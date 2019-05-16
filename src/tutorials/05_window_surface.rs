@@ -73,9 +73,9 @@ impl VulkanApp {
             VALIDATION.is_enable,
             &VALIDATION.required_validation_layers.to_vec(),
         );
-        let surface_stuff = VulkanApp::create_surface(&entry, &instance, &window);
         let (debug_utils_loader, debug_merssager) =
             utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
+        let surface_stuff = VulkanApp::create_surface(&entry, &instance, &window);
         let physical_device = VulkanApp::pick_physical_device(&instance, &surface_stuff);
         let (device, family_indices) = VulkanApp::create_logical_device(
             &instance,
@@ -276,6 +276,7 @@ impl Drop for VulkanApp {
     fn drop(&mut self) {
         unsafe {
             self.device.destroy_device(None);
+            // FIXME: The program crash here.
             self.surface_loader.destroy_surface(self.surface, None);
 
             if VALIDATION.is_enable {

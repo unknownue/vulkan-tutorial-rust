@@ -79,20 +79,7 @@ pub fn setup_debug_utils(
     if is_enable_debug == false {
         (debug_utils_loader, ash::vk::DebugUtilsMessengerEXT::null())
     } else {
-        let messenger_ci = vk::DebugUtilsMessengerCreateInfoEXT {
-            s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-            p_next: ptr::null(),
-            flags: vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
-            message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::WARNING |
-                // vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
-                // vk::DebugUtilsMessageSeverityFlagsEXT::INFO |
-                vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
-            message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
-                | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
-                | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
-            pfn_user_callback: Some(vulkan_debug_utils_callback),
-            p_user_data: ptr::null_mut(),
-        };
+        let messenger_ci = populate_debug_messenger_create_info();
 
         let utils_messenger = unsafe {
             debug_utils_loader
@@ -101,5 +88,22 @@ pub fn setup_debug_utils(
         };
 
         (debug_utils_loader, utils_messenger)
+    }
+}
+
+pub fn populate_debug_messenger_create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
+    vk::DebugUtilsMessengerCreateInfoEXT {
+        s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        p_next: ptr::null(),
+        flags: vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
+        message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::WARNING |
+            // vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
+            // vk::DebugUtilsMessageSeverityFlagsEXT::INFO |
+            vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
+        message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
+            | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
+            | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
+        pfn_user_callback: Some(vulkan_debug_utils_callback),
+        p_user_data: ptr::null_mut(),
     }
 }

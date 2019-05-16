@@ -10,8 +10,10 @@ use ash::vk;
 
 use std::ffi::CString;
 use std::os::raw::c_char;
+use std::os::raw::c_void;
 use std::path::Path;
 use std::ptr;
+
 
 use crate::utility::constants::*;
 use crate::utility::debug;
@@ -42,6 +44,9 @@ pub fn create_instance(
         api_version: API_VERSION,
     };
 
+    // This create info used to debug issues in vk::createInstance and vk::destroyInstance.
+    let debug_utils_create_info = debug::populate_debug_messenger_create_info();
+
     // VK_EXT debug report has been requested here.
     let extension_names = platforms::required_extension_names();
 
@@ -56,7 +61,12 @@ pub fn create_instance(
 
     let create_info = vk::InstanceCreateInfo {
         s_type: vk::StructureType::INSTANCE_CREATE_INFO,
-        p_next: ptr::null(),
+        p_next: if VALIDATION.is_enable {
+            &debug_utils_create_info as *const vk::DebugUtilsMessengerCreateInfoEXT
+                as *const c_void
+        } else {
+            ptr::null()
+        },
         flags: vk::InstanceCreateFlags::empty(),
         p_application_info: &app_info,
         pp_enabled_layer_names: if is_enable_debug {

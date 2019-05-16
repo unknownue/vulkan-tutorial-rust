@@ -98,8 +98,11 @@ impl VulkanApp {
             application_version: APPLICATION_VERSION,
             p_engine_name: engine_name.as_ptr(),
             engine_version: ENGINE_VERSION,
-            api_version: API_VERSION,
+            api_version: API_VERSION, // set api_version to vk_make_version!(2, 0, 92) to test if the p_next field in vk::InstanceCreateInfo works.
         };
+
+        // This create info used to debug issues in vk::createInstance and vk::destroyInstance.
+        let debug_utils_create_info = populate_debug_messenger_create_info();
 
         // VK_EXT debug utils has been requested here.
         let extension_names = utility::platforms::required_extension_names();
@@ -116,7 +119,12 @@ impl VulkanApp {
 
         let create_info = vk::InstanceCreateInfo {
             s_type: vk::StructureType::INSTANCE_CREATE_INFO,
-            p_next: ptr::null(),
+            p_next: if VALIDATION.is_enable {
+                &debug_utils_create_info as *const vk::DebugUtilsMessengerCreateInfoEXT
+                    as *const c_void
+            } else {
+                ptr::null()
+            },
             flags: vk::InstanceCreateFlags::empty(),
             p_application_info: &app_info,
             pp_enabled_layer_names: if VALIDATION.is_enable {
@@ -188,20 +196,7 @@ impl VulkanApp {
         if VALIDATION.is_enable == false {
             (debug_utils_loader, ash::vk::DebugUtilsMessengerEXT::null())
         } else {
-            let messenger_ci = vk::DebugUtilsMessengerCreateInfoEXT {
-                s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-                p_next: ptr::null(),
-                flags: vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
-                message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::WARNING |
-                    // vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
-                    // vk::DebugUtilsMessageSeverityFlagsEXT::INFO |
-                    vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
-                message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
-                    | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
-                    | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
-                pfn_user_callback: Some(vulkan_debug_utils_callback),
-                p_user_data: ptr::null_mut(),
-            };
+            let messenger_ci = populate_debug_messenger_create_info();
 
             let utils_messenger = unsafe {
                 debug_utils_loader
@@ -231,6 +226,23 @@ impl VulkanApp {
                 _ => ControlFlow::Continue,
             }
         });
+    }
+}
+
+fn populate_debug_messenger_create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
+    vk::DebugUtilsMessengerCreateInfoEXT {
+        s_type: vk::StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        p_next: ptr::null(),
+        flags: vk::DebugUtilsMessengerCreateFlagsEXT::empty(),
+        message_severity: vk::DebugUtilsMessageSeverityFlagsEXT::WARNING |
+            // vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
+            // vk::DebugUtilsMessageSeverityFlagsEXT::INFO |
+            vk::DebugUtilsMessageSeverityFlagsEXT::ERROR,
+        message_type: vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
+            | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
+            | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION,
+        pfn_user_callback: Some(vulkan_debug_utils_callback),
+        p_user_data: ptr::null_mut(),
     }
 }
 
