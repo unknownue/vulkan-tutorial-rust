@@ -222,7 +222,6 @@ impl VulkanApp {
     ) -> (ash::Device, QueueFamilyIndices) {
         let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
 
-        use std::collections::HashSet;
         let mut unique_queue_families = HashSet::new();
         unique_queue_families.insert(indices.graphics_family as u32);
         unique_queue_families.insert(indices.present_family as u32);

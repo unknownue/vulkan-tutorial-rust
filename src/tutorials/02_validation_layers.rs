@@ -12,7 +12,7 @@ use winit::{ControlFlow, Event, EventsLoop, VirtualKeyCode, WindowEvent};
 const WINDOW_TITLE: &'static str = "02.Validation Layers";
 const VALIDATION: ValidationInfo = ValidationInfo {
     is_enable: true,
-    required_validation_layers: ["VK_LAYER_LUNARG_standard_validation"],
+    required_validation_layers: ["VK_LAYER_KHRONOS_validation"],
 };
 
 /// the callback function used in Debug Utils.

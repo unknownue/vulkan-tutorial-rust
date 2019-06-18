@@ -18,7 +18,7 @@ const WINDOW_WIDTH: u32 = 1280;
 const WINDOW_HEIGHT: u32 = 720;
 const VALIDATION: ValidationInfo = ValidationInfo {
     is_enable: true,
-    required_validation_layers: ["VK_LAYER_LUNARG_standard_validation"],
+    required_validation_layers: ["VK_LAYER_KHRONOS_validation"],
 };
 const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
     names: ["VK_KHR_swapchain"],
