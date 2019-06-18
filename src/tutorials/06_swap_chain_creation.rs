@@ -470,14 +470,6 @@ impl VulkanApp {
     fn choose_swapchain_format(
         available_formats: &Vec<vk::SurfaceFormatKHR>,
     ) -> vk::SurfaceFormatKHR {
-        // check if the list contains only one entry with undefined format
-        // it means that there are no preferred surface formats and any can be choosen
-        if available_formats.len() == 1 && available_formats[0].format == vk::Format::UNDEFINED {
-            return vk::SurfaceFormatKHR {
-                format: vk::Format::B8G8R8A8_UNORM,
-                color_space: vk::ColorSpaceKHR::SRGB_NONLINEAR,
-            };
-        }
 
         // check if list contains most widely used R8G8B8A8 format with nonlinear color space
         for available_format in available_formats {

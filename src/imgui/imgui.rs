@@ -666,12 +666,6 @@ fn query_swapchain_support(
 }
 
 fn choose_swapchain_format(available_formats: &Vec<vk::SurfaceFormatKHR>) -> vk::SurfaceFormatKHR {
-    if available_formats.len() == 1 && available_formats[0].format == vk::Format::UNDEFINED {
-        return vk::SurfaceFormatKHR {
-            format: vk::Format::B8G8R8A8_UNORM,
-            color_space: vk::ColorSpaceKHR::SRGB_NONLINEAR,
-        };
-    }
 
     for available_format in available_formats {
         if available_format.format == vk::Format::B8G8R8A8_UNORM
