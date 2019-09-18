@@ -8,7 +8,8 @@ use vulkan_tutorial_rust::{
 use ash::version::DeviceV1_0;
 use ash::version::InstanceV1_0;
 use ash::vk;
-use winit::{ControlFlow, Event, EventsLoop, VirtualKeyCode, WindowEvent};
+use winit::event::{Event, VirtualKeyCode, ElementState, KeyboardInput, WindowEvent};
+use winit::event_loop::{EventLoop, ControlFlow};
 
 use std::ptr;
 
@@ -16,11 +17,7 @@ use std::ptr;
 const WINDOW_TITLE: &'static str = "07.Image View";
 
 struct VulkanApp {
-    // winit stuff
-    events_loop: EventsLoop,
-    _window: winit::Window,
 
-    // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
     surface_loader: ash::extensions::khr::Surface,
@@ -43,11 +40,7 @@ struct VulkanApp {
 }
 
 impl VulkanApp {
-    pub fn new() -> VulkanApp {
-        // init window stuff
-        let events_loop = EventsLoop::new();
-        let window =
-            utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+    pub fn new(window: &winit::window::Window) -> VulkanApp {
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
@@ -90,11 +83,6 @@ impl VulkanApp {
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
-            // winit stuff
-            events_loop,
-            _window: window,
-
-            // vulkan stuff
             _entry: entry,
             instance,
             surface: surface_stuff.surface,
@@ -182,29 +170,44 @@ impl Drop for VulkanApp {
 
 // Fix content -------------------------------------------------------------------------------
 impl VulkanApp {
-    pub fn main_loop(&mut self) {
-        self.events_loop.run_forever(|event| {
+    pub fn main_loop(self, event_loop: EventLoop<()>) {
+
+         event_loop.run(move |event, _, control_flow| {
+
             match event {
-                // handling keyboard event
-                Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::KeyboardInput { input, .. } => {
-                        if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
-                            ControlFlow::Break
-                        } else {
-                            ControlFlow::Continue
-                        }
+                | Event::WindowEvent { event, .. } => {
+                    match event {
+                        | WindowEvent::CloseRequested => {
+                            *control_flow = ControlFlow::Exit
+                        },
+                        | WindowEvent::KeyboardInput { input, .. } => {
+                            match input {
+                                | KeyboardInput { virtual_keycode, state, .. } => {
+                                    match (virtual_keycode, state) {
+                                        | (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                                            *control_flow = ControlFlow::Exit
+                                        },
+                                        | _ => {},
+                                    }
+                                },
+                            }
+                        },
+                        | _ => {},
                     }
-                    WindowEvent::CloseRequested => ControlFlow::Break,
-                    _ => ControlFlow::Continue,
                 },
-                _ => ControlFlow::Continue,
+                _ => (),
             }
-        });
+
+        })
     }
 }
 
+
 fn main() {
-    let mut vulkan_app = VulkanApp::new();
-    vulkan_app.main_loop();
+    let event_loop = EventLoop::new();
+    let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    let vulkan_app = VulkanApp::new(&window);
+    vulkan_app.main_loop(event_loop);;
 }
 // -------------------------------------------------------------------------------------------

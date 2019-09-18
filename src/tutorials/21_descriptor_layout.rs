@@ -27,7 +27,7 @@ struct UniformBufferObject {
 }
 
 struct VulkanApp21 {
-    window: winit::Window,
+    window: winit::window::Window,
 
     // vulkan stuff
     _entry: ash::Entry,
@@ -77,9 +77,9 @@ struct VulkanApp21 {
 }
 
 impl VulkanApp21 {
-    pub fn new(event_loop: &winit::EventsLoop) -> VulkanApp21 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp21 {
         let window =
-            utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+            utility::window::init_window(event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
@@ -852,9 +852,9 @@ impl VulkanApp for VulkanApp21 {
 }
 
 fn main() {
-    let mut program_proc = ProgramProc::new();
-    let mut vulkan_app = VulkanApp21::new(&program_proc.events_loop);
+    let program_proc = ProgramProc::new();
+    let vulkan_app = VulkanApp21::new(&program_proc.event_loop);
 
-    program_proc.main_loop(&mut vulkan_app);
+    program_proc.main_loop(vulkan_app);
 }
 // -------------------------------------------------------------------------------------------

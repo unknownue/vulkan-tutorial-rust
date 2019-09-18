@@ -95,7 +95,7 @@ pub fn create_instance(
 pub fn create_surface(
     entry: &ash::Entry,
     instance: &ash::Instance,
-    window: &winit::Window,
+    window: &winit::window::Window,
     screen_width: u32,
     screen_height: u32,
 ) -> SurfaceStuff {
@@ -350,7 +350,7 @@ pub fn create_swapchain(
     instance: &ash::Instance,
     device: &ash::Device,
     physical_device: vk::PhysicalDevice,
-    window: &winit::Window,
+    window: &winit::window::Window,
     surface_stuff: &SurfaceStuff,
     queue_family: &QueueFamilyIndices,
 ) -> SwapChainStuff {
@@ -457,7 +457,7 @@ pub fn choose_swapchain_present_mode(
 
 pub fn choose_swapchain_extent(
     capabilities: &vk::SurfaceCapabilitiesKHR,
-    window: &winit::Window,
+    window: &winit::window::Window,
 ) -> vk::Extent2D {
     if capabilities.current_extent.width != u32::max_value() {
         capabilities.current_extent
@@ -465,8 +465,7 @@ pub fn choose_swapchain_extent(
         use num::clamp;
 
         let window_size = window
-            .get_inner_size()
-            .expect("Failed to get the size of Window");
+            .inner_size();
         println!(
             "\t\tInner Window Size: ({}, {})",
             window_size.width, window_size.height

@@ -84,7 +84,7 @@ pub const RECT_TEX_COORD_VERTICES_DATA: [VertexV2; 4] = [
 ];
 
 struct VulkanApp25 {
-    window: winit::Window,
+    window: winit::window::Window,
 
     // vulkan stuff
     _entry: ash::Entry,
@@ -143,7 +143,7 @@ struct VulkanApp25 {
 }
 
 impl VulkanApp25 {
-    pub fn new(event_loop: &winit::EventsLoop) -> VulkanApp25 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp25 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -1074,9 +1074,9 @@ impl VulkanApp for VulkanApp25 {
 }
 
 fn main() {
-    let mut program_proc = ProgramProc::new();
-    let mut vulkan_app = VulkanApp25::new(&program_proc.events_loop);
+    let program_proc = ProgramProc::new();
+    let vulkan_app = VulkanApp25::new(&program_proc.event_loop);
 
-    program_proc.main_loop(&mut vulkan_app);
+    program_proc.main_loop(vulkan_app);
 }
 // -------------------------------------------------------------------------------------------

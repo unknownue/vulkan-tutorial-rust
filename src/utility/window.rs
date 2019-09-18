@@ -1,17 +1,20 @@
-use winit::{Event, EventsLoop, VirtualKeyCode, WindowEvent};
+
+use winit::event::{Event, VirtualKeyCode, ElementState, KeyboardInput, WindowEvent};
+use winit::event_loop::{EventLoop, ControlFlow};
+
 
 const IS_PAINT_FPS_COUNTER: bool = true;
 
 pub fn init_window(
-    events_loop: &EventsLoop,
+    event_loop: &EventLoop<()>,
     title: &str,
     width: u32,
     height: u32,
-) -> winit::Window {
-    winit::WindowBuilder::new()
+) -> winit::window::Window {
+    winit::window::WindowBuilder::new()
         .with_title(title)
-        .with_dimensions((width, height).into())
-        .build(events_loop)
+        .with_inner_size((width, height).into())
+        .build(event_loop)
         .expect("Failed to create window.")
 }
 
@@ -24,61 +27,69 @@ pub trait VulkanApp {
 }
 
 pub struct ProgramProc {
-    pub events_loop: EventsLoop,
+    pub event_loop: EventLoop<()>,
 }
 
 impl ProgramProc {
+
     pub fn new() -> ProgramProc {
         // init window stuff
-        let events_loop = EventsLoop::new();
+        let event_loop = EventLoop::new();
 
-        ProgramProc { events_loop }
+        ProgramProc { event_loop }
     }
 
-    pub fn main_loop(&mut self, vulkan_app: &mut impl VulkanApp) {
-        let mut is_first_toggle_resize = true;
+    pub fn main_loop<A: 'static + VulkanApp>(self, mut vulkan_app: A) {
+
         let mut tick_counter = super::fps_limiter::FPSLimiter::new();
-        let mut is_running = true;
 
-        'mainloop: loop {
-            self.events_loop.poll_events(|event| {
-                match event {
-                    // handling keyboard event
-                    Event::WindowEvent { event, .. } => match event {
-                        WindowEvent::KeyboardInput { input, .. } => {
-                            if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
-                                is_running = false;
+        self.event_loop.run(move |event, _, control_flow| {
+
+            match event {
+                | Event::WindowEvent { event, .. } => {
+                    match event {
+                        | WindowEvent::CloseRequested => {
+                            vulkan_app.wait_device_idle();
+                            *control_flow = ControlFlow::Exit
+                        },
+                        | WindowEvent::KeyboardInput { input, .. } => {
+                            match input {
+                                | KeyboardInput { virtual_keycode, state, .. } => {
+                                    match (virtual_keycode, state) {
+                                        | (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                                            vulkan_app.wait_device_idle();
+                                            *control_flow = ControlFlow::Exit
+                                        },
+                                        | _ => {},
+                                    }
+                                },
                             }
-                        }
-                        WindowEvent::Resized(_) => {
-                            if is_first_toggle_resize == false {
-                                vulkan_app.resize_framebuffer();
-                            } else {
-                                is_first_toggle_resize = false;
-                            }
-                        }
-                        WindowEvent::CloseRequested => {
-                            is_running = false;
-                        }
-                        _ => (),
-                    },
-                    _ => (),
-                }
-            });
+                        },
+                        | WindowEvent::Resized(_new_size) => {
+                            vulkan_app.wait_device_idle();
+                            vulkan_app.resize_framebuffer();
+                        },
+                        | _ => {},
+                    }
+                },
+                | Event::EventsCleared => {
 
-            let delta_time = tick_counter.delta_time();
-            vulkan_app.draw_frame(delta_time);
+                    let delta_time = tick_counter.delta_time();
+                    vulkan_app.draw_frame(delta_time);
 
-            tick_counter.tick_frame();
-            if IS_PAINT_FPS_COUNTER {
-                print!("FPS: {}\r", tick_counter.fps());
+                    if IS_PAINT_FPS_COUNTER {
+                        print!("FPS: {}\r", tick_counter.fps());
+                    }
+
+                    tick_counter.tick_frame();
+                },
+                | Event::LoopDestroyed => {
+                    vulkan_app.wait_device_idle();
+                },
+                _ => (),
             }
 
-            if is_running == false {
-                break 'mainloop;
-            }
-        }
-
-        vulkan_app.wait_device_idle();
+        })
     }
+
 }

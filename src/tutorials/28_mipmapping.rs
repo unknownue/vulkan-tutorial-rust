@@ -24,7 +24,7 @@ const MODEL_PATH: &'static str = "assets/chalet.obj";
 const TEXTURE_PATH: &'static str = "assets/chalet.jpg";
 
 struct VulkanApp28 {
-    window: winit::Window,
+    window: winit::window::Window,
 
     // vulkan stuff
     _entry: ash::Entry,
@@ -92,7 +92,7 @@ struct VulkanApp28 {
 }
 
 impl VulkanApp28 {
-    pub fn new(event_loop: &winit::EventsLoop) -> VulkanApp28 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp28 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -1357,9 +1357,9 @@ impl VulkanApp for VulkanApp28 {
 }
 
 fn main() {
-    let mut program_proc = ProgramProc::new();
-    let mut vulkan_app = VulkanApp28::new(&program_proc.events_loop);
+    let program_proc = ProgramProc::new();
+    let vulkan_app = VulkanApp28::new(&program_proc.event_loop);
 
-    program_proc.main_loop(&mut vulkan_app);
+    program_proc.main_loop(vulkan_app);
 }
 // -------------------------------------------------------------------------------------------

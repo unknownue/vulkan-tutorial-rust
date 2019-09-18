@@ -8,7 +8,8 @@ use vulkan_tutorial_rust::{
 use ash::version::DeviceV1_0;
 use ash::version::InstanceV1_0;
 use ash::vk;
-use winit::{ControlFlow, Event, EventsLoop, VirtualKeyCode, WindowEvent};
+use winit::event::{Event, VirtualKeyCode, ElementState, KeyboardInput, WindowEvent};
+use winit::event_loop::{EventLoop, ControlFlow};
 
 use std::ptr;
 
@@ -23,6 +24,7 @@ struct SyncObjects {
 }
 
 struct VulkanApp {
+    _window: winit::window::Window,
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -59,7 +61,10 @@ struct VulkanApp {
 }
 
 impl VulkanApp {
-    pub fn new(window: &winit::Window) -> VulkanApp {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp {
+
+        let window = utility::window::init_window(event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(
@@ -123,6 +128,7 @@ impl VulkanApp {
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
+            _window: window,
             // vulkan stuff
             _entry: entry,
             instance,
@@ -377,58 +383,54 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-struct ProgramProc {
-    // winit stuff
-    events_loop: EventsLoop,
-    window: winit::Window,
-}
+impl VulkanApp {
 
-impl ProgramProc {
-    fn new() -> ProgramProc {
-        // init window stuff
-        let events_loop = EventsLoop::new();
-        let window =
-            utility::window::init_window(&events_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+    pub fn main_loop(mut self, event_loop: EventLoop<()>) {
 
-        ProgramProc {
-            events_loop,
-            window,
-        }
-    }
+        event_loop.run(move |event, _, control_flow| {
 
-    fn main_loop(&mut self, vulkan_app: &mut VulkanApp) {
-        self.events_loop.run_forever(|event| {
             match event {
-                // handling keyboard event
-                Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::KeyboardInput { input, .. } => {
-                        if let Some(VirtualKeyCode::Escape) = input.virtual_keycode {
-                            return ControlFlow::Break;
-                        }
+                | Event::WindowEvent { event, .. } => {
+                    match event {
+                        | WindowEvent::CloseRequested => {
+                            *control_flow = ControlFlow::Exit
+                        },
+                        | WindowEvent::KeyboardInput { input, .. } => {
+                            match input {
+                                | KeyboardInput { virtual_keycode, state, .. } => {
+                                    match (virtual_keycode, state) {
+                                        | (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                                            *control_flow = ControlFlow::Exit
+                                        },
+                                        | _ => {},
+                                    }
+                                },
+                            }
+                        },
+                        | _ => {},
                     }
-                    WindowEvent::CloseRequested => return ControlFlow::Break,
-                    _ => (),
+                },
+                | Event::EventsCleared => {
+                    self.draw_frame();
+                },
+                | Event::LoopDestroyed => {
+                    unsafe {
+                        self.device.device_wait_idle()
+                            .expect("Failed to wait device idle!")
+                    };
                 },
                 _ => (),
             }
 
-            vulkan_app.draw_frame();
-            ControlFlow::Continue
-        });
-
-        unsafe {
-            vulkan_app
-                .device
-                .device_wait_idle()
-                .expect("Failed to wait device idle!")
-        };
+        })
     }
 }
 
 fn main() {
-    let mut program_proc = ProgramProc::new();
-    let mut vulkan_app = VulkanApp::new(&program_proc.window);
 
-    program_proc.main_loop(&mut vulkan_app);
+    let event_loop = EventLoop::new();
+
+    let vulkan_app = VulkanApp::new(&event_loop);
+    vulkan_app.main_loop(event_loop);;
 }
 // -------------------------------------------------------------------------------------------

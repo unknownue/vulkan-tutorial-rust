@@ -6,13 +6,13 @@ edition = "2018"
 authors = ["Houjuu-Nue <usami-ssc@protonmail.com>"]
 
 [dependencies]
-winit     = "0.18.0"
-ash       = "0.28.0"
+winit     = "0.20.0-alpha3"
+ash       = "0.29.0"
 num       = "0.2"
-cgmath    = "0.16.1"
-image     = "0.20"
-memoffset = "0.2"
-tobj      = "0.1.6"
+cgmath    = "0.17.0"
+image     = "0.22.2"
+memoffset = "0.5.1"
+tobj      = "0.1.10"
 
 [dependencies.bitflags]
 version = ">= 1.0.4"
