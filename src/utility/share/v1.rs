@@ -325,7 +325,7 @@ pub fn create_command_pool(
         s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
         p_next: ptr::null(),
         flags: vk::CommandPoolCreateFlags::empty(),
-        queue_family_index: queue_families.graphics_family as u32,
+        queue_family_index: queue_families.graphics_family.unwrap(),
     };
 
     unsafe {

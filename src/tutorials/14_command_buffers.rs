@@ -72,9 +72,9 @@ impl VulkanApp {
             &surface_stuff,
         );
         let graphics_queue =
-            unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
+            unsafe { device.get_device_queue(family_indices.graphics_family.unwrap(), 0) };
         let present_queue =
-            unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
+            unsafe { device.get_device_queue(family_indices.present_family.unwrap(), 0) };
         let swapchain_stuff = share::create_swapchain(
             &instance,
             &device,
@@ -150,7 +150,7 @@ impl VulkanApp {
             s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::CommandPoolCreateFlags::empty(),
-            queue_family_index: queue_families.graphics_family as u32,
+            queue_family_index: queue_families.graphics_family.unwrap(),
         };
 
         unsafe {

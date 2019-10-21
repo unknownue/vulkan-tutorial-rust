@@ -183,8 +183,8 @@ pub fn create_logical_device(
 
     use std::collections::HashSet;
     let mut unique_queue_families = HashSet::new();
-    unique_queue_families.insert(indices.graphics_family as u32);
-    unique_queue_families.insert(indices.present_family as u32);
+    unique_queue_families.insert(indices.graphics_family.unwrap());
+    unique_queue_families.insert(indices.present_family.unwrap());
 
     let queue_priorities = [1.0_f32];
     let mut queue_create_infos = vec![];
@@ -262,7 +262,7 @@ pub fn find_queue_family(
         if queue_family.queue_count > 0
             && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS)
         {
-            queue_family_indices.graphics_family = index;
+            queue_family_indices.graphics_family = Some(index);
         }
 
         let is_present_support = unsafe {
@@ -275,7 +275,7 @@ pub fn find_queue_family(
                 )
         };
         if queue_family.queue_count > 0 && is_present_support {
-            queue_family_indices.present_family = index;
+            queue_family_indices.present_family = Some(index);
         }
 
         if queue_family_indices.is_complete() {
@@ -373,8 +373,8 @@ pub fn create_swapchain(
                 vk::SharingMode::CONCURRENT,
                 2,
                 vec![
-                    queue_family.graphics_family as u32,
-                    queue_family.present_family as u32,
+                    queue_family.graphics_family.unwrap(),
+                    queue_family.present_family.unwrap(),
                 ],
             )
         } else {
