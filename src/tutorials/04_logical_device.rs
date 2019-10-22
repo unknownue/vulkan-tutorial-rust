@@ -19,12 +19,12 @@ use std::ptr;
 const WINDOW_TITLE: &'static str = "04.Logical Device";
 
 struct QueueFamilyIndices {
-    graphics_family: i32,
+    graphics_family: Option<u32>,
 }
 
 impl QueueFamilyIndices {
     pub fn is_complete(&self) -> bool {
-        self.graphics_family >= 0
+        self.graphics_family.is_some()
     }
 }
 
@@ -108,7 +108,7 @@ impl VulkanApp {
             s_type: vk::StructureType::DEVICE_QUEUE_CREATE_INFO,
             p_next: ptr::null(),
             flags: vk::DeviceQueueCreateFlags::empty(),
-            queue_family_index: indices.graphics_family as u32,
+            queue_family_index: indices.graphics_family.unwrap(),
             p_queue_priorities: queue_priorities.as_ptr(),
             queue_count: queue_priorities.len() as u32,
         };
@@ -154,7 +154,7 @@ impl VulkanApp {
                 .expect("Failed to create logical Device!")
         };
 
-        let graphics_queue = unsafe { device.get_device_queue(indices.graphics_family as u32, 0) };
+        let graphics_queue = unsafe { device.get_device_queue(indices.graphics_family.unwrap(), 0) };
 
         (device, graphics_queue)
     }
@@ -167,7 +167,7 @@ impl VulkanApp {
             unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
 
         let mut queue_family_indices = QueueFamilyIndices {
-            graphics_family: -1,
+            graphics_family: None,
         };
 
         let mut index = 0;
@@ -175,7 +175,7 @@ impl VulkanApp {
             if queue_family.queue_count > 0
                 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS)
             {
-                queue_family_indices.graphics_family = index;
+                queue_family_indices.graphics_family = Some(index);
             }
 
             if queue_family_indices.is_complete() {

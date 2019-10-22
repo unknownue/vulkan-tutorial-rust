@@ -14,12 +14,12 @@ use winit::event_loop::{EventLoop, ControlFlow};
 const WINDOW_TITLE: &'static str = "03.Physical Device Selection";
 
 struct QueueFamilyIndices {
-    graphics_family: i32,
+    graphics_family: Option<u32>,
 }
 
 impl QueueFamilyIndices {
     pub fn is_complete(&self) -> bool {
-        self.graphics_family >= 0
+        self.graphics_family.is_some()
     }
 }
 
@@ -182,7 +182,7 @@ impl VulkanApp {
             unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
 
         let mut queue_family_indices = QueueFamilyIndices {
-            graphics_family: -1,
+            graphics_family: None,
         };
 
         let mut index = 0;
@@ -190,7 +190,7 @@ impl VulkanApp {
             if queue_family.queue_count > 0
                 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS)
             {
-                queue_family_indices.graphics_family = index;
+                queue_family_indices.graphics_family = Some(index);
             }
 
             if queue_family_indices.is_complete() {

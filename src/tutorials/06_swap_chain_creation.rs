@@ -24,20 +24,20 @@ const DEVICE_EXTENSIONS: DeviceExtension = DeviceExtension {
 };
 
 struct QueueFamilyIndices {
-    graphics_family: i32,
-    present_family: i32,
+    graphics_family: Option<u32>,
+    present_family: Option<u32>,
 }
 
 impl QueueFamilyIndices {
     pub fn new() -> QueueFamilyIndices {
         QueueFamilyIndices {
-            graphics_family: -1,
-            present_family: -1,
+            graphics_family: None,
+            present_family: None,
         }
     }
 
     pub fn is_complete(&self) -> bool {
-        self.graphics_family >= 0 && self.present_family >= 0
+        self.graphics_family.is_some() && self.present_family.is_some()
     }
 }
 
@@ -102,9 +102,9 @@ impl VulkanApp {
             &surface_stuff,
         );
         let graphics_queue =
-            unsafe { device.get_device_queue(family_indices.graphics_family as u32, 0) };
+            unsafe { device.get_device_queue(family_indices.graphics_family.unwrap(), 0) };
         let present_queue =
-            unsafe { device.get_device_queue(family_indices.present_family as u32, 0) };
+            unsafe { device.get_device_queue(family_indices.present_family.unwrap(), 0) };
         let swapchain_stuff = VulkanApp::create_swapchain(
             &instance,
             &device,
@@ -211,8 +211,8 @@ impl VulkanApp {
         let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
 
         let mut unique_queue_families = HashSet::new();
-        unique_queue_families.insert(indices.graphics_family as u32);
-        unique_queue_families.insert(indices.present_family as u32);
+        unique_queue_families.insert(indices.graphics_family.unwrap());
+        unique_queue_families.insert(indices.present_family.unwrap());
 
         let queue_priorities = [1.0_f32];
         let mut queue_create_infos = vec![];
@@ -291,7 +291,7 @@ impl VulkanApp {
             if queue_family.queue_count > 0
                 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS)
             {
-                queue_family_indices.graphics_family = index;
+                queue_family_indices.graphics_family = Some(index);
             }
 
             let is_present_support = unsafe {
@@ -304,7 +304,7 @@ impl VulkanApp {
                     )
             };
             if queue_family.queue_count > 0 && is_present_support {
-                queue_family_indices.present_family = index;
+                queue_family_indices.present_family = Some(index);
             }
 
             if queue_family_indices.is_complete() {
@@ -404,8 +404,8 @@ impl VulkanApp {
                     vk::SharingMode::EXCLUSIVE,
                     2,
                     vec![
-                        queue_family.graphics_family as u32,
-                        queue_family.present_family as u32,
+                        queue_family.graphics_family.unwrap(),
+                        queue_family.present_family.unwrap(),
                     ],
                 )
             } else {
