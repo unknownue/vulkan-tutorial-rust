@@ -13,7 +13,7 @@ jobs:
 
   - job: Linux
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-18.04
     steps:
       - template: ci/azure-steps.yml
     strategy:
@@ -33,7 +33,7 @@ jobs:
 
   - job: macOS
     pool:
-      vmImage: macos-10.13
+      vmImage: macos-10.14
     steps:
       - template: ci/azure-steps.yml
     strategy:
