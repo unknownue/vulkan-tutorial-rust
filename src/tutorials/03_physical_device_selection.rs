@@ -202,6 +202,10 @@ impl VulkanApp {
 
         queue_family_indices
     }
+
+    fn draw_frame(&mut self) {
+        // Drawing will be here
+    }
 }
 
 impl Drop for VulkanApp {
@@ -218,7 +222,7 @@ impl Drop for VulkanApp {
 
 // Fix content -------------------------------------------------------------------------------
 impl VulkanApp {
-    pub fn main_loop(self, event_loop: EventLoop<()>) {
+    pub fn main_loop(mut self, event_loop: EventLoop<()>) {
 
          event_loop.run(move |event, _, control_flow| {
 
@@ -242,6 +246,9 @@ impl VulkanApp {
                         },
                         | _ => {},
                     }
+                },
+                | Event::EventsCleared => {
+                    self.draw_frame();
                 },
                 _ => (),
             }
