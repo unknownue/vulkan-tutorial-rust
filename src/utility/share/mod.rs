@@ -124,12 +124,10 @@ pub fn pick_physical_device(
     };
 
     let result = physical_devices.iter().find(|physical_device| {
-        let swapchain_support = query_swapchain_support(**physical_device, surface_stuff);
         let is_suitable = is_physical_device_suitable(
             instance,
             **physical_device,
             surface_stuff,
-            &swapchain_support,
             required_device_extensions,
         );
 
@@ -152,7 +150,6 @@ pub fn is_physical_device_suitable(
     instance: &ash::Instance,
     physical_device: vk::PhysicalDevice,
     surface_stuff: &SurfaceStuff,
-    swapchain_support: &SwapChainSupportDetail,
     required_device_extensions: &DeviceExtension,
 ) -> bool {
     let device_features = unsafe { instance.get_physical_device_features(physical_device) };
@@ -162,8 +159,12 @@ pub fn is_physical_device_suitable(
     let is_queue_family_supported = indices.is_complete();
     let is_device_extension_supported =
         check_device_extension_support(instance, physical_device, required_device_extensions);
-    let is_swapchain_supported =
-        !swapchain_support.formats.is_empty() && !swapchain_support.present_modes.is_empty();
+    let is_swapchain_supported = if is_device_extension_supported {
+        let swapchain_support = query_swapchain_support(physical_device, surface_stuff);
+        !swapchain_support.formats.is_empty() && !swapchain_support.present_modes.is_empty()
+    } else {
+        false
+    };
     let is_support_sampler_anisotropy = device_features.sampler_anisotropy == 1;
 
     return is_queue_family_supported
