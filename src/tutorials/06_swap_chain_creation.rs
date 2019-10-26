@@ -475,17 +475,13 @@ impl VulkanApp {
     fn choose_swapchain_present_mode(
         available_present_modes: &Vec<vk::PresentModeKHR>,
     ) -> vk::PresentModeKHR {
-        let mut best_mode = vk::PresentModeKHR::FIFO;
-
         for &available_present_mode in available_present_modes.iter() {
             if available_present_mode == vk::PresentModeKHR::MAILBOX {
                 return available_present_mode;
-            } else if available_present_mode == vk::PresentModeKHR::IMMEDIATE {
-                best_mode = available_present_mode
             }
         }
 
-        best_mode
+        vk::PresentModeKHR::FIFO
     }
 
     fn choose_swapchain_extent(capabilities: &vk::SurfaceCapabilitiesKHR) -> vk::Extent2D {
