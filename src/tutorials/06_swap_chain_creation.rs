@@ -392,11 +392,12 @@ impl VulkanApp {
             VulkanApp::choose_swapchain_present_mode(&swapchain_support.present_modes);
         let extent = VulkanApp::choose_swapchain_extent(&swapchain_support.capabilities);
 
-        use std::cmp::min;
-        let image_count = min(
-            swapchain_support.capabilities.min_image_count + 1,
-            swapchain_support.capabilities.max_image_count,
-        );
+        let image_count = swapchain_support.capabilities.min_image_count + 1;
+        let image_count = if swapchain_support.capabilities.max_image_count > 0 {
+            image_count.min(swapchain_support.capabilities.max_image_count)
+        } else {
+            image_count
+        };
 
         let (image_sharing_mode, queue_family_index_count, queue_family_indices) =
             if queue_family.graphics_family != queue_family.present_family {
