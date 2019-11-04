@@ -161,8 +161,6 @@ impl VulkanApp29 {
         let (color_image, color_image_view, color_image_memory) =
             VulkanApp29::create_color_resources(
                 &device,
-                command_pool,
-                graphics_queue,
                 swapchain_stuff.swapchain_format,
                 swapchain_stuff.swapchain_extent,
                 &physical_device_memory_properties,
@@ -378,8 +376,6 @@ impl VulkanApp29 {
 
     fn create_color_resources(
         device: &ash::Device,
-        command_pool: vk::CommandPool,
-        submit_queue: vk::Queue,
         swapchain_format: vk::Format,
         swapchain_extent: vk::Extent2D,
         device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
@@ -405,17 +401,6 @@ impl VulkanApp29 {
             color_image,
             color_format,
             vk::ImageAspectFlags::COLOR,
-            1,
-        );
-
-        share::v1::transition_image_layout(
-            device,
-            command_pool,
-            submit_queue,
-            color_image,
-            color_format,
-            vk::ImageLayout::UNDEFINED,
-            vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
             1,
         );
 
@@ -1263,8 +1248,6 @@ impl VulkanApp for VulkanApp29 {
 
         let color_resources = VulkanApp29::create_color_resources(
             &self.device,
-            self.command_pool,
-            self.graphics_queue,
             self.swapchain_format,
             self.swapchain_extent,
             &self.memory_properties,
