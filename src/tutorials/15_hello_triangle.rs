@@ -172,9 +172,6 @@ impl VulkanApp {
             self.device
                 .wait_for_fences(&wait_fences, true, std::u64::MAX)
                 .expect("Failed to wait for Fence!");
-            self.device
-                .reset_fences(&wait_fences)
-                .expect("Failed to reset Fence!");
 
             self.swapchain_loader
                 .acquire_next_image(
@@ -203,6 +200,10 @@ impl VulkanApp {
         }];
 
         unsafe {
+            self.device
+                .reset_fences(&wait_fences)
+                .expect("Failed to reset Fence!");
+
             self.device
                 .queue_submit(
                     self.graphics_queue,
