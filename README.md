@@ -4,8 +4,6 @@
 
 A Rust implementation of the [Vulkan Tutorial](https://vulkan-tutorial.com) based on [ash crate](https://crates.io/crates/ash).
 
-If you prefer using [Vulkano](https://crates.io/crates/vulkano), see also [vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs).
-
 ## Status
 
 The environment configuration is same as ash. See [here](https://github.com/MaikKlein/ash#example) for more detail.
@@ -70,3 +68,14 @@ $ cargo run --bin 00
 ## Snapshot
 
 ![All snapshots](snapshot/snapshot_all.png)
+
+## See also
+
+[bwasty/vulkan-tutorial-rs](https://github.com/bwasty/vulkan-tutorial-rs) — another Rust implementation using [Vulkano](https://crates.io/crates/vulkano)
+
+[adrien-ben/vulkan-tutorial-rs](https://github.com/adrien-ben/vulkan-tutorial-rs) — another Rust implementation with some more custom chapters.
+
+[KhronosGroup/Vulkan-samples](https://github.com/khronosGroup/Vulkan-samples) — Offical examples from KhronosGroup
+
+[SaschaWillems/Vulkan](SaschaWillems/Vulkan) — More examples in C++
+
