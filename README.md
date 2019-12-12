@@ -77,5 +77,5 @@ $ cargo run --bin 00
 
 [KhronosGroup/Vulkan-samples](https://github.com/khronosGroup/Vulkan-samples) — Offical examples from KhronosGroup
 
-[SaschaWillems/Vulkan](SaschaWillems/Vulkan) — More examples in C++
+[SaschaWillems/Vulkan](https://github.com/SaschaWillems/Vulkan) — More examples in C++
 
