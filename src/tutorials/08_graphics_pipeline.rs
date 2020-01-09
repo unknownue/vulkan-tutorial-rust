@@ -176,7 +176,7 @@ fn main() {
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     let vulkan_app = VulkanApp::new(&window);
-    vulkan_app.main_loop(event_loop);;
+    vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------
 

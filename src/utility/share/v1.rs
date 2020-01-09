@@ -465,7 +465,7 @@ pub fn create_vertex_buffer<T>(
     submit_queue: vk::Queue,
     data: &[T],
 ) -> (vk::Buffer, vk::DeviceMemory) {
-    let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;;
+    let buffer_size = ::std::mem::size_of_val(data) as vk::DeviceSize;
 
     let (staging_buffer, staging_buffer_memory) = create_buffer(
         device,

@@ -250,6 +250,6 @@ fn main() {
     let _window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     let vulkan_app = VulkanApp::new();
-    vulkan_app.main_loop(event_loop);;
+    vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------

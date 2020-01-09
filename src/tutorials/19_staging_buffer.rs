@@ -239,7 +239,7 @@ impl VulkanApp {
         command_pool: vk::CommandPool,
         submit_queue: vk::Queue,
     ) -> (vk::Buffer, vk::DeviceMemory) {
-        let buffer_size = std::mem::size_of_val(&VERTICES_DATA) as vk::DeviceSize;;
+        let buffer_size = std::mem::size_of_val(&VERTICES_DATA) as vk::DeviceSize;
         let device_memory_properties =
             unsafe { instance.get_physical_device_memory_properties(physical_device) };
 
@@ -993,6 +993,6 @@ fn main() {
     let event_loop = EventLoop::new();
 
     let vulkan_app = VulkanApp::new(&event_loop);
-    vulkan_app.main_loop(event_loop);;
+    vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------

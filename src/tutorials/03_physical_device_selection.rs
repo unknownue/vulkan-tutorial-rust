@@ -133,13 +133,13 @@ impl VulkanApp {
                 "support"
             } else {
                 "unsupport"
-            };;
+            };
             let is_transfer_support = if queue_family.queue_flags.contains(vk::QueueFlags::TRANSFER)
             {
                 "support"
             } else {
                 "unsupport"
-            };;
+            };
             let is_sparse_support = if queue_family
                 .queue_flags
                 .contains(vk::QueueFlags::SPARSE_BINDING)
@@ -147,7 +147,7 @@ impl VulkanApp {
                 "support"
             } else {
                 "unsupport"
-            };;
+            };
 
             println!(
                 "\t\t{}\t    | {},  {},  {},  {}",
