@@ -9,6 +9,7 @@ use std::ptr;
 
 use winit::event::{Event, VirtualKeyCode, ElementState, KeyboardInput, WindowEvent};
 use winit::event_loop::{EventLoop, ControlFlow};
+use winit::window::Window;
 
 // Constants
 const WINDOW_TITLE: &'static str = "01.Instance Creation";
@@ -36,7 +37,7 @@ impl VulkanApp {
     fn init_window(event_loop: &EventLoop<()>) -> winit::window::Window {
         winit::window::WindowBuilder::new()
             .with_title(WINDOW_TITLE)
-            .with_inner_size((WINDOW_WIDTH, WINDOW_HEIGHT).into())
+            .with_inner_size(winit::dpi::LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT))
             .build(event_loop)
             .expect("Failed to create window.")
     }
@@ -81,7 +82,7 @@ impl VulkanApp {
         // Drawing will be here
     }
 
-    pub fn main_loop(mut self, event_loop: EventLoop<()>) {
+    pub fn main_loop(mut self, event_loop: EventLoop<()>, window: Window) {
 
         event_loop.run(move |event, _, control_flow| {
 
@@ -106,7 +107,10 @@ impl VulkanApp {
                         | _ => {},
                     }
                 },
-                | Event::EventsCleared => {
+                | Event::MainEventsCleared => {
+                    window.request_redraw();
+                },
+                | Event::RedrawRequested(_window_id) => {
                     self.draw_frame();
                 },
                 _ => (),
@@ -127,8 +131,8 @@ impl Drop for VulkanApp {
 fn main() {
 
     let event_loop = EventLoop::new();
-    let _window = VulkanApp::init_window(&event_loop);
+    let window = VulkanApp::init_window(&event_loop);
 
     let vulkan_app = VulkanApp::new();
-    vulkan_app.main_loop(event_loop);
+    vulkan_app.main_loop(event_loop, window);
 }

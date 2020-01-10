@@ -372,7 +372,7 @@ impl Drop for VulkanApp {
 
 // Fix content -------------------------------------------------------------------------------
 impl VulkanApp {
-    pub fn main_loop(mut self, event_loop: EventLoop<()>) {
+    pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
 
@@ -397,7 +397,10 @@ impl VulkanApp {
                         | _ => {},
                     }
                 },
-                | Event::EventsCleared => {
+                | Event::MainEventsCleared => {
+                    window.request_redraw();
+                },
+                | Event::RedrawRequested(_window_id) => {
                     self.draw_frame();
                 },
                 _ => (),
@@ -413,6 +416,6 @@ fn main() {
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     let vulkan_app = VulkanApp::new(&window);
-    vulkan_app.main_loop(event_loop);
+    vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

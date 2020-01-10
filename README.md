@@ -15,10 +15,10 @@ Vulkan is quite hard. All examples on official website have been finished. :beer
 Enter the project root directory, download the assets by the python3 script:
 
 ```shell
-$ python download_asset.py
+vulkan-tutorial-rust$ python download_asset.py
 ```
 
- Run any example with the following command:
+Run any example with the following command:
 
 ```shell
 $ cargo run --bin example_number

@@ -13,7 +13,7 @@ pub fn init_window(
 ) -> winit::window::Window {
     winit::window::WindowBuilder::new()
         .with_title(title)
-        .with_inner_size((width, height).into())
+        .with_inner_size(winit::dpi::LogicalSize::new(width, height))
         .build(event_loop)
         .expect("Failed to create window.")
 }
@@ -24,6 +24,7 @@ pub trait VulkanApp {
     fn cleanup_swapchain(&self);
     fn wait_device_idle(&self);
     fn resize_framebuffer(&mut self);
+    fn window_ref(&self) -> &winit::window::Window;
 }
 
 pub struct ProgramProc {
@@ -72,8 +73,10 @@ impl ProgramProc {
                         | _ => {},
                     }
                 },
-                | Event::EventsCleared => {
-
+                | Event::MainEventsCleared => {
+                    vulkan_app.window_ref().request_redraw();
+                },
+                | Event::RedrawRequested(_window_id) => {
                     let delta_time = tick_counter.delta_time();
                     vulkan_app.draw_frame(delta_time);
 

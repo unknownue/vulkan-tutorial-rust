@@ -1071,6 +1071,10 @@ impl VulkanApp for VulkanApp25 {
     fn resize_framebuffer(&mut self) {
         self.is_framebuffer_resized = true;
     }
+
+    fn window_ref(&self) -> &winit::window::Window {
+        &self.window
+    }
 }
 
 fn main() {

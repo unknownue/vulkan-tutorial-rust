@@ -24,7 +24,7 @@ struct SyncObjects {
 }
 
 struct VulkanApp {
-    _window: winit::window::Window,
+    window: winit::window::Window,
     // vulkan stuff
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -128,7 +128,7 @@ impl VulkanApp {
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
-            _window: window,
+            window,
             // vulkan stuff
             _entry: entry,
             instance,
@@ -411,7 +411,10 @@ impl VulkanApp {
                         | _ => {},
                     }
                 },
-                | Event::EventsCleared => {
+                | Event::MainEventsCleared => {
+                    self.window.request_redraw();
+                },
+                | Event::RedrawRequested(_window_id) => {
                     self.draw_frame();
                 },
                 | Event::LoopDestroyed => {

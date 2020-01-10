@@ -852,7 +852,10 @@ impl VulkanApp {
                         | _ => {},
                     }
                 },
-                | Event::EventsCleared => {
+                | Event::MainEventsCleared => {
+                    self.window.request_redraw();
+                },
+                | Event::RedrawRequested(_window_id) => {
                     self.draw_frame();
 
                     tick_counter.tick_frame();
