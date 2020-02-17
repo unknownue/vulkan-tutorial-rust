@@ -430,7 +430,7 @@ pub fn choose_swapchain_format(
 ) -> vk::SurfaceFormatKHR {
 
     for available_format in available_formats {
-        if available_format.format == vk::Format::B8G8R8A8_UNORM
+        if available_format.format == vk::Format::B8G8R8A8_SRGB
             && available_format.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR
         {
             return available_format.clone();
