@@ -387,8 +387,8 @@ impl VulkanApp26 {
         instance: &ash::Instance,
         device: &ash::Device,
         physical_device: vk::PhysicalDevice,
-        command_pool: vk::CommandPool,
-        submit_queue: vk::Queue,
+        _command_pool: vk::CommandPool,
+        _submit_queue: vk::Queue,
         swapchain_extent: vk::Extent2D,
         device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
     ) -> (vk::Image, vk::ImageView, vk::DeviceMemory) {
@@ -411,16 +411,6 @@ impl VulkanApp26 {
             depth_format,
             vk::ImageAspectFlags::DEPTH,
             1,
-        );
-
-        VulkanApp26::transition_image_layout(
-            device,
-            command_pool,
-            submit_queue,
-            depth_image,
-            depth_format,
-            vk::ImageLayout::UNDEFINED,
-            vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         );
 
         (depth_image, depth_image_view, depth_image_memory)
@@ -467,92 +457,7 @@ impl VulkanApp26 {
         panic!("Failed to find supported format!")
     }
 
-    fn transition_image_layout(
-        device: &ash::Device,
-        command_pool: vk::CommandPool,
-        submit_queue: vk::Queue,
-        image: vk::Image,
-        format: vk::Format,
-        old_layout: vk::ImageLayout,
-        new_layout: vk::ImageLayout,
-    ) {
-        let command_buffer = share::begin_single_time_command(device, command_pool);
-
-        let src_access_mask;
-        let dst_access_mask;
-        let source_stage;
-        let destination_stage;
-
-        if old_layout == vk::ImageLayout::UNDEFINED
-            && new_layout == vk::ImageLayout::TRANSFER_DST_OPTIMAL
-        {
-            src_access_mask = vk::AccessFlags::empty();
-            dst_access_mask = vk::AccessFlags::TRANSFER_WRITE;
-            source_stage = vk::PipelineStageFlags::TOP_OF_PIPE;
-            destination_stage = vk::PipelineStageFlags::TRANSFER;
-        } else if old_layout == vk::ImageLayout::TRANSFER_DST_OPTIMAL
-            && new_layout == vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL
-        {
-            src_access_mask = vk::AccessFlags::TRANSFER_WRITE;
-            dst_access_mask = vk::AccessFlags::SHADER_READ;
-            source_stage = vk::PipelineStageFlags::TRANSFER;
-            destination_stage = vk::PipelineStageFlags::FRAGMENT_SHADER;
-        } else if old_layout == vk::ImageLayout::UNDEFINED
-            && new_layout == vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-        {
-            src_access_mask = vk::AccessFlags::empty();
-            dst_access_mask = vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ
-                | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE;
-            source_stage = vk::PipelineStageFlags::TOP_OF_PIPE;
-            destination_stage = vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS;
-        } else {
-            panic!("Unsupported layout transition!")
-        }
-
-        let aspect_mask = if new_layout == vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL {
-            if VulkanApp26::has_stencil_component(format) {
-                vk::ImageAspectFlags::DEPTH | vk::ImageAspectFlags::STENCIL
-            } else {
-                vk::ImageAspectFlags::DEPTH
-            }
-        } else {
-            vk::ImageAspectFlags::COLOR
-        };
-
-        let image_barriers = [vk::ImageMemoryBarrier {
-            s_type: vk::StructureType::IMAGE_MEMORY_BARRIER,
-            p_next: ptr::null(),
-            src_access_mask,
-            dst_access_mask,
-            old_layout,
-            new_layout,
-            src_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
-            dst_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
-            image,
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask,
-                base_mip_level: 0,
-                level_count: 1,
-                base_array_layer: 0,
-                layer_count: 1,
-            },
-        }];
-
-        unsafe {
-            device.cmd_pipeline_barrier(
-                command_buffer,
-                source_stage,
-                destination_stage,
-                vk::DependencyFlags::empty(),
-                &[],
-                &[],
-                &image_barriers,
-            );
-        }
-
-        share::end_single_time_command(device, command_pool, submit_queue, command_buffer);
-    }
-
+    #[allow(dead_code)]
     fn has_stencil_component(format: vk::Format) -> bool {
         format == vk::Format::D32_SFLOAT_S8_UINT || format == vk::Format::D24_UNORM_S8_UINT
     }

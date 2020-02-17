@@ -772,7 +772,7 @@ pub fn transition_image_layout(
     command_pool: vk::CommandPool,
     submit_queue: vk::Queue,
     image: vk::Image,
-    format: vk::Format,
+    _format: vk::Format,
     old_layout: vk::ImageLayout,
     new_layout: vk::ImageLayout,
     mip_levels: u32,
@@ -799,14 +799,6 @@ pub fn transition_image_layout(
         source_stage = vk::PipelineStageFlags::TRANSFER;
         destination_stage = vk::PipelineStageFlags::FRAGMENT_SHADER;
     } else if old_layout == vk::ImageLayout::UNDEFINED
-        && new_layout == vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-    {
-        src_access_mask = vk::AccessFlags::empty();
-        dst_access_mask = vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ
-            | vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE;
-        source_stage = vk::PipelineStageFlags::TOP_OF_PIPE;
-        destination_stage = vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS;
-    } else if old_layout == vk::ImageLayout::UNDEFINED
         && new_layout == vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL
     {
         src_access_mask = vk::AccessFlags::empty();
@@ -817,16 +809,6 @@ pub fn transition_image_layout(
     } else {
         panic!("Unsupported layout transition!")
     }
-
-    let aspect_mask = if new_layout == vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL {
-        if has_stencil_component(format) {
-            vk::ImageAspectFlags::DEPTH | vk::ImageAspectFlags::STENCIL
-        } else {
-            vk::ImageAspectFlags::DEPTH
-        }
-    } else {
-        vk::ImageAspectFlags::COLOR
-    };
 
     let image_barriers = [vk::ImageMemoryBarrier {
         s_type: vk::StructureType::IMAGE_MEMORY_BARRIER,
@@ -839,7 +821,7 @@ pub fn transition_image_layout(
         dst_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
         image,
         subresource_range: vk::ImageSubresourceRange {
-            aspect_mask,
+            aspect_mask: vk::ImageAspectFlags::COLOR,
             base_mip_level: 0,
             level_count: mip_levels,
             base_array_layer: 0,
@@ -1067,8 +1049,8 @@ pub fn create_depth_resources(
     instance: &ash::Instance,
     device: &ash::Device,
     physical_device: vk::PhysicalDevice,
-    command_pool: vk::CommandPool,
-    submit_queue: vk::Queue,
+    _command_pool: vk::CommandPool,
+    _submit_queue: vk::Queue,
     swapchain_extent: vk::Extent2D,
     device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
     msaa_samples: vk::SampleCountFlags,
@@ -1091,17 +1073,6 @@ pub fn create_depth_resources(
         depth_image,
         depth_format,
         vk::ImageAspectFlags::DEPTH,
-        1,
-    );
-
-    transition_image_layout(
-        device,
-        command_pool,
-        submit_queue,
-        depth_image,
-        depth_format,
-        vk::ImageLayout::UNDEFINED,
-        vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         1,
     );
 
