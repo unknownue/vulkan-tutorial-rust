@@ -48,8 +48,7 @@ pub fn create_render_pass(device: &ash::Device, surface_format: vk::Format) -> v
         src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
         dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
         src_access_mask: vk::AccessFlags::empty(),
-        dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ
-            | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+        dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
         dependency_flags: vk::DependencyFlags::empty(),
     }];
 
