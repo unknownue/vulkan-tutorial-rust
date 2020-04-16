@@ -908,7 +908,7 @@ pub fn create_texture_image_view(
     create_image_view(
         device,
         texture_image,
-        vk::Format::R8G8B8A8_UNORM,
+        vk::Format::R8G8B8A8_SRGB,
         vk::ImageAspectFlags::COLOR,
         mip_levels,
     )
@@ -997,7 +997,7 @@ pub fn create_texture_image(
         image_height,
         1,
         vk::SampleCountFlags::TYPE_1,
-        vk::Format::R8G8B8A8_UNORM,
+        vk::Format::R8G8B8A8_SRGB,
         vk::ImageTiling::OPTIMAL,
         vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
         vk::MemoryPropertyFlags::DEVICE_LOCAL,
@@ -1009,7 +1009,7 @@ pub fn create_texture_image(
         command_pool,
         submit_queue,
         texture_image,
-        vk::Format::R8G8B8A8_UNORM,
+        vk::Format::R8G8B8A8_SRGB,
         vk::ImageLayout::UNDEFINED,
         vk::ImageLayout::TRANSFER_DST_OPTIMAL,
         1,
