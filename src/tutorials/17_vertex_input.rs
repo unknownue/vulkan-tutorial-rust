@@ -62,7 +62,7 @@ const _VERTICES_DATA: [Vertex; 3] = [
         color: [0.0, 1.0, 0.0],
     },
     Vertex {
-        pos: [-0.5, -0.5],
+        pos: [-0.5, 0.5],
         color: [0.0, 0.0, 1.0],
     },
 ];
