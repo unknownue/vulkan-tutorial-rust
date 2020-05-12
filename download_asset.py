@@ -5,15 +5,17 @@
 import sys
 import os
 from urllib.request import urlretrieve
-from zipfile import ZipFile
 
-ASSET_GENERAL_TEXTURE_URL = "https://vulkan-tutorial.com/images/texture.jpg"
-ASSET_CHALET_TEXTURE_URL = "https://vulkan-tutorial.com/resources/chalet.jpg"
-ASSET_CHALET_OBJ_URL = "https://vulkan-tutorial.com/resources/chalet.obj.zip"
+# ASSET_GENERAL_TEXTURE_URL = "https://vulkan-tutorial.com/images/texture.jpg"
+ASSET_GENERAL_TEXTURE_URL = "https://raw.githubusercontent.com/heitaoflower/vulkan-tutorial/master/Tutorial29/textures/texture.jpg"
+# ASSET_CHALET_TEXTURE_URL = "https://vulkan-tutorial.com/resources/chalet.jpg"
+ASSET_CHALET_TEXTURE_URL = "https://raw.githubusercontent.com/heitaoflower/vulkan-tutorial/master/Tutorial29/textures/chalet.jpg"
+# ASSET_CHALET_OBJ_URL = "https://vulkan-tutorial.com/resources/chalet.obj.zip"
+ASSET_CHALET_OBJ_URL = "https://raw.githubusercontent.com/heitaoflower/vulkan-tutorial/master/Tutorial29/models/chalet.obj"
 
 ASSET_GENERAL_TEXTURE_PATH = "./assets/texture.jpg"
 ASSET_CHALET_TEXTURE_PATH  = "./assets/chalet.jpg"
-ASSET_CHALET_OBJ_ZIP_PATH  = "./assets/chalet.obj.zip"
+ASSET_CHALET_OBJ_PATH  = "./assets/chalet.obj"
 
 def reporthook(blocknum, blocksize, totalsize):
     bytesread = blocknum * blocksize
@@ -33,15 +35,8 @@ print("Downloading chalet texture...")
 urlretrieve(ASSET_CHALET_TEXTURE_URL, ASSET_CHALET_TEXTURE_PATH, reporthook)
 
 print("Downloading chalet obj...")
-urlretrieve(ASSET_CHALET_OBJ_URL, ASSET_CHALET_OBJ_ZIP_PATH, reporthook)
+urlretrieve(ASSET_CHALET_OBJ_URL, ASSET_CHALET_OBJ_PATH, reporthook)
 
 print("Download finished")
-
-print("Extracting chalet obj...")
-
-zip = ZipFile(ASSET_CHALET_OBJ_ZIP_PATH, 'r')
-zip.extractall("./assets/")
-zip.close()
-os.remove(ASSET_CHALET_OBJ_ZIP_PATH)
 
 print('..done!')
