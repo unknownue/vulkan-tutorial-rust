@@ -402,7 +402,7 @@ impl VulkanApp {
         let (image_sharing_mode, queue_family_index_count, queue_family_indices) =
             if queue_family.graphics_family != queue_family.present_family {
                 (
-                    vk::SharingMode::EXCLUSIVE,
+                    vk::SharingMode::CONCURRENT,
                     2,
                     vec![
                         queue_family.graphics_family.unwrap(),
