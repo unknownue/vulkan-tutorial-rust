@@ -49,7 +49,7 @@ struct VulkanApp {
     _entry: ash::Entry,
     instance: ash::Instance,
     debug_utils_loader: ash::extensions::ext::DebugUtils,
-    debug_merssager: vk::DebugUtilsMessengerEXT,
+    debug_messenger: vk::DebugUtilsMessengerEXT,
 }
 
 impl VulkanApp {
@@ -58,7 +58,7 @@ impl VulkanApp {
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
         let instance = VulkanApp::create_instance(&entry);
-        let (debug_utils_loader, debug_merssager) = VulkanApp::setup_debug_utils(&entry, &instance);
+        let (debug_utils_loader, debug_messenger) = VulkanApp::setup_debug_utils(&entry, &instance);
 
         // cleanup(); the 'drop' function will take care of it.
         VulkanApp {
@@ -66,7 +66,7 @@ impl VulkanApp {
             _entry: entry,
             instance,
             debug_utils_loader,
-            debug_merssager,
+            debug_messenger,
         }
     }
 
@@ -266,7 +266,7 @@ impl Drop for VulkanApp {
         unsafe {
             if VALIDATION.is_enable {
                 self.debug_utils_loader
-                    .destroy_debug_utils_messenger(self.debug_merssager, None);
+                    .destroy_debug_utils_messenger(self.debug_messenger, None);
             }
             self.instance.destroy_instance(None);
         }

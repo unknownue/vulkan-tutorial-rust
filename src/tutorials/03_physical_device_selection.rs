@@ -29,7 +29,7 @@ struct VulkanApp {
     _entry: ash::Entry,
     instance: ash::Instance,
     debug_utils_loader: ash::extensions::ext::DebugUtils,
-    debug_merssager: vk::DebugUtilsMessengerEXT,
+    debug_messenger: vk::DebugUtilsMessengerEXT,
     _physical_device: vk::PhysicalDevice,
 }
 
@@ -45,7 +45,7 @@ impl VulkanApp {
             &VALIDATION.required_validation_layers.to_vec(),
         );
 
-        let (debug_utils_loader, debug_merssager) =
+        let (debug_utils_loader, debug_messenger) =
             utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
         let physical_device = VulkanApp::pick_physical_device(&instance);
 
@@ -55,7 +55,7 @@ impl VulkanApp {
             _entry: entry,
             instance,
             debug_utils_loader,
-            debug_merssager,
+            debug_messenger,
             _physical_device: physical_device,
         }
     }
@@ -213,7 +213,7 @@ impl Drop for VulkanApp {
         unsafe {
             if VALIDATION.is_enable {
                 self.debug_utils_loader
-                    .destroy_debug_utils_messenger(self.debug_merssager, None);
+                    .destroy_debug_utils_messenger(self.debug_messenger, None);
             }
             self.instance.destroy_instance(None);
         }

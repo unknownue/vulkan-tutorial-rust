@@ -35,7 +35,7 @@ struct VulkanApp21 {
     surface_loader: ash::extensions::khr::Surface,
     surface: vk::SurfaceKHR,
     debug_utils_loader: ash::extensions::ext::DebugUtils,
-    debug_merssager: vk::DebugUtilsMessengerEXT,
+    debug_messenger: vk::DebugUtilsMessengerEXT,
 
     physical_device: vk::PhysicalDevice,
     device: ash::Device,
@@ -91,7 +91,7 @@ impl VulkanApp21 {
         );
         let surface_stuff =
             share::create_surface(&entry, &instance, &window, WINDOW_WIDTH, WINDOW_HEIGHT);
-        let (debug_utils_loader, debug_merssager) =
+        let (debug_utils_loader, debug_messenger) =
             setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
         let physical_device =
             share::pick_physical_device(&instance, &surface_stuff, &DEVICE_EXTENSIONS);
@@ -178,7 +178,7 @@ impl VulkanApp21 {
             surface: surface_stuff.surface,
             surface_loader: surface_stuff.surface_loader,
             debug_utils_loader,
-            debug_merssager,
+            debug_messenger,
 
             physical_device,
             device,
@@ -654,7 +654,7 @@ impl Drop for VulkanApp21 {
 
             if VALIDATION.is_enable {
                 self.debug_utils_loader
-                    .destroy_debug_utils_messenger(self.debug_merssager, None);
+                    .destroy_debug_utils_messenger(self.debug_messenger, None);
             }
             self.instance.destroy_instance(None);
         }
